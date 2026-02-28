@@ -1002,6 +1002,10 @@ pub async fn do_check_software_update() -> hbb_common::ResultType<()> {
 
 #[inline]
 pub fn get_app_name() -> String {
+    let display_name = hbb_common::config::APP_DISPLAY_NAME.read().unwrap().clone();
+    if !display_name.is_empty() {
+        return display_name;
+    }
     hbb_common::config::APP_NAME.read().unwrap().clone()
 }
 
