@@ -33,7 +33,7 @@ class _PrivacyPolicyPageState extends State<PrivacyPolicyPage> {
 
   Future<void> _loadHtmlFromAsset() async {
     final htmlContent =
-        await rootBundle.loadString('../privacy_policy.html');
+        await rootBundle.loadString('assets/privacy_policy.html');
     await _controller.loadHtmlString(htmlContent);
   }
 
