@@ -1,4 +1,4 @@
-lazy_static::lazy_static! {
+﻿lazy_static::lazy_static! {
 pub static ref T: std::collections::HashMap<&'static str, &'static str> =
     [
         ("Status", "Tila"),
@@ -529,8 +529,8 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
         ("Installation failed!", "Asennus epäonnistui!"),
         ("Reverse mouse wheel", "Käänteinen hiiren rullaussuunta"),
         ("{} sessions", "{} istuntoa"),
-        ("scam_title", "Huijausvaroitus"),
-        ("scam_text1", "Älä anna tuntemattomille henkilöille pääsyä tietokoneeseesi."),
+        ("scam_title", "Vahvista toisen osapuolen henkilöllisyys."),
+        ("scam_text1", "Jos toinen osapuoli ei ole Gamwing Global Technology Co., Ltd. -henkilöstöä ja pyytää sinua käyttämään Gamwingiä ja käynnistämään palvelun, älä jatka vaan katkaise puhelu heti."),
         ("scam_text2", "RustDesk ei koskaan pyydä maksua tai etäkäyttöä ilman lupaasi."),
         ("Don't show again", "Älä näytä uudelleen"),
         ("I Agree", "Hyväksyn"),

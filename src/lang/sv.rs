@@ -1,4 +1,4 @@
-lazy_static::lazy_static! {
+﻿lazy_static::lazy_static! {
 pub static ref T: std::collections::HashMap<&'static str, &'static str> =
     [
         ("Status", "Status"),
@@ -529,8 +529,8 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
         ("Installation failed!", "Installationen misslyckades!"),
         ("Reverse mouse wheel", "Ändra riktning för scrollhjulet"),
         ("{} sessions", "{} sessioner"),
-        ("scam_title", ""),
-        ("scam_text1", ""),
+        ("scam_title", "Vänligen verifiera motpartens identitet."),
+        ("scam_text1", "Om den andra parten inte är personal från Gamwing Global Technology Co., Ltd. och ber dig att använda Gamwing och starta tjänsten, fortsätt inte och lägg på omedelbart."),
         ("scam_text2", ""),
         ("Don't show again", "Visa inte igen"),
         ("I Agree", "Jag godkänner"),

@@ -1,4 +1,4 @@
-lazy_static::lazy_static! {
+﻿lazy_static::lazy_static! {
 pub static ref T: std::collections::HashMap<&'static str, &'static str> =
     [
         ("desk_tip", "Your desktop can be accessed with this ID and password."),
@@ -186,8 +186,8 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
         ("Primary Color", "Primary color"),
         ("HSV Color", "HSV color"),
         ("Installation Successful!", "Installation successful!"),
-        ("scam_title", "You May Be Being SCAMMED!"),
-        ("scam_text1", "If you are on the phone with someone you DON'T know AND TRUST who has asked you to use Gamwing and start the service, do not proceed and hang up immediately."),
+        ("scam_title", "Please verify the identity of the other party."),
+        ("scam_text1", "If the other party is not Gamwing Global Technology Co., Ltd. staff and asks you to use Gamwing and start the service, do not proceed and hang up immediately."),
         ("scam_text2", "They are likely a scammer trying to steal your money or other private information."),
         ("auto_disconnect_option_tip", "Automatically close incoming sessions on user inactivity"),
         ("Connection failed due to inactivity", "Automatically disconnected due to inactivity"),

@@ -1,4 +1,4 @@
-lazy_static::lazy_static! {
+﻿lazy_static::lazy_static! {
 pub static ref T: std::collections::HashMap<&'static str, &'static str> =
     [
         ("Status", "Stav"),
@@ -529,8 +529,8 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
         ("Installation failed!", "Inštalácia zlyhala!"),
         ("Reverse mouse wheel", "Reverzné koliesko myši"),
         ("{} sessions", "{} relácií"),
-        ("scam_title", "Možno ste boli oklamaní!"),
-        ("scam_text1", "Ak telefonujete s niekým, koho nepoznáte a komu nedôverujete a kto vás požiadal o použitie a spustenie aplikácie RustDesk, nepokračujte v hovore a okamžite zaveste."),
+        ("scam_title", "Overte prosím totožnosť druhej strany."),
+        ("scam_text1", "Ak druhá strana nie je zamestnancom Gamwing Global Technology Co., Ltd. a žiada vás o použitie Gamwing a spustenie služby, nepokračujte a okamžite zaveste."),
         ("scam_text2", "Pravdepodobne ide o podvodníka, ktorý sa snaží ukradnúť vaše peniaze alebo iné súkromné informácie."),
         ("Don't show again", "Nezobrazovať znova"),
         ("I Agree", "Súhlasím"),

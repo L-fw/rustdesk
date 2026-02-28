@@ -1,4 +1,4 @@
-lazy_static::lazy_static! {
+﻿lazy_static::lazy_static! {
 pub static ref T: std::collections::HashMap<&'static str, &'static str> =
     [
         ("Status", "وضعیت"),
@@ -529,8 +529,8 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
         ("Installation failed!", "نصب انجام نشد!"),
         ("Reverse mouse wheel", "معکوس کردن چرخ موس"),
         ("{} sessions", "{} جلسه"),
-        ("scam_title", "ممکن است شما در حال کلاهبرداری باشید!"),
-        ("scam_text1", "استفاده کنید و سرویس را راه‌اندازی کنید، صحبت می‌کنید، ادامه ندهید و بلافاصله تلفن را قطع کنید RustDesk اگر با شخصی که نمی‌شناسید و به او اعتماد ندارید و از شما خواسته است از"),
+        ("scam_title", "لطفاً هویت طرف مقابل را تأیید کنید."),
+        ("scam_text1", "اگر طرف مقابل از کارکنان Gamwing Global Technology Co., Ltd. نیست و از شما می‌خواهد از Gamwing استفاده کنید و سرویس را شروع کنید، ادامه ندهید و فوراً تماس را قطع کنید."),
         ("scam_text2", "آنها احتمالا یک کلاهبردار هستند که سعی در سرقت پول یا سایر اطلاعات خصوصی شما دارند."),
         ("Don't show again", "دیگر نشان نده"),
         ("I Agree", "موافقم"),

@@ -1,4 +1,4 @@
-lazy_static::lazy_static! {
+﻿lazy_static::lazy_static! {
 pub static ref T: std::collections::HashMap<&'static str, &'static str> =
     [
         ("Status", "நிலை"),
@@ -529,8 +529,8 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
         ("Installation failed!", "நிறுவல் தோல்வி!"),
         ("Reverse mouse wheel", "சுட்டி சக்கரம் தலைகீழ்"),
         ("{} sessions", "{} அமர்வுகள்"),
-        ("scam_title", "மோசடி எச்சரிக்கை"),
-        ("scam_text1", "தொலைபேசி மோசடியின் பலியாகலாம்!"),
+        ("scam_title", "தயவுசெய்து மற்ற நபரின் அடையாளத்தை சரிபார்க்கவும்."),
+        ("scam_text1", "மற்ற நபர் Gamwing Global Technology Co., Ltd. பணியாளர் இல்லை மற்றும் Gamwing பயன்படுத்தி சேவையை தொடங்க சொன்னால், தொடர வேண்டாம் மற்றும் உடனடியாக இணைப்பை துண்டிக்கவும்."),
         ("scam_text2", "RustDesk ஊழியர் இவ்வாறு தொடர்பு கொள்ள மாட்டார்கள்"),
         ("Don't show again", "மீண்டும் காட்ட வேண்டாம்"),
         ("I Agree", "ஏற்கிறேன்"),

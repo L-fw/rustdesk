@@ -1,4 +1,4 @@
-lazy_static::lazy_static! {
+﻿lazy_static::lazy_static! {
 pub static ref T: std::collections::HashMap<&'static str, &'static str> =
     [
         ("Status", "Istadu"),
@@ -529,8 +529,8 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
         ("Installation failed!", "Installtazione fallida"),
         ("Reverse mouse wheel", "Funtzione rodedda ratu furriada"),
         ("{} sessions", "{} sessiones"),
-        ("scam_title", "Ti diant pòdere àere TRAMPADU!"),
-        ("scam_text1", "Si ses in su telèfonu cun calicunu chi NON connosches NON FIDADU chi t'at pedidu de impreare RustDesk e de allùghere su servìtziu, non sigas e tanca deretu."),
+        ("scam_title", "Verìfica s'identidade de s'àtera persone."),
+        ("scam_text1", "Si s'àtera persone no est un'impiegadu de Gamwing Global Technology Co., Ltd. e ti pedit de impreare Gamwing e de allùghere su servìtziu, no l'iscurtes e tanca sa mutida luegus."),
         ("scam_text2", "Est dàbile chi siat unu trampadore chi chircat de furare su dinare tuo o àteras informatziones privadas tuas."),
         ("Don't show again", "Non mustres prus"),
         ("I Agree", "Atzeto"),
