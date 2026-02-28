@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <title>隐私政策 · Gamwing</title>
+  <style>
+    :root {
+      --bg: #0f0f12;
+      --surface: #1a1a20;
+      --border: #2a2a35;
+      --accent: #5b8fff;
+      --accent-soft: rgba(91, 143, 255, 0.12);
+      --text-primary: #e8e8f0;
+      --text-secondary: #8888a0;
+      --text-muted: #55556a;
+      --radius: 12px;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html {
+      font-size: 15px;
+      scroll-behavior: smooth;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text-primary);
+      font-family: -apple-system, "PingFang SC", "Noto Sans CJK SC", "Source Han Sans SC", sans-serif;
+      line-height: 1.8;
+      padding: 0;
+      min-height: 100vh;
+    }
+
+    /* ── Header ── */
+    header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 20px 20px 16px;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    .header-label {
+      font-size: 11px;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--accent);
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .header-title {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--text-primary);
+      letter-spacing: -0.02em;
+    }
+
+    .header-date {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
+    /* ── Main ── */
+    main {
+      padding: 24px 20px 60px;
+      max-width: 680px;
+      margin: 0 auto;
+    }
+
+    /* ── Notice Banner ── */
+    .notice-banner {
+      background: var(--accent-soft);
+      border: 1px solid rgba(91, 143, 255, 0.25);
+      border-radius: var(--radius);
+      padding: 14px 16px;
+      margin-bottom: 28px;
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+    }
+
+    .notice-icon {
+      font-size: 16px;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    .notice-text {
+      font-size: 13px;
+      color: #a0b8ff;
+      line-height: 1.7;
+    }
+
+    /* ── Sections ── */
+    .section {
+      margin-bottom: 32px;
+    }
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .section-num {
+      background: var(--accent);
+      color: #fff;
+      font-size: 11px;
+      font-weight: 700;
+      width: 22px;
+      height: 22px;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .section-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--text-primary);
+      letter-spacing: -0.01em;
+    }
+
+    .sub-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--accent);
+      margin: 16px 0 8px;
+      letter-spacing: 0.02em;
+    }
+
+    p {
+      font-size: 14px;
+      color: var(--text-secondary);
+      margin-bottom: 10px;
+      line-height: 1.85;
+    }
+
+    /* ── Cards ── */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 14px 16px;
+      margin-bottom: 8px;
+    }
+
+    .card-item {
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+      padding: 8px 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .card-item:last-child {
+      border-bottom: none;
+      padding-bottom: 0;
+    }
+
+    .card-item:first-child {
+      padding-top: 0;
+    }
+
+    .dot {
+      width: 6px;
+      height: 6px;
+      background: var(--accent);
+      border-radius: 50%;
+      flex-shrink: 0;
+      margin-top: 8px;
+    }
+
+    .card-item-text {
+      font-size: 13.5px;
+      color: var(--text-secondary);
+      line-height: 1.75;
+    }
+
+    /* ── Permission cards ── */
+    .perm-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      margin-bottom: 8px;
+    }
+
+    .perm-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .perm-row:last-child { border-bottom: none; }
+
+    .perm-icon {
+      font-size: 18px;
+      width: 28px;
+      text-align: center;
+      flex-shrink: 0;
+    }
+
+    .perm-info { flex: 1; }
+
+    .perm-name {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .perm-desc {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    /* ── Numbered list ── */
+    .num-list {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+
+    .num-item {
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .num-item:last-child { border-bottom: none; }
+
+    .num-badge {
+      background: var(--accent-soft);
+      color: var(--accent);
+      font-size: 11px;
+      font-weight: 700;
+      width: 20px;
+      height: 20px;
+      border-radius: 5px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+
+    .num-text {
+      font-size: 13.5px;
+      color: var(--text-secondary);
+      line-height: 1.75;
+    }
+
+    /* ── Rights grid ── */
+    .rights-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .right-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 14px;
+    }
+
+    .right-icon { font-size: 20px; margin-bottom: 6px; }
+
+    .right-name {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 4px;
+    }
+
+    .right-desc {
+      font-size: 12px;
+      color: var(--text-muted);
+      line-height: 1.6;
+    }
+
+    /* ── Warning box ── */
+    .warning-box {
+      background: rgba(255, 180, 60, 0.08);
+      border: 1px solid rgba(255, 180, 60, 0.2);
+      border-radius: var(--radius);
+      padding: 14px 16px;
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+      margin-bottom: 10px;
+    }
+
+    .warning-icon { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+
+    .warning-text {
+      font-size: 13px;
+      color: #c8a060;
+      line-height: 1.75;
+    }
+
+    /* ── Contact card ── */
+    .contact-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+
+    .contact-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .contact-row:last-child { border-bottom: none; }
+
+    .contact-label {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .contact-value {
+      font-size: 13px;
+      color: var(--text-primary);
+      font-weight: 500;
+      text-align: right;
+    }
+
+    .contact-value a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+
+    /* ── Divider ── */
+    .divider {
+      height: 1px;
+      background: var(--border);
+      margin: 28px 0;
+    }
+
+    /* ── Footer ── */
+    footer {
+      text-align: center;
+      font-size: 12px;
+      color: var(--text-muted);
+      padding: 20px;
+      border-top: 1px solid var(--border);
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="header-label">Gamwing · 佳影寰球科技有限公司</div>
+  <div class="header-title">隐私政策</div>
+  <div class="header-date">生效日期：2026-02-27</div>
+</header>
+
+<main>
+
+  <!-- 引言 -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">一</div>
+      <div class="section-title">引言</div>
+    </div>
+    <p>欢迎使用佳影寰球科技有限公司（以下简称「我们」或「本公司」）提供的 Gamwing 应用程序（以下简称「本应用」）。我们非常重视用户的隐私保护，并致力于依法保护您的个人信息。</p>
+    <p>本隐私政策适用于您在 Android 设备上使用本应用时涉及的信息收集、使用和保护行为。请在使用本应用前仔细阅读本政策，使用本应用即表示您同意本政策的内容。</p>
+    <div class="warning-box">
+      <div class="warning-icon">⚠️</div>
+      <div class="warning-text">我们建议您在使用完本应用后，尽量卸载软件或关闭相关权限，以避免不必要的损失。鉴于互联网的性质，我们希望提醒您注意，在透过互联网传送个人资料（例如透过电子邮件通讯）时，可能会有某些安全漏洞，而要全面保护个人资料、防止第三者接达是不可能的。</div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- 收集的信息 -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">二</div>
+      <div class="section-title">我们收集的信息</div>
+    </div>
+    <div class="sub-title">2.1 设备信息</div>
+    <div class="card">
+      <div class="card-item"><div class="dot"></div><div class="card-item-text">设备型号、品牌及操作系统版本</div></div>
+      <div class="card-item"><div class="dot"></div><div class="card-item-text">设备唯一标识符（如 Android ID）</div></div>
+      <div class="card-item"><div class="dot"></div><div class="card-item-text">屏幕分辨率及硬件配置信息</div></div>
+      <div class="card-item"><div class="dot"></div><div class="card-item-text">应用版本号及运行状态信息</div></div>
+    </div>
+    <div class="sub-title">2.2 网络与 IP 地址信息</div>
+    <div class="card">
+      <div class="card-item"><div class="dot"></div><div class="card-item-text">您的 IP 地址（用于建立点对点或中继连接）</div></div>
+      <div class="card-item"><div class="dot"></div><div class="card-item-text">网络类型（Wi-Fi、移动数据等）</div></div>
+      <div class="card-item"><div class="dot"></div><div class="card-item-text">连接状态及网络质量相关数据</div></div>
+    </div>
+    <div class="sub-title">2.3 我们不收集的信息</div>
+    <div class="card">
+      <div class="card-item"><div class="dot"></div><div class="card-item-text">您的姓名、身份证号、手机号码等个人身份信息</div></div>
+      <div class="card-item"><div class="dot"></div><div class="card-item-text">您的位置信息</div></div>
+      <div class="card-item"><div class="dot"></div><div class="card-item-text">您设备中的照片、文件、通讯录等私人内容（除非您主动在会话中共享）</div></div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- 使用目的 -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">三</div>
+      <div class="section-title">信息的使用目的</div>
+    </div>
+    <p>我们收集上述信息仅用于以下目的：</p>
+    <div class="num-list">
+      <div class="num-item"><div class="num-badge">1</div><div class="num-text">建立和维护设备间的远程连接</div></div>
+      <div class="num-item"><div class="num-badge">2</div><div class="num-text">优化应用性能，改善用户体验</div></div>
+      <div class="num-item"><div class="num-badge">3</div><div class="num-text">诊断并解决技术问题</div></div>
+      <div class="num-item"><div class="num-badge">4</div><div class="num-text">保障应用及服务的安全稳定运行</div></div>
+    </div>
+    <p style="margin-top:12px;">我们不会将您的信息用于广告推送、营销活动或出售给第三方。</p>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- 存储与安全 -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">四</div>
+      <div class="section-title">信息的存储与安全</div>
+    </div>
+    <p>我们采取合理的技术和管理措施保护您的信息安全：</p>
+    <div class="card">
+      <div class="card-item"><div class="dot"></div><div class="card-item-text">传输过程中使用加密技术保护数据</div></div>
+      <div class="card-item"><div class="dot"></div><div class="card-item-text">限制对用户数据的访问权限，仅授权人员可访问</div></div>
+      <div class="card-item"><div class="dot"></div><div class="card-item-text">定期审查和更新安全措施</div></div>
+    </div>
+    <p style="margin-top:12px;">我们仅在实现本政策所述目的所必要的期限内保留您的信息，超过保留期限后将予以删除或匿名化处理。</p>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- 共享与披露 -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">五</div>
+      <div class="section-title">信息的共享与披露</div>
+    </div>
+    <p>我们不会将您的个人信息出售、出租或以其他商业方式提供给任何第三方。在以下情况下，我们可能会共享必要的信息：</p>
+    <div class="card">
+      <div class="card-item"><div class="dot"></div><div class="card-item-text">经您明确同意的情形</div></div>
+      <div class="card-item"><div class="dot"></div><div class="card-item-text">依法配合政府机关、司法机关依法履行职责的情形</div></div>
+      <div class="card-item"><div class="dot"></div><div class="card-item-text">为保护本公司、用户或公众的合法权益而必要披露的情形</div></div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- 您的权利 -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">六</div>
+      <div class="section-title">您的权利</div>
+    </div>
+    <p>根据适用法律，您对自己的个人信息享有以下权利：</p>
+    <div class="rights-grid">
+      <div class="right-card">
+        <div class="right-icon">🔍</div>
+        <div class="right-name">查询权</div>
+        <div class="right-desc">查询我们持有的您的个人信息</div>
+      </div>
+      <div class="right-card">
+        <div class="right-icon">✏️</div>
+        <div class="right-name">更正权</div>
+        <div class="right-desc">要求更正不准确的个人信息</div>
+      </div>
+      <div class="right-card">
+        <div class="right-icon">🗑️</div>
+        <div class="right-name">删除权</div>
+        <div class="right-desc">要求删除您的个人信息</div>
+      </div>
+      <div class="right-card">
+        <div class="right-icon">🚪</div>
+        <div class="right-name">撤回同意权</div>
+        <div class="right-desc">随时卸载本应用以停止信息收集</div>
+      </div>
+    </div>
+    <p style="margin-top:12px;">如需行使上述权利，请通过本政策末尾的联系方式联系我们。</p>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- 应用权限说明 -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">七</div>
+      <div class="section-title">应用权限说明</div>
+    </div>
+    <p>本应用在 Android 设备上可能申请以下权限，以实现相应功能：</p>
+    <div class="perm-card">
+      <div class="perm-row">
+        <div class="perm-icon">🌐</div>
+        <div class="perm-info">
+          <div class="perm-name">网络访问权限</div>
+          <div class="perm-desc">用于建立远程连接</div>
+        </div>
+      </div>
+      <div class="perm-row">
+        <div class="perm-icon">♿</div>
+        <div class="perm-info">
+          <div class="perm-name">无障碍服务权限</div>
+          <div class="perm-desc">用于在被控制端模拟触控与键盘操作</div>
+        </div>
+      </div>
+      <div class="perm-row">
+        <div class="perm-icon">🪟</div>
+        <div class="perm-info">
+          <div class="perm-name">悬浮窗权限</div>
+          <div class="perm-desc">用于显示远程控制操作工具栏</div>
+        </div>
+      </div>
+      <div class="perm-row">
+        <div class="perm-icon">📹</div>
+        <div class="perm-info">
+          <div class="perm-name">屏幕录制权限</div>
+          <div class="perm-desc">用于在被控制端采集屏幕画面</div>
+        </div>
+      </div>
+    </div>
+    <p style="margin-top:12px;">我们仅在您使用相关功能时请求必要权限，您可在设备设置中随时撤销授权。</p>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- 隐私政策的更新 -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">八</div>
+      <div class="section-title">隐私政策的更新</div>
+    </div>
+    <p>我们可能会不时更新本隐私政策。政策更新后，我们将在应用内以显著方式提示您，并更新政策顶部的生效日期。建议您定期查阅本政策，以了解最新内容。</p>
+    <p>重大变更将通过应用内通知或其他合理方式告知您，您继续使用本应用即表示同意更新后的政策。</p>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- 联系我们 -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">九</div>
+      <div class="section-title">联系我们</div>
+    </div>
+    <p>如您对本隐私政策有任何疑问、意见或建议，或需要行使您的个人信息权利，请通过以下方式联系我们：</p>
+    <div class="contact-card">
+      <div class="contact-row">
+        <div class="contact-label">公司名称</div>
+        <div class="contact-value">佳影寰球科技有限公司</div>
+      </div>
+      <div class="contact-row">
+        <div class="contact-label">应用名称</div>
+        <div class="contact-value">Gamwing</div>
+      </div>
+      <div class="contact-row">
+        <div class="contact-label">官网</div>
+        <div class="contact-value"><a href="https://jygamwing.com/">jygamwing.com</a></div>
+      </div>
+    </div>
+    <p style="margin-top:12px;">我们将在收到您的请求后 15 个工作日内予以回复。</p>
+  </div>
+
+</main>
+
+<footer>
+  © 2026 佳影寰球科技有限公司 版权所有
+</footer>
+
+</body>
+</html>

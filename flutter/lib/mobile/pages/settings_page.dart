@@ -20,6 +20,7 @@ import '../../models/platform_model.dart';
 import '../widgets/dialog.dart';
 import 'home_page.dart';
 import 'scan_page.dart';
+import 'privacy_policy_page.dart';
 
 class SettingsPage extends StatefulWidget implements PageShape {
   @override
@@ -964,8 +965,14 @@ class _SettingsState extends State<SettingsPage> with WidgetsBindingObserver {
                   leading: Icon(Icons.fingerprint)),
             SettingsTile(
               title: Text(translate("Privacy Statement")),
-              onPressed: (context) =>
-                  launchUrlString('about:blank'),
+              onPressed: (context) {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const PrivacyPolicyPage(),
+                  ),
+                );
+              },
               leading: Icon(Icons.privacy_tip),
             )
           ],
