@@ -22,7 +22,7 @@ app.use(express.json());
 const VERSION_CONFIG = {
   latestVersion: '1.6.0',
   // url 格式: 最后一段路径必须是版本号，RustDesk 通过 rsplit('/') 提取
-  releaseUrl: 'https://112.74.59.152/releases/tag/1.6.0',
+  releaseUrl: 'http://112.74.59.152/releases/tag/1.6.0',
 };
 
 // ───────────────────────────────────────────────────────
