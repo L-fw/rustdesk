@@ -42,7 +42,7 @@ env:
   # vcpkg version: 2025.08.27
   # If we change the `VCPKG COMMIT_ID`, please remember:
   # 1. Call `$VCPKG_ROOT/vcpkg x-update-baseline` to update the baseline in `vcpkg.json`.
-  #  Or we may face build issue like 
+  #  Or we may face build issue like
   #  https://github.com/rustdesk/rustdesk/actions/runs/14414119794/job/40427970174
   # 2. Update the `VCPKG_COMMIT_ID` in `ci.yml` and `playground.yml`.
   VCPKG_COMMIT_ID: "120deac3062162151622ca4860575a33844ba10b"
@@ -528,7 +528,7 @@ jobs:
         run: |
           rustup target add ${{ matrix.job.target }}
           cargo build --features flutter,hwcodec --release --target aarch64-apple-ios --lib
-          
+
       - name: Upload liblibrustdesk.a Artifacts
         uses: actions/upload-artifact@master
         with:
@@ -978,6 +978,10 @@ jobs:
           prefix-key: rustdesk-lib-cache-android # TODO: drop '-android' part after caches are invalidated
           key: ${{ matrix.job.target }}
 
+      - name: Enable incoming_only feature
+        run: |
+          sed -i 's/^default = \[/default = ["incoming_only", /' Cargo.toml
+
       - name: Build rustdesk lib
         env:
           ANDROID_NDK_HOME: ${{ steps.setup-ndk.outputs.ndk-path }}
@@ -1222,6 +1226,10 @@ jobs:
         with:
           name: librustdesk.so.i686-linux-android
           path: ./flutter/android/app/src/main/jniLibs/x86
+
+      - name: Enable incoming_only feature
+        run: |
+          sed -i 's/^default = \[/default = ["incoming_only", /' Cargo.toml
 
       - name: Build rustdesk
         shell: bash
