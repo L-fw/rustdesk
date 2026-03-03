@@ -940,10 +940,9 @@ pub fn is_modifier(evt: &KeyEvent) -> bool {
 }
 
 pub fn check_software_update() {
-    let opt = LocalConfig::get_option(keys::OPTION_ENABLE_CHECK_UPDATE);
-    if config::option2bool(keys::OPTION_ENABLE_CHECK_UPDATE, &opt) {
-        std::thread::spawn(move || allow_err!(do_check_software_update()));
-    }
+    // Always run: banned check must execute regardless of enable-check-update.
+    // The version comparison inside do_check_software_update() is guarded separately.
+    std::thread::spawn(move || allow_err!(do_check_software_update()));
 }
 
 // Accept invalid cert because self-hosted server may use self-signed certificate.
@@ -1005,22 +1004,30 @@ pub async fn do_check_software_update() -> hbb_common::ResultType<()> {
         return Ok(());
     }
 
-    let response_url = resp.url;
-    let latest_release_version = response_url.rsplit('/').next().unwrap_or_default();
+    // Version update check is guarded by enable-check-update option
+    let check_update_enabled = {
+        let opt = LocalConfig::get_option(keys::OPTION_ENABLE_CHECK_UPDATE);
+        config::option2bool(keys::OPTION_ENABLE_CHECK_UPDATE, &opt)
+    };
 
-    if get_version_number(&latest_release_version) > get_version_number(crate::VERSION) {
-        #[cfg(feature = "flutter")]
-        {
-            let mut m = HashMap::new();
-            m.insert("name", "check_software_update_finish");
-            m.insert("url", &response_url);
-            if let Ok(data) = serde_json::to_string(&m) {
-                let _ = crate::flutter::push_global_event(crate::flutter::APP_TYPE_MAIN, data);
+    if check_update_enabled {
+        let response_url = resp.url;
+        let latest_release_version = response_url.rsplit('/').next().unwrap_or_default();
+
+        if get_version_number(&latest_release_version) > get_version_number(crate::VERSION) {
+            #[cfg(feature = "flutter")]
+            {
+                let mut m = HashMap::new();
+                m.insert("name", "check_software_update_finish");
+                m.insert("url", &response_url);
+                if let Ok(data) = serde_json::to_string(&m) {
+                    let _ = crate::flutter::push_global_event(crate::flutter::APP_TYPE_MAIN, data);
+                }
             }
+            *SOFTWARE_UPDATE_URL.lock().unwrap() = response_url;
+        } else {
+            *SOFTWARE_UPDATE_URL.lock().unwrap() = "".to_string();
         }
-        *SOFTWARE_UPDATE_URL.lock().unwrap() = response_url;
-    } else {
-        *SOFTWARE_UPDATE_URL.lock().unwrap() = "".to_string();
     }
     Ok(())
 }
