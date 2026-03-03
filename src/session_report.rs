@@ -54,7 +54,7 @@ async fn do_report_session_start(
         "session_id": session_id,
         "peer_id": peer_id,
     });
-    let client = crate::create_http_client_async(crate::TlsType::NativeTls, true);
+    let client = crate::hbbs_http::create_http_client_async(hbb_common::tls::TlsType::NativeTls, true);
     client
         .post(&url)
         .header("X-Device-Id", device_id)
@@ -80,7 +80,7 @@ async fn do_report_session_heartbeat(
     let body = serde_json::json!({
         "session_id": session_id,
     });
-    let client = crate::create_http_client_async(crate::TlsType::NativeTls, true);
+    let client = crate::hbbs_http::create_http_client_async(hbb_common::tls::TlsType::NativeTls, true);
     client
         .post(&url)
         .header("X-Device-Id", device_id)
@@ -102,7 +102,7 @@ async fn do_report_session_end(
     let body = serde_json::json!({
         "session_id": session_id,
     });
-    let client = crate::create_http_client_async(crate::TlsType::NativeTls, true);
+    let client = crate::hbbs_http::create_http_client_async(hbb_common::tls::TlsType::NativeTls, true);
     client
         .post(&url)
         .header("X-Device-Id", device_id)
