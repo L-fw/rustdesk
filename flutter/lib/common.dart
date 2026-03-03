@@ -3961,12 +3961,114 @@ void checkUpdate() {
       if (evt['latestVersion'] is String) {
         stateGlobal.serverLatestVersion.value = evt['latestVersion'];
       }
+      if (evt['minRequired'] is String) {
+        stateGlobal.serverMinRequired.value = evt['minRequired'];
+      }
+
+      // 有新版本时弹出更新对话框
+      if (stateGlobal.updateUrl.value.isNotEmpty) {
+        _showVersionUpdateDialog();
+      }
     });
     Timer(const Duration(seconds: 1), () async {
       bind.mainGetSoftwareUpdateUrl();
     });
   }
 }
+
+/// 简单版本号比较，返回 v1 是否小于 v2
+bool _isVersionLessThan(String v1, String v2) {
+  if (v1.isEmpty || v2.isEmpty) return false;
+  final parts1 = v1.split('.').map((e) => int.tryParse(e) ?? 0).toList();
+  final parts2 = v2.split('.').map((e) => int.tryParse(e) ?? 0).toList();
+  final len = parts1.length > parts2.length ? parts1.length : parts2.length;
+  for (int i = 0; i < len; i++) {
+    final a = i < parts1.length ? parts1[i] : 0;
+    final b = i < parts2.length ? parts2[i] : 0;
+    if (a < b) return true;
+    if (a > b) return false;
+  }
+  return false;
+}
+
+void _showVersionUpdateDialog() async {
+  final ctx = globalKey.currentContext;
+  if (ctx == null) {
+    // 页面还没初始化，延迟重试
+    Future.delayed(const Duration(seconds: 1), _showVersionUpdateDialog);
+    return;
+  }
+
+  final currentVersion = await bind.mainGetVersion();
+  final minRequired = stateGlobal.serverMinRequired.value;
+  final latestVersion = stateGlobal.serverLatestVersion.value;
+  final downloadUrl = stateGlobal.serverDownloadUrl.value;
+  final updateLog = stateGlobal.serverUpdateLog.value;
+
+  // 当前版本低于最低要求版本 → 强制更新，不可取消
+  final isBelowMinimum =
+      minRequired.isNotEmpty && _isVersionLessThan(currentVersion, minRequired);
+
+  showDialog(
+    context: ctx,
+    barrierDismissible: false,
+    builder: (context) => WillPopScope(
+      onWillPop: () async {
+        if (isBelowMinimum) {
+          // 低于最低版本，按返回键直接退出 APP
+          SystemNavigator.pop();
+          return false;
+        }
+        return true; // 允许关闭
+      },
+      child: AlertDialog(
+        title: Text('发现新版本 $latestVersion'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('当前版本: $currentVersion'),
+            const SizedBox(height: 8),
+            if (updateLog.isNotEmpty) ...[
+              const Text('更新内容:', style: TextStyle(fontWeight: FontWeight.bold)),
+              const SizedBox(height: 4),
+              Text(updateLog),
+              const SizedBox(height: 8),
+            ],
+            if (isBelowMinimum)
+              const Text(
+                '您的版本过低，必须更新后才能继续使用。',
+                style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+              ),
+          ],
+        ),
+        actions: [
+          if (!isBelowMinimum)
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('暂不更新'),
+            ),
+          ElevatedButton(
+            onPressed: () async {
+              final url = downloadUrl.isNotEmpty
+                  ? downloadUrl
+                  : stateGlobal.updateUrl.value;
+              if (url.isNotEmpty) {
+                await launchUrl(Uri.parse(url),
+                    mode: LaunchMode.externalApplication);
+              }
+              if (isBelowMinimum) {
+                SystemNavigator.pop();
+              }
+            },
+            child: const Text('立即更新'),
+          ),
+        ],
+      ),
+    ),
+  );
+}
+
 
 // https://github.com/flutter/flutter/issues/153560#issuecomment-2497160535
 // For TextField, TextFormField

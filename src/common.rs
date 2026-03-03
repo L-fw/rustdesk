@@ -1033,6 +1033,7 @@ pub async fn do_check_software_update() -> hbb_common::ResultType<()> {
                 let download_url = resp.download_url.clone();
                 let update_log = resp.update_log.clone();
                 let force_update = if resp.force_update { "true" } else { "false" };
+                let min_required = resp.min_required.clone();
                 let mut m = HashMap::new();
                 m.insert("name", "check_software_update_finish");
                 m.insert("url", &response_url);
@@ -1040,6 +1041,7 @@ pub async fn do_check_software_update() -> hbb_common::ResultType<()> {
                 m.insert("downloadUrl", &download_url);
                 m.insert("updateLog", &update_log);
                 m.insert("forceUpdate", force_update);
+                m.insert("minRequired", &min_required);
                 if let Ok(data) = serde_json::to_string(&m) {
                     let _ = crate::flutter::push_global_event(crate::flutter::APP_TYPE_MAIN, data);
                 }

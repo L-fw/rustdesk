@@ -32,6 +32,7 @@ class StateGlobal {
   final serverUpdateLog = ''.obs;
   final serverForceUpdate = false.obs;
   final serverLatestVersion = ''.obs;
+  final serverMinRequired = ''.obs;
 
   String _inputSource = '';
 
