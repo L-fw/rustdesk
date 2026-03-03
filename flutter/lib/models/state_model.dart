@@ -26,6 +26,8 @@ class StateGlobal {
   final isPortrait = false.obs;
 
   final updateUrl = ''.obs;
+  final deviceBanned = false.obs;
+  final bannedMessage = ''.obs;
 
   String _inputSource = '';
 

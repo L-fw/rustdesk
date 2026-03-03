@@ -1,63 +1,161 @@
 // ═══════════════════════════════════════════════════════
-// RustDesk 自建服务器 — 版本检查 API
-// 兼容 RustDesk 原生更新机制（Rust 端 do_check_software_update）
+// RustDesk 设备管理后台 + 版本检查 API
+// 端口：3000
 // ═══════════════════════════════════════════════════════
 
 const express = require('express');
+const fs = require('fs');
+const path = require('path');
 const app = express();
 app.use(express.json());
 
 // ───────────────────────────────────────────────────────
-// 版本配置
-// latestVersion : 当前最新版本号（与 Cargo.toml / pubspec.yaml 对应）
-// releaseUrl    : 发布页面 URL（版本号放在最后一段路径）
-//
-// RustDesk 客户端逻辑：
-//   1. POST 请求，body = { os, os_version, arch, device_id, typ }
-//   2. 响应 { url: "https://..." }
-//   3. 从 url 的最后一个 "/" 后提取版本号，与本地版本比较
-//   4. 如果服务器版本 > 本地版本 → 显示更新提示
-//   5. 如果服务器版本 <= 本地版本 → 静默通过
+// 配置
 // ───────────────────────────────────────────────────────
+const ADMIN_PASSWORD = 'your-password-here'; // ← 改成你的密码
+const DATA_FILE = path.join(__dirname, 'devices.json');
+
 const VERSION_CONFIG = {
-  latestVersion: '1.6.0',
-  // url 格式: 最后一段路径必须是版本号，RustDesk 通过 rsplit('/') 提取
-  releaseUrl: 'http://112.74.59.152/releases/tag/1.6.0',
+  android: {
+    latestVersion: '1.4.5',
+    minRequired: '1.4.5',
+    forceUpdate: false,
+    downloadUrl: 'http://112.74.59.152/download/rustdesk-latest.apk',
+    updateLog: '1. 修复连接稳定性问题\n2. 优化画面传输质量',
+    releaseUrl: 'http://112.74.59.152/releases/tag/1.4.5',
+  },
 };
 
 // ───────────────────────────────────────────────────────
+// 设备数据管理（存 JSON 文件）
+// 格式：{ "device_id": { name, firstSeen, lastSeen, banned } }
+// ───────────────────────────────────────────────────────
+function loadDevices() {
+  if (!fs.existsSync(DATA_FILE)) return {};
+  try {
+    return JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'));
+  } catch {
+    return {};
+  }
+}
+
+function saveDevices(devices) {
+  fs.writeFileSync(DATA_FILE, JSON.stringify(devices, null, 2));
+}
+
+function upsertDevice(deviceId, ip) {
+  const devices = loadDevices();
+  const now = new Date().toISOString();
+  if (!devices[deviceId]) {
+    devices[deviceId] = {
+      id: deviceId,
+      firstSeen: now,
+      lastSeen: now,
+      ip,
+      banned: false,
+    };
+  } else {
+    devices[deviceId].lastSeen = now;
+    devices[deviceId].ip = ip;
+  }
+  saveDevices(devices);
+  return devices[deviceId];
+}
+
+// ───────────────────────────────────────────────────────
+// 管理员认证中间件
+// ───────────────────────────────────────────────────────
+function authMiddleware(req, res, next) {
+  const token = req.headers['x-admin-token'];
+  if (token !== ADMIN_PASSWORD) {
+    return res.status(401).json({ code: 401, msg: '未授权' });
+  }
+  next();
+}
+
+// ───────────────────────────────────────────────────────
+// 版本检查接口（APP 调用）
 // POST /api/version/check
-//
-// RustDesk 原生请求格式:
-//   POST body (JSON):
-//   {
-//     "os": "android",
-//     "os_version": "14",
-//     "arch": "aarch64",
-//     "device_id": [...],
-//     "typ": "rustdesk-client"
-//   }
-//
-// 响应格式:
-//   { "url": "https://your-domain.com/releases/tag/1.5.0" }
-//
-// 如果不需要更新，返回空 url 即可
+// Header: X-Device-Id
 // ───────────────────────────────────────────────────────
 app.post('/api/version/check', (req, res) => {
   const { os, os_version, arch, typ } = req.body || {};
+  const deviceId = req.headers['x-device-id'] || 'unknown';
   const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+
+  // 记录设备
+  const device = upsertDevice(deviceId, ip);
 
   // 日志
   console.log(JSON.stringify({
     time: new Date().toISOString(),
-    ip, os, os_version, arch, typ,
+    deviceId, ip, os, os_version, arch,
   }));
 
-  // 返回最新版本的 release URL
-  // RustDesk 客户端会自行比较版本号来决定是否提示更新
+  // 设备被禁用
+  if (device.banned) {
+    return res.json({ banned: true, msg: '设备已被禁用，请联系管理员' });
+  }
+
+  // 返回版本信息
   return res.json({
-    url: VERSION_CONFIG.releaseUrl,
+    url: VERSION_CONFIG.android.releaseUrl,
   });
+});
+
+// ───────────────────────────────────────────────────────
+// 管理 API
+// ───────────────────────────────────────────────────────
+
+// 登录验证
+app.post('/admin/login', (req, res) => {
+  const { password } = req.body;
+  if (password === ADMIN_PASSWORD) {
+    return res.json({ code: 200, token: ADMIN_PASSWORD });
+  }
+  return res.status(401).json({ code: 401, msg: '密码错误' });
+});
+
+// 获取设备列表
+app.get('/admin/devices', authMiddleware, (req, res) => {
+  const devices = loadDevices();
+  const list = Object.values(devices).sort(
+    (a, b) => new Date(b.lastSeen) - new Date(a.lastSeen)
+  );
+  res.json({ code: 200, data: list });
+});
+
+// 禁用设备
+app.post('/admin/devices/:id/ban', authMiddleware, (req, res) => {
+  const devices = loadDevices();
+  if (!devices[req.params.id]) {
+    return res.status(404).json({ code: 404, msg: '设备不存在' });
+  }
+  devices[req.params.id].banned = true;
+  saveDevices(devices);
+  res.json({ code: 200, msg: '已禁用' });
+});
+
+// 恢复设备
+app.post('/admin/devices/:id/unban', authMiddleware, (req, res) => {
+  const devices = loadDevices();
+  if (!devices[req.params.id]) {
+    return res.status(404).json({ code: 404, msg: '设备不存在' });
+  }
+  devices[req.params.id].banned = false;
+  saveDevices(devices);
+  res.json({ code: 200, msg: '已恢复' });
+});
+
+// 删除设备记录
+app.delete('/admin/devices/:id', authMiddleware, (req, res) => {
+  const devices = loadDevices();
+  if (!devices[req.params.id]) {
+    return res.status(404).json({ code: 404, msg: '设备不存在' });
+  }
+  delete devices[req.params.id];
+  saveDevices(devices);
+  res.json({ code: 200, msg: '已删除' });
 });
 
 // 健康检查
@@ -65,8 +163,16 @@ app.get('/health', (_req, res) => {
   res.json({ status: 'ok', time: new Date().toISOString() });
 });
 
+// ───────────────────────────────────────────────────────
+// 管理界面（静态 HTML）
+// ───────────────────────────────────────────────────────
+app.get('/admin', (_req, res) => {
+  res.sendFile(path.join(__dirname, 'admin.html'));
+});
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`✅ 版本检查服务运行在 :${PORT}`);
-  console.log(`   测试: curl -X POST http://localhost:${PORT}/api/version/check -H "Content-Type: application/json" -d '{"os":"android","os_version":"14","arch":"aarch64","typ":"rustdesk-client"}'`);
+  console.log(`✅ 服务运行在 :${PORT}`);
+  console.log(`   管理界面: http://localhost:${PORT}/admin`);
+  console.log(`   版本检查: POST http://localhost:${PORT}/api/version/check`);
 });

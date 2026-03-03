@@ -949,7 +949,7 @@ pub fn check_software_update() {
 // Accept invalid cert because self-hosted server may use self-signed certificate.
 #[tokio::main(flavor = "current_thread")]
 pub async fn do_check_software_update() -> hbb_common::ResultType<()> {
-    let (request, url) =
+    let (request, url, device_id_hex) =
         hbb_common::version_check_request(hbb_common::VER_TYPE_RUSTDESK_CLIENT.to_string());
     let proxy_conf = Config::get_socks();
     let tls_url = get_url_for_tls(&url, &proxy_conf);
@@ -957,7 +957,13 @@ pub async fn do_check_software_update() -> hbb_common::ResultType<()> {
     let is_tls_not_cached = tls_type.is_none();
     let tls_type = tls_type.unwrap_or(TlsType::Rustls);
     let client = create_http_client_async(tls_type, true);
-    let latest_release_response = match client.post(&url).json(&request).send().await {
+    let latest_release_response = match client
+        .post(&url)
+        .header("X-Device-Id", &device_id_hex)
+        .json(&request)
+        .send()
+        .await
+    {
         Ok(resp) => {
             upsert_tls_cache(tls_url, tls_type, true);
             resp
@@ -966,7 +972,12 @@ pub async fn do_check_software_update() -> hbb_common::ResultType<()> {
             if is_tls_not_cached && err.is_request() {
                 let tls_type = TlsType::NativeTls;
                 let client = create_http_client_async(tls_type, true);
-                let resp = client.post(&url).json(&request).send().await?;
+                let resp = client
+                    .post(&url)
+                    .header("X-Device-Id", &device_id_hex)
+                    .json(&request)
+                    .send()
+                    .await?;
                 upsert_tls_cache(tls_url, tls_type, true);
                 resp
             } else {
@@ -976,6 +987,24 @@ pub async fn do_check_software_update() -> hbb_common::ResultType<()> {
     };
     let bytes = latest_release_response.bytes().await?;
     let resp: hbb_common::VersionCheckResponse = serde_json::from_slice(&bytes)?;
+
+    // Handle banned device
+    if resp.banned {
+        log::warn!("Device is banned by server: {}", resp.msg);
+        #[cfg(feature = "flutter")]
+        {
+            let msg = resp.msg.clone();
+            let mut m = HashMap::new();
+            m.insert("name", "check_software_update_finish");
+            m.insert("banned", "true");
+            m.insert("msg", &msg);
+            if let Ok(data) = serde_json::to_string(&m) {
+                let _ = crate::flutter::push_global_event(crate::flutter::APP_TYPE_MAIN, data);
+            }
+        }
+        return Ok(());
+    }
+
     let response_url = resp.url;
     let latest_release_version = response_url.rsplit('/').next().unwrap_or_default();
 

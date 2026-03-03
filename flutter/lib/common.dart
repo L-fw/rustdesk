@@ -3941,6 +3941,11 @@ void checkUpdate() {
     platformFFI.registerEventHandler(
         kCheckSoftwareUpdateFinish, kCheckSoftwareUpdateFinish,
         (Map<String, dynamic> evt) async {
+      if (evt['banned'] == 'true') {
+        stateGlobal.deviceBanned.value = true;
+        stateGlobal.bannedMessage.value = evt['msg'] ?? '设备已被禁用，请联系管理员';
+        return;
+      }
       if (evt['url'] is String) {
         stateGlobal.updateUrl.value = evt['url'];
       }

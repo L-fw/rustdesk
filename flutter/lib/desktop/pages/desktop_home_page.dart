@@ -858,6 +858,24 @@ class _DesktopHomePageState extends State<DesktopHomePage>
       });
     }
     WidgetsBinding.instance.addObserver(this);
+
+    // Listen for device banned status
+    ever(stateGlobal.deviceBanned, (banned) {
+      if (banned) {
+        _showBannedDialog();
+      }
+    });
+  }
+
+  void _showBannedDialog() {
+    if (!mounted) return;
+    gFFI.dialogManager.show((setState, close, context) {
+      return CustomAlertDialog(
+        title: Text('设备已被禁用'),
+        content: Obx(() => Text(stateGlobal.bannedMessage.value)),
+        actions: [],
+      );
+    }, tag: 'device-banned');
   }
 
   _updateWindowSize() {

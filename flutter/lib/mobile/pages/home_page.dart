@@ -40,6 +40,28 @@ class HomePageState extends State<HomePage> {
   void initState() {
     super.initState();
     initPages();
+    // Listen for device banned status
+    ever(stateGlobal.deviceBanned, (banned) {
+      if (banned) {
+        _showBannedDialog();
+      }
+    });
+  }
+
+  void _showBannedDialog() {
+    if (!mounted) return;
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => WillPopScope(
+        onWillPop: () async => false,
+        child: AlertDialog(
+          title: const Text('设备已被禁用'),
+          content: Obx(() => Text(stateGlobal.bannedMessage.value)),
+          actions: const [],
+        ),
+      ),
+    );
   }
 
   void initPages() {
