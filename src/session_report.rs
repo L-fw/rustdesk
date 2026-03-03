@@ -1,7 +1,7 @@
 // Session reporting module for remote control session tracking.
 // Reports session start/heartbeat/end to the management server.
 
-use hbb_common::{config::Config, log};
+use hbb_common::{config::Config, log, tokio};
 
 /// Base URL for session reporting API (same server as version check)
 const SESSION_API_BASE: &str = "http://112.74.59.152:3000";
