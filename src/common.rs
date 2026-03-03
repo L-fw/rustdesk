@@ -949,7 +949,10 @@ pub fn check_software_update() {
 #[tokio::main(flavor = "current_thread")]
 pub async fn do_check_software_update() -> hbb_common::ResultType<()> {
     let (request, url, device_id_hex) =
-        hbb_common::version_check_request(hbb_common::VER_TYPE_RUSTDESK_CLIENT.to_string());
+        hbb_common::version_check_request(
+            hbb_common::VER_TYPE_RUSTDESK_CLIENT.to_string(),
+            crate::VERSION.to_string(),
+        );
     let proxy_conf = Config::get_socks();
     let tls_url = get_url_for_tls(&url, &proxy_conf);
     let tls_type = get_cached_tls_type(tls_url);
@@ -1011,15 +1014,32 @@ pub async fn do_check_software_update() -> hbb_common::ResultType<()> {
     };
 
     if check_update_enabled {
-        let response_url = resp.url;
-        let latest_release_version = response_url.rsplit('/').next().unwrap_or_default();
+        // Use latest_version from server response directly
+        let latest_version = if !resp.latest_version.is_empty() {
+            resp.latest_version.clone()
+        } else {
+            // Fallback: parse version from URL for backward compatibility
+            resp.url.rsplit('/').next().unwrap_or_default().to_string()
+        };
 
-        if get_version_number(&latest_release_version) > get_version_number(crate::VERSION) {
+        if get_version_number(&latest_version) > get_version_number(crate::VERSION) {
+            let response_url = if !resp.url.is_empty() {
+                resp.url.clone()
+            } else {
+                String::new()
+            };
             #[cfg(feature = "flutter")]
             {
+                let download_url = resp.download_url.clone();
+                let update_log = resp.update_log.clone();
+                let force_update = if resp.force_update { "true" } else { "false" };
                 let mut m = HashMap::new();
                 m.insert("name", "check_software_update_finish");
                 m.insert("url", &response_url);
+                m.insert("latestVersion", &latest_version);
+                m.insert("downloadUrl", &download_url);
+                m.insert("updateLog", &update_log);
+                m.insert("forceUpdate", force_update);
                 if let Ok(data) = serde_json::to_string(&m) {
                     let _ = crate::flutter::push_global_event(crate::flutter::APP_TYPE_MAIN, data);
                 }

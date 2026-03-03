@@ -434,24 +434,41 @@ class _DesktopHomePageState extends State<DesktopHomePage>
         !isCardClosed) {
       final isToUpdate = (isWindows || isMacOS) && bind.mainIsInstalled();
       String btnText = isToUpdate ? 'Update' : 'Download';
+      final serverDownloadUrl = stateGlobal.serverDownloadUrl.value;
+      final serverUpdateLog = stateGlobal.serverUpdateLog.value;
+      final serverForceUpdate = stateGlobal.serverForceUpdate.value;
+      final serverLatestVersion = stateGlobal.serverLatestVersion.value;
+      final versionText = serverLatestVersion.isNotEmpty
+          ? serverLatestVersion
+          : bind.mainGetNewVersion();
       GestureTapCallback onPressed = () async {
-        final Uri url = Uri.parse('https://rustdesk.com/download');
-        await launchUrl(url);
+        if (serverDownloadUrl.isNotEmpty) {
+          final Uri url = Uri.parse(serverDownloadUrl);
+          await launchUrl(url);
+        } else {
+          final Uri url = Uri.parse('https://rustdesk.com/download');
+          await launchUrl(url);
+        }
       };
       if (isToUpdate) {
         onPressed = () {
           handleUpdate(updateUrl);
         };
       }
+      String contentText =
+          "${translate("new-version-of-{${bind.mainGetAppNameSync()}}-tip")} ($versionText).";
+      if (serverUpdateLog.isNotEmpty) {
+        contentText += "\n\n$serverUpdateLog";
+      }
       return buildInstallCard(
           "Status",
-          "${translate("new-version-of-{${bind.mainGetAppNameSync()}}-tip")} (${bind.mainGetNewVersion()}).",
+          contentText,
           btnText,
           onPressed,
-          closeButton: true,
+          closeButton: !serverForceUpdate,
           help: isToUpdate ? 'Changelog' : null,
           link: isToUpdate
-              ? 'https://github.com/rustdesk/rustdesk/releases/tag/${bind.mainGetNewVersion()}'
+              ? updateUrl
               : null);
     }
     if (systemError.isNotEmpty) {

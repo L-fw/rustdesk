@@ -28,6 +28,10 @@ class StateGlobal {
   final updateUrl = ''.obs;
   final deviceBanned = false.obs;
   final bannedMessage = ''.obs;
+  final serverDownloadUrl = ''.obs;
+  final serverUpdateLog = ''.obs;
+  final serverForceUpdate = false.obs;
+  final serverLatestVersion = ''.obs;
 
   String _inputSource = '';
 

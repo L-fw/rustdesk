@@ -302,6 +302,9 @@ pub struct Connection {
     #[cfg(not(any(target_os = "android", target_os = "ios")))]
     terminal_user_token: Option<TerminalUserToken>,
     terminal_generic_service: Option<Box<GenericService>>,
+    // Session reporting to management server
+    session_report_id: String,
+    session_report_heartbeat_counter: u32,
 }
 
 impl ConnInner {
@@ -479,6 +482,8 @@ impl Connection {
             #[cfg(not(any(target_os = "android", target_os = "ios")))]
             terminal_user_token: None,
             terminal_generic_service: None,
+            session_report_id: format!("sess_{}_{}", id, hbb_common::get_time()),
+            session_report_heartbeat_counter: 0,
         };
         let addr = hbb_common::try_into_v4(addr);
         if !conn.on_open(addr).await {
@@ -918,6 +923,16 @@ impl Connection {
                     conn.file_remove_log_control.on_timer().drain(..).map(|x| conn.send_to_cm(x)).count();
                     #[cfg(feature = "hwcodec")]
                     conn.update_supported_encoding();
+                    // Session heartbeat every ~30 seconds
+                    if conn.authorized {
+                        conn.session_report_heartbeat_counter += 1;
+                        if conn.session_report_heartbeat_counter >= 30 {
+                            conn.session_report_heartbeat_counter = 0;
+                            crate::session_report::report_session_heartbeat(
+                                &conn.session_report_id,
+                            );
+                        }
+                    }
                 }
                 _ = test_delay_timer.tick() => {
                     if last_recv_time.elapsed() >= SEC30 {
@@ -981,6 +996,10 @@ impl Connection {
             raii::AuthedConnID::check_remove_session(conn.inner.id(), conn.session_key());
         }
 
+        // Report session end to management server
+        if conn.authorized {
+            crate::session_report::report_session_end(&conn.session_report_id);
+        }
         conn.post_conn_audit(json!({
             "action": "close",
         }));
@@ -1374,6 +1393,11 @@ impl Connection {
             return;
         }
         self.authorized = true;
+        // Report session start to management server
+        crate::session_report::report_session_start(
+            &self.session_report_id,
+            &self.lr.my_id,
+        );
         let (conn_type, auth_conn_type) = if self.file_transfer.is_some() {
             (1, AuthConnType::FileTransfer)
         } else if self.port_forward_socket.is_some() {

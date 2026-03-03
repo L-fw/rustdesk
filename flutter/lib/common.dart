@@ -3949,6 +3949,18 @@ void checkUpdate() {
       if (evt['url'] is String) {
         stateGlobal.updateUrl.value = evt['url'];
       }
+      if (evt['downloadUrl'] is String) {
+        stateGlobal.serverDownloadUrl.value = evt['downloadUrl'];
+      }
+      if (evt['updateLog'] is String) {
+        stateGlobal.serverUpdateLog.value = evt['updateLog'];
+      }
+      if (evt['forceUpdate'] == 'true') {
+        stateGlobal.serverForceUpdate.value = true;
+      }
+      if (evt['latestVersion'] is String) {
+        stateGlobal.serverLatestVersion.value = evt['latestVersion'];
+      }
     });
     Timer(const Duration(seconds: 1), () async {
       bind.mainGetSoftwareUpdateUrl();
