@@ -879,7 +879,16 @@ class _DesktopHomePageState extends State<DesktopHomePage>
       if (banned) {
         _showBannedDialog();
       }
-    });
+    }, tag: 'device-banned');
+
+    // Listen for remote disabled status (WebSocket push)
+    ever(stateGlobal.remoteDisabled, (disabled) {
+      if (disabled) {
+        _showRemoteDisabledDialog();
+      } else {
+        gFFI.dialogManager.dismissByTag('remote-disabled');
+      }
+    }, tag: 'remote-disabled');
   }
 
   void _showBannedDialog() {
@@ -891,6 +900,25 @@ class _DesktopHomePageState extends State<DesktopHomePage>
         actions: [],
       );
     }, tag: 'device-banned');
+  }
+
+  void _showRemoteDisabledDialog() {
+    if (!mounted) return;
+    gFFI.dialogManager.show((setState, close, context) {
+      return CustomAlertDialog(
+        title: Row(children: [
+          const Icon(Icons.block, color: Colors.redAccent, size: 28),
+          const SizedBox(width: 10),
+          Text('远程功能已禁用'),
+        ]),
+        content: Obx(() => Text(
+          stateGlobal.remoteDisabledMessage.value.isNotEmpty
+              ? stateGlobal.remoteDisabledMessage.value
+              : '远程功能已被管理员禁用，远程连接已断开。\n管理员恢复权限后将自动恢复。',
+        )),
+        actions: [],
+      );
+    }, tag: 'remote-disabled');
   }
 
   _updateWindowSize() {

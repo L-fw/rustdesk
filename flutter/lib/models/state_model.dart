@@ -28,6 +28,8 @@ class StateGlobal {
   final updateUrl = ''.obs;
   final deviceBanned = false.obs;
   final bannedMessage = ''.obs;
+  final remoteDisabled = false.obs;
+  final remoteDisabledMessage = ''.obs;
   final serverDownloadUrl = ''.obs;
   final serverUpdateLog = ''.obs;
   final serverForceUpdate = false.obs;

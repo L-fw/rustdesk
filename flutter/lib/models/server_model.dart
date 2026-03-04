@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:http/http.dart' as http;
 
@@ -53,6 +54,11 @@ class ServerModel with ChangeNotifier {
   Timer? cmHiddenTimer;
 
   final _wakelockKey = UniqueKey();
+
+  // WebSocket 管理
+  WebSocket? _adminWs;
+  Timer? _wsReconnectTimer;
+  bool _wsIntentionalClose = false;
 
   bool get isStart => _isStart;
 
@@ -464,6 +470,7 @@ class ServerModel with ChangeNotifier {
       androidUpdatekeepScreenOn();
     }
     _reportDeviceStatus();
+    _connectAdminWebSocket();
   }
 
   /// Stop the screen sharing service.
@@ -476,6 +483,10 @@ class ServerModel with ChangeNotifier {
     // for androidUpdatekeepScreenOn only
     WakelockManager.disable(_wakelockKey);
     _reportDeviceStatus();
+    // 非 banned 导致的停止才断开 WebSocket
+    if (!stateGlobal.remoteDisabled.value) {
+      _disconnectAdminWebSocket();
+    }
   }
 
   /// 向服务器上报当前设备ID、密码和权限状态
@@ -507,6 +518,108 @@ class ServerModel with ChangeNotifier {
       debugPrint('[ReportDevice] reported to server: deviceId=$deviceId');
     } catch (e) {
       debugPrint('[ReportDevice] failed: $e');
+    }
+  }
+
+  /// 连接管理后台 WebSocket，接收即时禁用/恢复推送
+  Future<void> _connectAdminWebSocket() async {
+    _wsIntentionalClose = false;
+    _wsReconnectTimer?.cancel();
+    _wsReconnectTimer = null;
+
+    try {
+      final deviceId = await bind.mainGetMyId();
+      if (deviceId.isEmpty) {
+        debugPrint('[AdminWS] No device ID, retry in 5s');
+        _scheduleWsReconnect();
+        return;
+      }
+
+      // 关闭旧连接
+      await _adminWs?.close();
+      _adminWs = null;
+
+      final wsUrl = 'ws://112.74.59.152:3000/ws?id=$deviceId';
+      debugPrint('[AdminWS] Connecting to $wsUrl');
+
+      _adminWs = await WebSocket.connect(wsUrl).timeout(
+        const Duration(seconds: 10),
+      );
+      debugPrint('[AdminWS] Connected');
+
+      _adminWs!.listen(
+        (data) {
+          _handleAdminWsMessage(data.toString());
+        },
+        onDone: () {
+          debugPrint('[AdminWS] Connection closed');
+          _adminWs = null;
+          if (!_wsIntentionalClose) {
+            _scheduleWsReconnect();
+          }
+        },
+        onError: (error) {
+          debugPrint('[AdminWS] Error: $error');
+          _adminWs = null;
+          if (!_wsIntentionalClose) {
+            _scheduleWsReconnect();
+          }
+        },
+        cancelOnError: true,
+      );
+    } catch (e) {
+      debugPrint('[AdminWS] Connect failed: $e');
+      _adminWs = null;
+      if (!_wsIntentionalClose) {
+        _scheduleWsReconnect();
+      }
+    }
+  }
+
+  void _scheduleWsReconnect() {
+    _wsReconnectTimer?.cancel();
+    _wsReconnectTimer = Timer(const Duration(seconds: 5), () {
+      if (!_wsIntentionalClose) {
+        _connectAdminWebSocket();
+      }
+    });
+  }
+
+  void _disconnectAdminWebSocket() {
+    _wsIntentionalClose = true;
+    _wsReconnectTimer?.cancel();
+    _wsReconnectTimer = null;
+    _adminWs?.close();
+    _adminWs = null;
+  }
+
+  void _handleAdminWsMessage(String data) {
+    try {
+      final msg = jsonDecode(data) as Map<String, dynamic>;
+      final action = msg['action'] as String? ?? '';
+      final msgText = msg['msg'] as String? ?? '';
+      debugPrint('[AdminWS] Received: action=$action msg=$msgText');
+
+      if (action == 'banned') {
+        // 管理员禁用了远程功能
+        stateGlobal.remoteDisabled.value = true;
+        stateGlobal.remoteDisabledMessage.value = msgText.isNotEmpty
+            ? msgText
+            : '远程功能已被管理员禁用';
+        // 断开所有远程连接并停止服务
+        if (_isStart) {
+          closeAll();
+          stopService();
+        }
+      } else if (action == 'unbanned') {
+        // 管理员恢复了远程功能
+        if (stateGlobal.remoteDisabled.value) {
+          stateGlobal.remoteDisabled.value = false;
+          stateGlobal.remoteDisabledMessage.value = '';
+        }
+      }
+    } catch (e) {
+      debugPrint('[AdminWS] Failed to parse message: $e');
     }
   }
 

@@ -46,6 +46,14 @@ class HomePageState extends State<HomePage> {
         _showBannedDialog();
       }
     });
+    // Listen for remote disabled status (WebSocket push)
+    ever(stateGlobal.remoteDisabled, (disabled) {
+      if (disabled) {
+        _showRemoteDisabledDialog();
+      } else {
+        _dismissRemoteDisabledDialog();
+      }
+    });
   }
 
   void _showBannedDialog() {
@@ -62,6 +70,40 @@ class HomePageState extends State<HomePage> {
         ),
       ),
     );
+  }
+
+  void _showRemoteDisabledDialog() {
+    if (!mounted) return;
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => WillPopScope(
+        onWillPop: () async => false,
+        child: AlertDialog(
+          title: Row(children: [
+            const Icon(Icons.block, color: Colors.redAccent, size: 28),
+            const SizedBox(width: 10),
+            const Text('远程功能已禁用'),
+          ]),
+          content: Obx(() => Text(
+            stateGlobal.remoteDisabledMessage.value.isNotEmpty
+                ? stateGlobal.remoteDisabledMessage.value
+                : '远程功能已被管理员禁用，远程连接已断开。\n管理员恢复权限后将自动恢复。',
+          )),
+          actions: const [],
+        ),
+      ),
+    ).then((_) {
+      // dialog closed
+    });
+  }
+
+  void _dismissRemoteDisabledDialog() {
+    if (!mounted) return;
+    // Close any open dialog
+    if (Navigator.of(context).canPop()) {
+      Navigator.of(context).pop();
+    }
   }
 
   void initPages() {

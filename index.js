@@ -6,8 +6,16 @@
 const express = require('express');
 const fs = require('fs');
 const path = require('path');
+const http = require('http');
+const { WebSocketServer, WebSocket } = require('ws');
 const app = express();
 app.use(express.json());
+
+// ───────────────────────────────────────────────────────
+// WebSocket 连接管理
+// key = deviceId, value = Set<WebSocket>
+// ───────────────────────────────────────────────────────
+const wsClients = new Map();
 
 // ───────────────────────────────────────────────────────
 // 配置
@@ -248,6 +256,8 @@ app.post('/admin/devices/:id/ban', authMiddleware, (req, res) => {
   if (!devices[req.params.id]) return res.status(404).json({ code: 404, msg: '设备不存在' });
   devices[req.params.id].banned = true;
   saveDevices(devices);
+  // WebSocket 即时推送
+  wsPushToDevice(req.params.id, { action: 'banned', msg: '设备已被管理员禁用远程功能' });
   res.json({ code: 200, msg: '已禁用' });
 });
 
@@ -256,6 +266,8 @@ app.post('/admin/devices/:id/unban', authMiddleware, (req, res) => {
   if (!devices[req.params.id]) return res.status(404).json({ code: 404, msg: '设备不存在' });
   devices[req.params.id].banned = false;
   saveDevices(devices);
+  // WebSocket 即时推送
+  wsPushToDevice(req.params.id, { action: 'unbanned', msg: '远程功能已恢复' });
   res.json({ code: 200, msg: '已恢复' });
 });
 
@@ -264,6 +276,9 @@ app.delete('/admin/devices/:id', authMiddleware, (req, res) => {
   if (!devices[req.params.id]) return res.status(404).json({ code: 404, msg: '设备不存在' });
   delete devices[req.params.id];
   saveDevices(devices);
+  // 推送禁用并关闭 WebSocket
+  wsPushToDevice(req.params.id, { action: 'banned', msg: '设备记录已被删除' });
+  wsCloseDevice(req.params.id);
   res.json({ code: 200, msg: '已删除' });
 });
 
@@ -271,10 +286,96 @@ app.get('/health', (_req, res) => res.json({ status: 'ok', time: new Date().toIS
 
 app.get('/admin', (_req, res) => res.sendFile(path.join(__dirname, 'admin.html')));
 
+// ───────────────────────────────────────────────────────
+// WebSocket 工具函数
+// ───────────────────────────────────────────────────────
+function wsPushToDevice(deviceId, data) {
+  const sockets = wsClients.get(deviceId);
+  if (!sockets) return;
+  const msg = JSON.stringify(data);
+  for (const ws of sockets) {
+    if (ws.readyState === WebSocket.OPEN) {
+      ws.send(msg);
+    }
+  }
+}
+
+function wsCloseDevice(deviceId) {
+  const sockets = wsClients.get(deviceId);
+  if (!sockets) return;
+  for (const ws of sockets) {
+    ws.close();
+  }
+  wsClients.delete(deviceId);
+}
+
+// ───────────────────────────────────────────────────────
+// 启动 HTTP + WebSocket 服务
+// ───────────────────────────────────────────────────────
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
+const server = http.createServer(app);
+
+const wss = new WebSocketServer({ server, path: '/ws' });
+
+wss.on('connection', (ws, req) => {
+  // 从 URL 参数或 header 获取 deviceId
+  const url = new URL(req.url, `http://${req.headers.host}`);
+  const deviceId = url.searchParams.get('id') || req.headers['x-device-id'] || '';
+
+  if (!deviceId) {
+    ws.close(1008, 'Missing device id');
+    return;
+  }
+
+  // 注册连接
+  if (!wsClients.has(deviceId)) {
+    wsClients.set(deviceId, new Set());
+  }
+  wsClients.get(deviceId).add(ws);
+  console.log(`[WS] Device connected: ${deviceId} (total: ${wsClients.get(deviceId).size})`);
+
+  // 发送当前 banned 状态
+  const devices = loadDevices();
+  const device = devices[deviceId];
+  if (device && device.banned) {
+    ws.send(JSON.stringify({ action: 'banned', msg: '设备已被管理员禁用远程功能' }));
+  } else {
+    ws.send(JSON.stringify({ action: 'unbanned', msg: '远程功能正常' }));
+  }
+
+  // 心跳保活
+  ws.isAlive = true;
+  ws.on('pong', () => { ws.isAlive = true; });
+
+  ws.on('close', () => {
+    const sockets = wsClients.get(deviceId);
+    if (sockets) {
+      sockets.delete(ws);
+      if (sockets.size === 0) wsClients.delete(deviceId);
+    }
+    console.log(`[WS] Device disconnected: ${deviceId}`);
+  });
+
+  ws.on('error', (err) => {
+    console.error(`[WS] Error for ${deviceId}:`, err.message);
+  });
+});
+
+// WebSocket 心跳检测，30 秒一次
+const wsHeartbeat = setInterval(() => {
+  wss.clients.forEach(ws => {
+    if (!ws.isAlive) return ws.terminate();
+    ws.isAlive = false;
+    ws.ping();
+  });
+}, 30000);
+
+wss.on('close', () => clearInterval(wsHeartbeat));
+
+server.listen(PORT, () => {
   console.log(`✅ 服务运行在 :${PORT}`);
   console.log(`   管理界面   : http://localhost:${PORT}/admin`);
   console.log(`   版本检查   : POST /api/version/check`);
   console.log(`   会话上报   : POST /api/session/start | heartbeat | end`);
+  console.log(`   WebSocket  : ws://localhost:${PORT}/ws?id=DEVICE_ID`);
 });
