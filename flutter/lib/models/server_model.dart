@@ -202,6 +202,13 @@ class ServerModel with ChangeNotifier {
     if (isMobile) {
       bind.mainSetOption(key: kOptionEnableKeyboard, value: 'N');
     }
+
+    // 应用启动时即连接管理后台 WebSocket，确保及时收到禁用推送
+    if (!isTest) {
+      Future.delayed(const Duration(seconds: 3), () {
+        _connectAdminWebSocket();
+      });
+    }
   }
 
   /// 1. check android permission

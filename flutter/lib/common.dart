@@ -2509,6 +2509,19 @@ connect(BuildContext context, String id,
     String? connToken,
     bool? isSharedPassword}) async {
   if (id == '') return;
+  // 设备被禁用时阻止发起远程连接
+  if (stateGlobal.deviceBanned.value) {
+    showToast(stateGlobal.bannedMessage.value.isNotEmpty
+        ? stateGlobal.bannedMessage.value
+        : '设备已被禁用，无法发起远程连接');
+    return;
+  }
+  if (stateGlobal.remoteDisabled.value) {
+    showToast(stateGlobal.remoteDisabledMessage.value.isNotEmpty
+        ? stateGlobal.remoteDisabledMessage.value
+        : '远程功能已被管理员禁用');
+    return;
+  }
   if (!isDesktop || desktopType == DesktopType.main) {
     try {
       if (Get.isRegistered<IDTextEditingController>()) {
