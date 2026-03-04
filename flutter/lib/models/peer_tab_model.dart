@@ -41,6 +41,8 @@ class PeerTabModel with ChangeNotifier {
     true,
     true,
     !isWeb && bind.mainGetLocalOption(key: "disable-discovery-panel") != "Y",
+    // !(bind.isDisableAb() || bind.isDisableAccount()),
+    // !(bind.isDisableGroupPanel() || bind.isDisableAccount()),
     false, // 隐藏通讯录标签
     false, // 隐藏群组标签
   ]);

