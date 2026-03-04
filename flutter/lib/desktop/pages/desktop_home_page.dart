@@ -879,7 +879,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
       if (banned) {
         _showBannedDialog();
       }
-    }, tag: 'device-banned');
+    });
 
     // Listen for remote disabled status (WebSocket push)
     ever(stateGlobal.remoteDisabled, (disabled) {
@@ -888,7 +888,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
       } else {
         gFFI.dialogManager.dismissByTag('remote-disabled');
       }
-    }, tag: 'remote-disabled');
+    });
   }
 
   void _showBannedDialog() {

@@ -19,6 +19,7 @@ import '../desktop/pages/server_page.dart' as desktop;
 import '../desktop/widgets/tabbar_widget.dart';
 import '../mobile/pages/server_page.dart';
 import 'model.dart';
+import '../models/state_model.dart';
 
 const kLoginDialogTag = "LOGIN";
 
