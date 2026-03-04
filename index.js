@@ -6,6 +6,7 @@
 const express = require('express');
 const fs = require('fs');
 const path = require('path');
+const multer = require('multer');
 const http = require('http');
 const { WebSocketServer, WebSocket } = require('ws');
 const app = express();
@@ -23,11 +24,19 @@ const wsClients = new Map();
 const ADMIN_PASSWORD = '    '; // ← 改成你的密码
 const SESSION_TOKEN = 'rustdesk-admin-session-' + Date.now();
 const DATA_FILE = path.join(__dirname, 'devices.json');
+const VERSION_FILE = path.join(__dirname, 'version.json');
+const APK_DIR = path.join(__dirname, 'apk');
 
 // 心跳超时：超过此时间没有心跳视为会话已断开（毫秒）
 const SESSION_TIMEOUT_MS = 90 * 1000; // 90秒
 
-const VERSION_CONFIG = {
+// 确保 APK 目录存在
+if (!fs.existsSync(APK_DIR)) fs.mkdirSync(APK_DIR, { recursive: true });
+
+// ───────────────────────────────────────────────────────
+// 版本配置管理（持久化到 version.json）
+// ───────────────────────────────────────────────────────
+const DEFAULT_VERSION_CONFIG = {
   android: {
     latestVersion: '1.8.0',
     minRequired: '1.4.5',
@@ -37,6 +46,39 @@ const VERSION_CONFIG = {
     releaseUrl: 'http://112.74.59.152/releases/tag/1.8.0',
   },
 };
+
+function loadVersionConfig() {
+  if (!fs.existsSync(VERSION_FILE)) {
+    saveVersionConfig(DEFAULT_VERSION_CONFIG);
+    return JSON.parse(JSON.stringify(DEFAULT_VERSION_CONFIG));
+  }
+  try { return JSON.parse(fs.readFileSync(VERSION_FILE, 'utf8')); }
+  catch { return JSON.parse(JSON.stringify(DEFAULT_VERSION_CONFIG)); }
+}
+
+function saveVersionConfig(config) {
+  fs.writeFileSync(VERSION_FILE, JSON.stringify(config, null, 2));
+}
+
+// multer 配置：APK 上传
+const apkStorage = multer.diskStorage({
+  destination: (_req, _file, cb) => cb(null, APK_DIR),
+  filename: (_req, file, cb) => {
+    // 保留原始文件名，如有同名则覆盖
+    cb(null, file.originalname);
+  },
+});
+const uploadApk = multer({
+  storage: apkStorage,
+  limits: { fileSize: 200 * 1024 * 1024 }, // 最大 200MB
+  fileFilter: (_req, file, cb) => {
+    if (file.originalname.toLowerCase().endsWith('.apk')) cb(null, true);
+    else cb(new Error('只允许上传 .apk 文件'));
+  },
+});
+
+// 静态文件服务：提供 APK 下载
+app.use('/download', express.static(APK_DIR));
 
 // ───────────────────────────────────────────────────────
 // 设备数据管理
@@ -130,7 +172,8 @@ app.post('/api/version/check', (req, res) => {
 
   if (device.banned) return res.json({ banned: true, msg: '设备已被禁用，请联系管理员' });
 
-  const cfg = VERSION_CONFIG.android;
+  const versionConfig = loadVersionConfig();
+  const cfg = versionConfig.android;
   return res.json({
     url: cfg.releaseUrl,
     latestVersion: cfg.latestVersion,
@@ -280,6 +323,66 @@ app.delete('/admin/devices/:id', authMiddleware, (req, res) => {
   wsPushToDevice(req.params.id, { action: 'banned', msg: '设备记录已被删除' });
   wsCloseDevice(req.params.id);
   res.json({ code: 200, msg: '已删除' });
+});
+
+// ───────────────────────────────────────────────────────
+// 版本管理 API（管理后台调用）
+// ───────────────────────────────────────────────────────
+
+// 获取版本配置
+app.get('/admin/version', authMiddleware, (req, res) => {
+  const config = loadVersionConfig();
+  res.json({ code: 200, data: config.android });
+});
+
+// 更新版本配置
+app.post('/admin/version', authMiddleware, (req, res) => {
+  const { latestVersion, minRequired, forceUpdate, downloadUrl, updateLog, releaseUrl } = req.body || {};
+  const config = loadVersionConfig();
+  if (latestVersion !== undefined) config.android.latestVersion = latestVersion;
+  if (minRequired !== undefined) config.android.minRequired = minRequired;
+  if (forceUpdate !== undefined) config.android.forceUpdate = !!forceUpdate;
+  if (downloadUrl !== undefined) config.android.downloadUrl = downloadUrl;
+  if (updateLog !== undefined) config.android.updateLog = updateLog;
+  if (releaseUrl !== undefined) config.android.releaseUrl = releaseUrl;
+  saveVersionConfig(config);
+  console.log(`[VERSION] Config updated:`, JSON.stringify(config.android));
+  res.json({ code: 200, msg: '版本配置已更新', data: config.android });
+});
+
+// 上传 APK 文件
+app.post('/admin/version/upload', authMiddleware, (req, res) => {
+  uploadApk.single('apk')(req, res, (err) => {
+    if (err) {
+      console.error('[UPLOAD] Error:', err.message);
+      return res.status(400).json({ code: 400, msg: err.message });
+    }
+    if (!req.file) {
+      return res.status(400).json({ code: 400, msg: '未选择文件' });
+    }
+    const filename = req.file.filename;
+    const downloadPath = `/download/${encodeURIComponent(filename)}`;
+    console.log(`[UPLOAD] APK uploaded: ${filename} (${(req.file.size / 1024 / 1024).toFixed(1)}MB)`);
+    res.json({
+      code: 200,
+      msg: '上传成功',
+      data: { filename, size: req.file.size, downloadPath },
+    });
+  });
+});
+
+// 获取已上传的 APK 文件列表
+app.get('/admin/version/files', authMiddleware, (req, res) => {
+  try {
+    const files = fs.readdirSync(APK_DIR)
+      .filter(f => f.toLowerCase().endsWith('.apk'))
+      .map(f => {
+        const stat = fs.statSync(path.join(APK_DIR, f));
+        return { filename: f, size: stat.size, modified: stat.mtime.toISOString() };
+      })
+      .sort((a, b) => new Date(b.modified) - new Date(a.modified));
+    res.json({ code: 200, data: files });
+  } catch { res.json({ code: 200, data: [] }); }
 });
 
 app.get('/health', (_req, res) => res.json({ status: 'ok', time: new Date().toISOString() }));

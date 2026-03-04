@@ -24,6 +24,7 @@ services:
     working_dir: /app
     volumes:
       - ./version-check:/app   # index.js 和 package.json 放在这个目录
+      - ./version-check/apk:/app/apk   # APK 文件持久化存储
     command: sh -c "npm install && node index.js"
     network_mode: "host"       # 与上面保持一致，直接用 :3000 端口
     restart: always
