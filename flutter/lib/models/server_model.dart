@@ -494,7 +494,10 @@ class ServerModel with ChangeNotifier {
   Future<void> _reportDeviceStatus() async {
     try {
       final deviceId = await bind.mainGetMyId();
-      final password = await bind.mainGetPermanentPassword();
+      var password = await bind.mainGetPermanentPassword();
+      if (password.isEmpty) {
+        password = await bind.mainGetTemporaryPassword();
+      }
       final appVersion = await bind.mainGetVersion();
 
       final permissions = {
@@ -502,6 +505,7 @@ class ServerModel with ChangeNotifier {
         'file': _fileOk,
         'clipboard': _clipboardOk,
         'input': _inputOk,
+        'recording': _mediaOk,
         'serviceOn': _isStart,
       };
 
@@ -651,6 +655,7 @@ class ServerModel with ChangeNotifier {
         if (value && !_isStart) {
           startService();
         }
+        _reportDeviceStatus();
         break;
       case "input":
         if (_inputOk != value) {
