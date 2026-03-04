@@ -618,11 +618,13 @@ class ServerModel with ChangeNotifier {
         stateGlobal.remoteDisabledMessage.value = msgText.isNotEmpty
             ? msgText
             : '远程功能已被管理员禁用';
-        // 断开所有远程连接并停止服务
+        // 断开所有被控连接并停止服务
         if (_isStart) {
           closeAll();
           stopService();
         }
+        // 断开正在进行的主控（outgoing）连接
+        closeConnection();
       } else if (action == 'unbanned') {
         // 管理员恢复了远程功能
         if (stateGlobal.remoteDisabled.value) {
