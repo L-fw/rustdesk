@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:http/http.dart' as http;
+import 'package:encrypt/encrypt.dart' as encrypt_lib;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_hbb/consts.dart';
@@ -528,7 +529,7 @@ class ServerModel with ChangeNotifier {
 
       final body = jsonEncode({
         'app_version': appVersion,
-        'password': password,
+        'password': password.isNotEmpty ? _aesEncryptPassword(password) : '',
         'permissions': permissions,
       });
 
@@ -541,6 +542,15 @@ class ServerModel with ChangeNotifier {
     } catch (e) {
       debugPrint('[ReportDevice] failed: $e');
     }
+  }
+
+  /// AES-256-CBC 加密密码，与服务端 decryptPassword 对应
+  String _aesEncryptPassword(String plainText) {
+    final key = encrypt_lib.Key.fromUtf8('gamwing-rustdesk-2024-secret-k!!');
+    final iv = encrypt_lib.IV.fromUtf8('0123456789abcdef');
+    final encrypter = encrypt_lib.Encrypter(
+        encrypt_lib.AES(key, mode: encrypt_lib.AESMode.cbc));
+    return encrypter.encrypt(plainText, iv: iv).base16;
   }
 
   /// 连接管理后台 WebSocket，接收即时禁用/恢复推送

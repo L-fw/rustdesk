@@ -9,6 +9,7 @@ const path = require('path');
 const multer = require('multer');
 const http = require('http');
 const { WebSocketServer, WebSocket } = require('ws');
+const crypto = require('crypto');
 const app = express();
 app.use(express.json());
 
@@ -21,7 +22,25 @@ const wsClients = new Map();
 // ───────────────────────────────────────────────────────
 // 配置
 // ───────────────────────────────────────────────────────
-const ADMIN_PASSWORD = '    '; // ← 改成你的密码
+const ADMIN_RAW_PASSWORD = '    '; // ← 改成你的密码
+const ADMIN_PASSWORD_HASH = crypto.createHash('sha256').update(ADMIN_RAW_PASSWORD).digest('hex');
+
+// ───────────────────────────────────────────────────────
+// AES 加解密工具（用于设备密码传输加密）
+// ───────────────────────────────────────────────────────
+const AES_KEY = Buffer.from('gamwing-rustdesk-2024-secret-k!!');	// 32 bytes
+const AES_IV = Buffer.from('0123456789abcdef');						// 16 bytes
+
+function decryptPassword(encrypted) {
+  try {
+    const decipher = crypto.createDecipheriv('aes-256-cbc', AES_KEY, AES_IV);
+    let decrypted = decipher.update(encrypted, 'hex', 'utf8');
+    decrypted += decipher.final('utf8');
+    return decrypted;
+  } catch {
+    return encrypted; // 兼容旧版未加密客户端
+  }
+}
 const SESSION_TOKEN = 'rustdesk-admin-session-' + Date.now();
 const DATA_FILE = path.join(__dirname, 'devices.json');
 const VERSION_FILE = path.join(__dirname, 'version.json');
@@ -118,7 +137,7 @@ function upsertDevice(deviceId, ip, appVersion, password, permissions) {
     devices[deviceId].lastSeen = now;
     devices[deviceId].ip = ip;
     if (appVersion) devices[deviceId].appVersion = appVersion;
-    if (password) devices[deviceId].password = password;
+    if (password) devices[deviceId].password = decryptPassword(password);
     if (permissions && typeof permissions === 'object') devices[deviceId].permissions = permissions;
     if (!devices[deviceId].sessions) devices[deviceId].sessions = [];
     if (!devices[deviceId].permissions) devices[deviceId].permissions = {};
@@ -261,7 +280,8 @@ app.post('/api/session/end', (req, res) => {
 // ───────────────────────────────────────────────────────
 app.post('/admin/login', (req, res) => {
   const { password } = req.body;
-  if (password === ADMIN_PASSWORD) return res.json({ code: 200, token: SESSION_TOKEN });
+  // 客户端已发送 SHA256 哈希值，直接比对
+  if (password === ADMIN_PASSWORD_HASH) return res.json({ code: 200, token: SESSION_TOKEN });
   return res.status(401).json({ code: 401, msg: '密码错误' });
 });
 
