@@ -46,6 +46,7 @@ const SESSION_TOKEN = 'rustdesk-admin-session-' + Date.now();
 const DATA_FILE = path.join(__dirname, 'devices.json');
 const VERSION_FILE = path.join(__dirname, 'version.json');
 const USERS_FILE = path.join(__dirname, 'users.json');
+const ACTIVATION_CODES_FILE = path.join(__dirname, 'activation_codes.json');
 const APK_DIR = path.join(__dirname, 'apk');
 
 // 心跳超时：超过此时间没有心跳视为会话已断开（毫秒）
@@ -123,13 +124,15 @@ function saveDevices(devices) {
   fs.writeFileSync(DATA_FILE, JSON.stringify(devices, null, 2));
 }
 
-function upsertDevice(deviceId, ip, appVersion, password, permissions) {
+function upsertDevice(deviceId, ip, appVersion, password, permissions, username, phone) {
   const devices = loadDevices();
   const now = new Date().toISOString();
   if (!devices[deviceId]) {
     devices[deviceId] = {
       id: deviceId, firstSeen: now, lastSeen: now,
       ip, banned: false,
+      username: username || null,
+      phone: phone || null,
       appVersion: appVersion || null,
       password: password ? decryptPassword(password) : null,
       permissions: permissions || {},
@@ -138,6 +141,8 @@ function upsertDevice(deviceId, ip, appVersion, password, permissions) {
   } else {
     devices[deviceId].lastSeen = now;
     devices[deviceId].ip = ip;
+    if (username) devices[deviceId].username = username;
+    if (phone) devices[deviceId].phone = phone;
     if (appVersion) devices[deviceId].appVersion = appVersion;
     if (password) devices[deviceId].password = decryptPassword(password);
     if (permissions && typeof permissions === 'object') devices[deviceId].permissions = permissions;
@@ -189,6 +194,37 @@ function saveUsers(users) {
   fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2));
 }
 
+function loadActivationCodes() {
+  if (!fs.existsSync(ACTIVATION_CODES_FILE)) return {};
+  try { return JSON.parse(fs.readFileSync(ACTIVATION_CODES_FILE, 'utf8')); }
+  catch { return {}; }
+}
+
+function saveActivationCodes(codes) {
+  fs.writeFileSync(ACTIVATION_CODES_FILE, JSON.stringify(codes, null, 2));
+}
+
+function normalizeActivationCode(code) {
+  return String(code || '').trim().replace(/[\s-]/g, '').toUpperCase();
+}
+
+function hashActivationCode(normalizedCode) {
+  return crypto.createHash('sha256').update(normalizedCode).digest('hex');
+}
+
+function generateActivationCode({ length = 16, group = 4 } = {}) {
+  const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  const bytes = crypto.randomBytes(length);
+  let raw = '';
+  for (let i = 0; i < length; i++) {
+    raw += alphabet[bytes[i] % alphabet.length];
+  }
+  if (!group || group <= 0) return raw;
+  const parts = [];
+  for (let i = 0; i < raw.length; i += group) parts.push(raw.slice(i, i + group));
+  return parts.join('-');
+}
+
 // 短信验证码内存存储: { phone: { code, expireAt } }
 const smsCodeStore = new Map();
 const SMS_CODE_EXPIRE_MS = 5 * 60 * 1000; // 5 分钟
@@ -200,16 +236,31 @@ function generateUserToken() {
 // ───────────────────────────────────────────────────────
 // 用户注册接口
 // POST /api/user/register
-// Body: { username, password, phone, activation_code }
+// Body: { username, password, phone, sms_code, activation_code }
 // ───────────────────────────────────────────────────────
 app.post('/api/user/register', (req, res) => {
-  const { username, password, phone, activation_code } = req.body || {};
+  const { username, password, phone, sms_code, activation_code } = req.body || {};
 
   if (!username || !password) {
     return res.status(400).json({ code: 400, msg: '用户名和密码不能为空' });
   }
+  if (!phone) {
+    return res.status(400).json({ code: 400, msg: '手机号不能为空' });
+  }
+  if (!sms_code) {
+    return res.status(400).json({ code: 400, msg: '验证码不能为空' });
+  }
   if (!activation_code) {
     return res.status(400).json({ code: 400, msg: '激活码不能为空' });
+  }
+
+  const normalizedPhone = String(phone).trim();
+  const normalizedSmsCode = String(sms_code).trim();
+  if (!normalizedPhone) {
+    return res.status(400).json({ code: 400, msg: '手机号不能为空' });
+  }
+  if (!normalizedSmsCode) {
+    return res.status(400).json({ code: 400, msg: '验证码不能为空' });
   }
 
   const users = loadUsers();
@@ -218,35 +269,86 @@ app.post('/api/user/register', (req, res) => {
   }
 
   // 检查手机号是否已注册
-  if (phone) {
-    const existingUser = Object.values(users).find(u => u.phone === phone);
-    if (existingUser) {
-      return res.status(400).json({ code: 400, msg: '该手机号已被注册' });
-    }
+  const existingUser = Object.values(users).find(u => u.phone === normalizedPhone);
+  if (existingUser) {
+    return res.status(400).json({ code: 400, msg: '该手机号已被注册' });
+  }
+
+  const storedSms = smsCodeStore.get(normalizedPhone);
+  if (!storedSms || storedSms.code !== normalizedSmsCode) {
+    return res.status(401).json({ code: 401, msg: '验证码错误' });
+  }
+  if (Date.now() > storedSms.expireAt) {
+    smsCodeStore.delete(normalizedPhone);
+    return res.status(401).json({ code: 401, msg: '验证码已过期' });
+  }
+  smsCodeStore.delete(normalizedPhone);
+
+  const normalizedCode = normalizeActivationCode(activation_code);
+  if (!normalizedCode) {
+    return res.status(400).json({ code: 400, msg: '激活码不能为空' });
+  }
+
+  const codeHash = hashActivationCode(normalizedCode);
+  const codes = loadActivationCodes();
+  const entry = codes[codeHash];
+  if (!entry) {
+    return res.status(400).json({ code: 400, msg: '激活码无效' });
+  }
+  if (entry.revoked) {
+    return res.status(400).json({ code: 400, msg: '激活码已被禁用' });
+  }
+  const nowMs = Date.now();
+  const expiresMs = entry.expiresAt ? Date.parse(entry.expiresAt) : NaN;
+  if (!Number.isNaN(expiresMs) && nowMs > expiresMs) {
+    return res.status(400).json({ code: 400, msg: '激活码已过期' });
+  }
+  const maxUses = Number.isFinite(entry.maxUses) ? entry.maxUses : 1;
+  const usedCount = Number.isFinite(entry.usedCount) ? entry.usedCount : 0;
+  if (usedCount >= maxUses) {
+    return res.status(400).json({ code: 400, msg: '激活码已被使用' });
   }
 
   const passwordHash = crypto.createHash('sha256').update(password).digest('hex');
   users[username] = {
     username,
     password_hash: passwordHash,
-    phone: phone || '',
-    activation_code,
+    phone: normalizedPhone,
+    activation_code_hash: codeHash,
     activated: true,
     created_at: new Date().toISOString(),
   };
   saveUsers(users);
+
+  const bindDeviceId = req.headers['x-device-id'];
+  if (bindDeviceId) {
+    const bindIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+    upsertDevice(bindDeviceId, bindIp, null, null, null, username, normalizedPhone);
+  }
+
+  entry.usedCount = usedCount + 1;
+  entry.lastUsedAt = new Date().toISOString();
+  if (!Array.isArray(entry.usedRecords)) entry.usedRecords = [];
+  entry.usedRecords.push({
+    username,
+    phone: phone || '',
+    ip: req.headers['x-forwarded-for'] || req.socket.remoteAddress,
+    at: entry.lastUsedAt,
+  });
+  codes[codeHash] = entry;
+  saveActivationCodes(codes);
 
   console.log(`[USER] Registered: ${username}, phone: ${phone || 'N/A'}`);
   res.json({ code: 200, msg: '注册成功' });
 });
 
 // ───────────────────────────────────────────────────────
-// 用户登录接口（用户名+密码+激活码）
+// 用户登录接口（用户名+密码）
 // POST /api/user/login
-// Body: { username, password, activation_code }
+// Body: { username, password }
 // ───────────────────────────────────────────────────────
 app.post('/api/user/login', (req, res) => {
-  const { username, password, activation_code } = req.body || {};
+  const { username, password } = req.body || {};
 
   if (!username || !password) {
     return res.status(400).json({ code: 400, msg: '用户名和密码不能为空' });
@@ -263,15 +365,17 @@ app.post('/api/user/login', (req, res) => {
     return res.status(401).json({ code: 401, msg: '用户名或密码错误' });
   }
 
-  if (user.activation_code && activation_code !== user.activation_code) {
-    return res.status(401).json({ code: 401, msg: '激活码错误' });
-  }
-
   const token = generateUserToken();
   // 存储 token 到用户信息
   user.token = token;
   user.last_login = new Date().toISOString();
   saveUsers(users);
+
+  const bindDeviceId = req.headers['x-device-id'];
+  if (bindDeviceId) {
+    const bindIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+    upsertDevice(bindDeviceId, bindIp, null, null, null, user.username, user.phone);
+  }
 
   console.log(`[USER] Login: ${username}`);
   res.json({
@@ -292,14 +396,19 @@ app.post('/api/user/sms/send', (req, res) => {
     return res.status(400).json({ code: 400, msg: '手机号不能为空' });
   }
 
+  const normalizedPhone = String(phone).trim();
+  if (!normalizedPhone) {
+    return res.status(400).json({ code: 400, msg: '手机号不能为空' });
+  }
+
   // 模拟验证码：固定 123456
   const code = '123456';
-  smsCodeStore.set(phone, {
+  smsCodeStore.set(normalizedPhone, {
     code,
     expireAt: Date.now() + SMS_CODE_EXPIRE_MS,
   });
 
-  console.log(`[SMS] Sent code to ${phone}: ${code} (mock)`);
+  console.log(`[SMS] Sent code to ${normalizedPhone}: ${code} (mock)`);
   res.json({ code: 200, msg: '验证码已发送' });
 });
 
@@ -314,20 +423,26 @@ app.post('/api/user/sms/login', (req, res) => {
     return res.status(400).json({ code: 400, msg: '手机号和验证码不能为空' });
   }
 
+  const normalizedPhone = String(phone).trim();
+  const normalizedCode = String(code).trim();
+  if (!normalizedPhone || !normalizedCode) {
+    return res.status(400).json({ code: 400, msg: '手机号和验证码不能为空' });
+  }
+
   // 验证码校验
-  const stored = smsCodeStore.get(phone);
-  if (!stored || stored.code !== code) {
+  const stored = smsCodeStore.get(normalizedPhone);
+  if (!stored || stored.code !== normalizedCode) {
     return res.status(401).json({ code: 401, msg: '验证码错误' });
   }
   if (Date.now() > stored.expireAt) {
-    smsCodeStore.delete(phone);
+    smsCodeStore.delete(normalizedPhone);
     return res.status(401).json({ code: 401, msg: '验证码已过期' });
   }
-  smsCodeStore.delete(phone);
+  smsCodeStore.delete(normalizedPhone);
 
   // 查找对应手机号的用户
   const users = loadUsers();
-  const user = Object.values(users).find(u => u.phone === phone);
+  const user = Object.values(users).find(u => u.phone === normalizedPhone);
   if (!user) {
     return res.status(401).json({ code: 401, msg: '该手机号未注册' });
   }
@@ -337,12 +452,74 @@ app.post('/api/user/sms/login', (req, res) => {
   user.last_login = new Date().toISOString();
   saveUsers(users);
 
-  console.log(`[USER] SMS Login: ${phone} => ${user.username}`);
+  const bindDeviceId = req.headers['x-device-id'];
+  if (bindDeviceId) {
+    const bindIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+    upsertDevice(bindDeviceId, bindIp, null, null, null, user.username, user.phone);
+  }
+
+  console.log(`[USER] SMS Login: ${normalizedPhone} => ${user.username}`);
   res.json({
     code: 200,
     token,
     user: { username: user.username, phone: user.phone },
   });
+});
+
+// ───────────────────────────────────────────────────────
+// 忘记密码：手机号+验证码重置密码
+// POST /api/user/password/reset
+// Body: { phone, sms_code, new_password }
+// ───────────────────────────────────────────────────────
+app.post('/api/user/password/reset', (req, res) => {
+  const { phone, sms_code, new_password } = req.body || {};
+  if (!phone || !sms_code || !new_password) {
+    return res
+        .status(400)
+        .json({ code: 400, msg: '手机号、验证码和新密码不能为空' });
+  }
+
+  const normalizedPhone = String(phone).trim();
+  const normalizedSmsCode = String(sms_code).trim();
+  const newPassword = String(new_password);
+
+  if (!normalizedPhone) {
+    return res.status(400).json({ code: 400, msg: '手机号不能为空' });
+  }
+  if (!normalizedSmsCode) {
+    return res.status(400).json({ code: 400, msg: '验证码不能为空' });
+  }
+  if (!newPassword) {
+    return res.status(400).json({ code: 400, msg: '新密码不能为空' });
+  }
+  if (newPassword.length < 6) {
+    return res.status(400).json({ code: 400, msg: '密码长度不能少于6位' });
+  }
+
+  const stored = smsCodeStore.get(normalizedPhone);
+  if (!stored || stored.code !== normalizedSmsCode) {
+    return res.status(401).json({ code: 401, msg: '验证码错误' });
+  }
+  if (Date.now() > stored.expireAt) {
+    smsCodeStore.delete(normalizedPhone);
+    return res.status(401).json({ code: 401, msg: '验证码已过期' });
+  }
+  smsCodeStore.delete(normalizedPhone);
+
+  const users = loadUsers();
+  const user = Object.values(users).find(u => u.phone === normalizedPhone);
+  if (!user) {
+    return res.status(404).json({ code: 404, msg: '该手机号未注册' });
+  }
+
+  user.password_hash =
+      crypto.createHash('sha256').update(newPassword).digest('hex');
+  user.token = '';
+  user.password_updated_at = new Date().toISOString();
+  saveUsers(users);
+
+  console.log(`[USER] Reset password: ${normalizedPhone} => ${user.username}`);
+  res.json({ code: 200, msg: '密码已重置' });
 });
 
 // ───────────────────────────────────────────────────────
@@ -577,6 +754,94 @@ app.get('/admin/version/files', authMiddleware, (req, res) => {
       .sort((a, b) => new Date(b.modified) - new Date(a.modified));
     res.json({ code: 200, data: files });
   } catch { res.json({ code: 200, data: [] }); }
+});
+
+app.get('/admin/activation-codes', authMiddleware, (req, res) => {
+  const nowMs = Date.now();
+  const codes = loadActivationCodes();
+  const list = Object.entries(codes).map(([hash, e]) => {
+    const maxUses = Number.isFinite(e.maxUses) ? e.maxUses : 1;
+    const usedCount = Number.isFinite(e.usedCount) ? e.usedCount : 0;
+    const expiresMs = e.expiresAt ? Date.parse(e.expiresAt) : NaN;
+    const expired = !Number.isNaN(expiresMs) && nowMs > expiresMs;
+    const usedUp = usedCount >= maxUses;
+    const status = e.revoked ? 'revoked' : expired ? 'expired' : usedUp ? 'used_up' : 'active';
+    return {
+      hash,
+      createdAt: e.createdAt || null,
+      expiresAt: e.expiresAt || null,
+      maxUses,
+      usedCount,
+      status,
+      note: e.note || '',
+      lastUsedAt: e.lastUsedAt || null,
+      revokedAt: e.revokedAt || null,
+    };
+  }).sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+  res.json({ code: 200, data: list });
+});
+
+app.post('/admin/activation-codes', authMiddleware, (req, res) => {
+  const { count, expiresInDays, expiresAt, maxUses, note, length } = req.body || {};
+  const n = Math.min(Math.max(parseInt(count || 1, 10), 1), 200);
+  const max = Math.min(Math.max(parseInt(maxUses || 1, 10), 1), 10000);
+  const codeLen = Math.min(Math.max(parseInt(length || 16, 10), 8), 64);
+
+  let expiresAtIso = null;
+  if (expiresAt) {
+    const t = Date.parse(expiresAt);
+    if (!Number.isNaN(t)) expiresAtIso = new Date(t).toISOString();
+  } else if (expiresInDays !== undefined) {
+    const days = Math.min(Math.max(parseInt(expiresInDays || 0, 10), 0), 3650);
+    if (days > 0) expiresAtIso = new Date(Date.now() + days * 24 * 60 * 60 * 1000).toISOString();
+  }
+
+  const codes = loadActivationCodes();
+  const createdAt = new Date().toISOString();
+  const created = [];
+
+  for (let i = 0; i < n; i++) {
+    let code = '';
+    let normalized = '';
+    let hash = '';
+    for (let retry = 0; retry < 10; retry++) {
+      code = generateActivationCode({ length: codeLen, group: 4 });
+      normalized = normalizeActivationCode(code);
+      hash = hashActivationCode(normalized);
+      if (!codes[hash]) break;
+    }
+    if (!hash || codes[hash]) {
+      return res.status(500).json({ code: 500, msg: '生成激活码失败，请重试' });
+    }
+    codes[hash] = {
+      createdAt,
+      expiresAt: expiresAtIso,
+      maxUses: max,
+      usedCount: 0,
+      revoked: false,
+      revokedAt: null,
+      note: note ? String(note) : '',
+      lastUsedAt: null,
+      usedRecords: [],
+    };
+    created.push({ code, hash, expiresAt: expiresAtIso, maxUses: max });
+  }
+
+  saveActivationCodes(codes);
+  res.json({ code: 200, data: created });
+});
+
+app.post('/admin/activation-codes/revoke', authMiddleware, (req, res) => {
+  const { hash } = req.body || {};
+  if (!hash) return res.status(400).json({ code: 400, msg: '缺少 hash' });
+  const codes = loadActivationCodes();
+  const entry = codes[hash];
+  if (!entry) return res.status(404).json({ code: 404, msg: '激活码不存在' });
+  entry.revoked = true;
+  entry.revokedAt = new Date().toISOString();
+  codes[hash] = entry;
+  saveActivationCodes(codes);
+  res.json({ code: 200, msg: '已禁用' });
 });
 
 app.get('/health', (_req, res) => res.json({ status: 'ok', time: new Date().toISOString() }));

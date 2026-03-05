@@ -42,6 +42,7 @@ class AppAuthService {
     required String username,
     required String password,
     required String phone,
+    required String smsCode,
     required String activationCode,
   }) async {
     try {
@@ -49,6 +50,7 @@ class AppAuthService {
         'username': username,
         'password': password,
         'phone': phone,
+        'sms_code': smsCode,
         'activation_code': activationCode,
       });
       if (result['code'] == 200) {
@@ -60,18 +62,14 @@ class AppAuthService {
     }
   }
 
-  /// 用户名+密码+激活码登录
-  /// 返回 null 表示成功，返回错误信息表示失败
   Future<String?> login({
     required String username,
     required String password,
-    required String activationCode,
   }) async {
     try {
       final result = await _post('/api/user/login', {
         'username': username,
         'password': password,
-        'activation_code': activationCode,
       });
       if (result['code'] == 200 && result['token'] != null) {
         await _saveLoginInfo(
@@ -124,6 +122,26 @@ class AppAuthService {
     }
   }
 
+  Future<String?> resetPassword({
+    required String phone,
+    required String smsCode,
+    required String newPassword,
+  }) async {
+    try {
+      final result = await _post('/api/user/password/reset', {
+        'phone': phone,
+        'sms_code': smsCode,
+        'new_password': newPassword,
+      });
+      if (result['code'] == 200) {
+        return null;
+      }
+      return result['msg'] ?? '重置失败';
+    } catch (e) {
+      return '网络错误: $e';
+    }
+  }
+
   /// 通用 POST 请求
   Future<Map<String, dynamic>> _post(
       String path, Map<String, dynamic> body) async {
@@ -133,6 +151,12 @@ class AppAuthService {
       final request =
           await client.postUrl(Uri.parse('$_serverBaseUrl$path'));
       request.headers.set('Content-Type', 'application/json');
+      try {
+        final deviceId = await bind.mainGetMyId();
+        if (deviceId.isNotEmpty) {
+          request.headers.set('X-Device-Id', deviceId);
+        }
+      } catch (_) {}
       request.write(jsonEncode(body));
       final response = await request.close();
       final responseBody = await response.transform(utf8.decoder).join();

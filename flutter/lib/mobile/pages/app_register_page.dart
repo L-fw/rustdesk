@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_hbb/common/app_auth_service.dart';
 
@@ -16,12 +18,17 @@ class _AppRegisterPageState extends State<AppRegisterPage> {
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
   final _phoneController = TextEditingController();
+  final _smsCodeController = TextEditingController();
   final _activationCodeController = TextEditingController();
 
   bool _obscurePassword = true;
   bool _obscureConfirm = true;
   bool _isLoading = false;
+  bool _isSendingSms = false;
   String? _errorMsg;
+
+  int _countdown = 0;
+  Timer? _countdownTimer;
 
   final _authService = AppAuthService();
 
@@ -31,8 +38,46 @@ class _AppRegisterPageState extends State<AppRegisterPage> {
     _passwordController.dispose();
     _confirmPasswordController.dispose();
     _phoneController.dispose();
+    _smsCodeController.dispose();
     _activationCodeController.dispose();
+    _countdownTimer?.cancel();
     super.dispose();
+  }
+
+  void _startCountdown() {
+    setState(() => _countdown = 60);
+    _countdownTimer?.cancel();
+    _countdownTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (_countdown <= 1) {
+        timer.cancel();
+        if (mounted) setState(() => _countdown = 0);
+      } else {
+        if (mounted) setState(() => _countdown--);
+      }
+    });
+  }
+
+  Future<void> _sendSmsCode() async {
+    final phone = _phoneController.text.trim();
+    if (phone.isEmpty) {
+      setState(() => _errorMsg = '请输入手机号');
+      return;
+    }
+    setState(() {
+      _isSendingSms = true;
+      _errorMsg = null;
+    });
+    final error = await _authService.sendSmsCode(phone: phone);
+    if (!mounted) return;
+    setState(() => _isSendingSms = false);
+    if (error != null) {
+      setState(() => _errorMsg = error);
+      return;
+    }
+    _startCountdown();
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('验证码已发送')),
+    );
   }
 
   Future<void> _register() async {
@@ -40,6 +85,7 @@ class _AppRegisterPageState extends State<AppRegisterPage> {
     final password = _passwordController.text;
     final confirmPassword = _confirmPasswordController.text;
     final phone = _phoneController.text.trim();
+    final smsCode = _smsCodeController.text.trim();
     final activationCode = _activationCodeController.text.trim();
 
     if (username.isEmpty) {
@@ -58,6 +104,14 @@ class _AppRegisterPageState extends State<AppRegisterPage> {
       setState(() => _errorMsg = '两次密码输入不一致');
       return;
     }
+    if (phone.isEmpty) {
+      setState(() => _errorMsg = '请输入手机号');
+      return;
+    }
+    if (smsCode.isEmpty) {
+      setState(() => _errorMsg = '请输入验证码');
+      return;
+    }
     if (activationCode.isEmpty) {
       setState(() => _errorMsg = '请输入激活码');
       return;
@@ -72,6 +126,7 @@ class _AppRegisterPageState extends State<AppRegisterPage> {
       username: username,
       password: password,
       phone: phone,
+      smsCode: smsCode,
       activationCode: activationCode,
     );
 
@@ -160,9 +215,46 @@ class _AppRegisterPageState extends State<AppRegisterPage> {
                 // Phone
                 _buildTextField(
                   controller: _phoneController,
-                  label: '手机号（选填）',
+                  label: '手机号',
                   icon: Icons.phone_android,
                   keyboardType: TextInputType.phone,
+                ),
+                const SizedBox(height: 14),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: _buildTextField(
+                        controller: _smsCodeController,
+                        label: '验证码',
+                        icon: Icons.sms_outlined,
+                        keyboardType: TextInputType.number,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    SizedBox(
+                      height: 48,
+                      child: ElevatedButton(
+                        onPressed: (_countdown > 0 || _isSendingSms)
+                            ? null
+                            : _sendSmsCode,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: MyTheme.accent,
+                          foregroundColor: Colors.white,
+                          disabledBackgroundColor: Colors.grey.shade300,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          elevation: 0,
+                        ),
+                        child: Text(
+                          _countdown > 0 ? '${_countdown}s' : '获取验证码',
+                          style: const TextStyle(fontSize: 13),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 14),
                 // Activation Code

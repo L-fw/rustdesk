@@ -23,7 +23,6 @@ class _AppLoginPageState extends State<AppLoginPage>
   // 账号密码登录
   final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
-  final _activationCodeController = TextEditingController();
   bool _obscurePassword = true;
 
   // 手机验证码登录
@@ -53,7 +52,6 @@ class _AppLoginPageState extends State<AppLoginPage>
     _tabController.dispose();
     _usernameController.dispose();
     _passwordController.dispose();
-    _activationCodeController.dispose();
     _phoneController.dispose();
     _smsCodeController.dispose();
     _countdownTimer?.cancel();
@@ -100,7 +98,6 @@ class _AppLoginPageState extends State<AppLoginPage>
   Future<void> _loginWithPassword() async {
     final username = _usernameController.text.trim();
     final password = _passwordController.text;
-    final activationCode = _activationCodeController.text.trim();
 
     if (username.isEmpty) {
       setState(() => _errorMsg = '请输入用户名');
@@ -108,10 +105,6 @@ class _AppLoginPageState extends State<AppLoginPage>
     }
     if (password.isEmpty) {
       setState(() => _errorMsg = '请输入密码');
-      return;
-    }
-    if (activationCode.isEmpty) {
-      setState(() => _errorMsg = '请输入激活码');
       return;
     }
 
@@ -123,7 +116,6 @@ class _AppLoginPageState extends State<AppLoginPage>
     final error = await _authService.login(
       username: username,
       password: password,
-      activationCode: activationCode,
     );
 
     if (mounted) {
@@ -177,6 +169,19 @@ class _AppLoginPageState extends State<AppLoginPage>
     Navigator.of(context).push(
       MaterialPageRoute(builder: (_) => const AppRegisterPage()),
     );
+  }
+
+  Future<void> _showForgotPassword() async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (_) => const _ForgotPasswordDialog(),
+    );
+    if (!mounted) return;
+    if (ok == true) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('密码已重置，请使用新密码登录')),
+      );
+    }
   }
 
   @override
@@ -348,16 +353,24 @@ class _AppLoginPageState extends State<AppLoginPage>
             },
           ),
         ),
-        const SizedBox(height: 14),
-        // Activation Code
-        _buildTextField(
-          controller: _activationCodeController,
-          label: '激活码',
-          icon: Icons.vpn_key_outlined,
-        ),
         const SizedBox(height: 24),
         // Login Button
         _buildLoginButton(onPressed: _loginWithPassword),
+        const SizedBox(height: 10),
+        Align(
+          alignment: Alignment.centerRight,
+          child: GestureDetector(
+            onTap: _showForgotPassword,
+            child: Text(
+              '忘记密码？',
+              style: TextStyle(
+                color: MyTheme.accent,
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ),
       ],
     );
   }
@@ -480,6 +493,274 @@ class _AppLoginPageState extends State<AppLoginPage>
                 style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600),
               ),
       ),
+    );
+  }
+}
+
+class _ForgotPasswordDialog extends StatefulWidget {
+  const _ForgotPasswordDialog();
+
+  @override
+  State<_ForgotPasswordDialog> createState() => _ForgotPasswordDialogState();
+}
+
+class _ForgotPasswordDialogState extends State<_ForgotPasswordDialog> {
+  final _phoneController = TextEditingController();
+  final _smsCodeController = TextEditingController();
+  final _passwordController = TextEditingController();
+  final _confirmPasswordController = TextEditingController();
+
+  final _authService = AppAuthService();
+
+  bool _obscurePassword = true;
+  bool _obscureConfirmPassword = true;
+  bool _isLoading = false;
+  bool _isSendingSms = false;
+  String? _errorMsg;
+
+  int _countdown = 0;
+  Timer? _countdownTimer;
+
+  @override
+  void dispose() {
+    _phoneController.dispose();
+    _smsCodeController.dispose();
+    _passwordController.dispose();
+    _confirmPasswordController.dispose();
+    _countdownTimer?.cancel();
+    super.dispose();
+  }
+
+  void _startCountdown() {
+    setState(() => _countdown = 60);
+    _countdownTimer?.cancel();
+    _countdownTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (_countdown <= 1) {
+        timer.cancel();
+        if (mounted) setState(() => _countdown = 0);
+      } else {
+        if (mounted) setState(() => _countdown--);
+      }
+    });
+  }
+
+  Future<void> _sendSmsCode() async {
+    final phone = _phoneController.text.trim();
+    if (phone.isEmpty) {
+      setState(() => _errorMsg = '请输入手机号');
+      return;
+    }
+    setState(() {
+      _isSendingSms = true;
+      _errorMsg = null;
+    });
+    final error = await _authService.sendSmsCode(phone: phone);
+    if (!mounted) return;
+    setState(() => _isSendingSms = false);
+    if (error != null) {
+      setState(() => _errorMsg = error);
+      return;
+    }
+    _startCountdown();
+  }
+
+  Future<void> _submit() async {
+    final phone = _phoneController.text.trim();
+    final smsCode = _smsCodeController.text.trim();
+    final password = _passwordController.text;
+    final confirmPassword = _confirmPasswordController.text;
+
+    if (phone.isEmpty) {
+      setState(() => _errorMsg = '请输入手机号');
+      return;
+    }
+    if (smsCode.isEmpty) {
+      setState(() => _errorMsg = '请输入验证码');
+      return;
+    }
+    if (password.isEmpty) {
+      setState(() => _errorMsg = '请输入新密码');
+      return;
+    }
+    if (password.length < 6) {
+      setState(() => _errorMsg = '密码长度不能少于6位');
+      return;
+    }
+    if (password != confirmPassword) {
+      setState(() => _errorMsg = '两次密码输入不一致');
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+      _errorMsg = null;
+    });
+
+    final error = await _authService.resetPassword(
+      phone: phone,
+      smsCode: smsCode,
+      newPassword: password,
+    );
+
+    if (!mounted) return;
+    setState(() => _isLoading = false);
+    if (error != null) {
+      setState(() => _errorMsg = error);
+      return;
+    }
+    Navigator.of(context).pop(true);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return AlertDialog(
+      title: const Text('忘记密码'),
+      content: SingleChildScrollView(
+        child: SizedBox(
+          width: 360,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: _phoneController,
+                keyboardType: TextInputType.phone,
+                decoration: const InputDecoration(
+                  labelText: '手机号',
+                  prefixIcon: Icon(Icons.phone_android, size: 20),
+                ),
+              ),
+              const SizedBox(height: 12),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _smsCodeController,
+                      keyboardType: TextInputType.number,
+                      decoration: const InputDecoration(
+                        labelText: '验证码',
+                        prefixIcon: Icon(Icons.sms_outlined, size: 20),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  SizedBox(
+                    height: 48,
+                    child: ElevatedButton(
+                      onPressed: (_countdown > 0 || _isSendingSms || _isLoading)
+                          ? null
+                          : _sendSmsCode,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: MyTheme.accent,
+                        foregroundColor: Colors.white,
+                        disabledBackgroundColor: Colors.grey.shade300,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        elevation: 0,
+                      ),
+                      child: Text(
+                        _countdown > 0 ? '${_countdown}s' : '获取验证码',
+                        style: const TextStyle(fontSize: 13),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: _passwordController,
+                obscureText: _obscurePassword,
+                decoration: InputDecoration(
+                  labelText: '新密码',
+                  prefixIcon: const Icon(Icons.lock_outline, size: 20),
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      _obscurePassword
+                          ? Icons.visibility_off_outlined
+                          : Icons.visibility_outlined,
+                      size: 20,
+                      color: Colors.grey,
+                    ),
+                    onPressed: () {
+                      setState(() => _obscurePassword = !_obscurePassword);
+                    },
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: _confirmPasswordController,
+                obscureText: _obscureConfirmPassword,
+                decoration: InputDecoration(
+                  labelText: '确认新密码',
+                  prefixIcon: const Icon(Icons.lock_outline, size: 20),
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      _obscureConfirmPassword
+                          ? Icons.visibility_off_outlined
+                          : Icons.visibility_outlined,
+                      size: 20,
+                      color: Colors.grey,
+                    ),
+                    onPressed: () {
+                      setState(() => _obscureConfirmPassword =
+                          !_obscureConfirmPassword);
+                    },
+                  ),
+                ),
+              ),
+              if (_errorMsg != null) ...[
+                const SizedBox(height: 12),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    _errorMsg!,
+                    style: const TextStyle(color: Colors.red, fontSize: 13),
+                  ),
+                ),
+              ],
+              const SizedBox(height: 4),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  '验证码会发送到你填写的手机号',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: isDark ? Colors.white54 : Colors.black45,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: _isLoading ? null : () => Navigator.of(context).pop(false),
+          child: const Text('取消'),
+        ),
+        ElevatedButton(
+          onPressed: _isLoading ? null : _submit,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: MyTheme.accent,
+            foregroundColor: Colors.white,
+            elevation: 0,
+          ),
+          child: _isLoading
+              ? const SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2.5,
+                    color: Colors.white,
+                  ),
+                )
+              : const Text('确认重置'),
+        ),
+      ],
     );
   }
 }
