@@ -468,14 +468,19 @@ class ServerModel with ChangeNotifier {
 
   /// Start the screen sharing service.
   Future<void> startService() async {
-    // 设备被禁用时阻止启动远程服务
+    // 先检查内存中的禁用状态
     if (stateGlobal.remoteDisabled.value || stateGlobal.deviceBanned.value) {
-      final msg = stateGlobal.remoteDisabledMessage.value.isNotEmpty
-          ? stateGlobal.remoteDisabledMessage.value
-          : stateGlobal.bannedMessage.value.isNotEmpty
-              ? stateGlobal.bannedMessage.value
-              : '设备已被禁用，无法启动远程服务';
-      showToast(msg);
+      _showBannedDialog(
+        stateGlobal.remoteDisabledMessage.value.isNotEmpty
+            ? stateGlobal.remoteDisabledMessage.value
+            : stateGlobal.bannedMessage.value.isNotEmpty
+                ? stateGlobal.bannedMessage.value
+                : '设备已被禁用，无法启动远程服务',
+      );
+      return;
+    }
+    // 实时向服务器确认禁用状态（防止 APP 重启后内存状态丢失）
+    if (await _checkBannedFromServer()) {
       return;
     }
     _isStart = true;
@@ -490,6 +495,56 @@ class ServerModel with ChangeNotifier {
     }
     _reportDeviceStatus();
     _connectAdminWebSocket();
+  }
+
+  /// 向服务器实时确认设备是否被禁用
+  Future<bool> _checkBannedFromServer() async {
+    try {
+      final deviceId = await bind.mainGetMyId();
+      if (deviceId.isEmpty) return false;
+      final url = Uri.parse('http://112.74.59.152:3000/api/version/check');
+      final resp = await http.post(url, headers: {
+        'Content-Type': 'application/json',
+        'X-Device-Id': deviceId,
+      }, body: jsonEncode({})).timeout(const Duration(seconds: 5));
+      if (resp.statusCode == 200) {
+        final data = jsonDecode(resp.body) as Map<String, dynamic>;
+        if (data['banned'] == true) {
+          final msg = data['msg'] as String? ?? '设备已被禁用，无法启动远程服务';
+          stateGlobal.remoteDisabled.value = true;
+          stateGlobal.remoteDisabledMessage.value = msg;
+          _showBannedDialog(msg);
+          return true;
+        }
+      }
+    } catch (e) {
+      debugPrint('[BanCheck] Server check failed: $e');
+    }
+    return false;
+  }
+
+  /// 显示设备被禁用的对话框
+  void _showBannedDialog(String msg) {
+    final ctx = globalKey.currentContext;
+    if (ctx == null) return;
+    showDialog(
+      context: ctx,
+      barrierDismissible: true,
+      builder: (context) => AlertDialog(
+        title: Row(children: const [
+          Icon(Icons.block, color: Colors.redAccent, size: 28),
+          SizedBox(width: 10),
+          Text('设备已被禁用'),
+        ]),
+        content: Text(msg),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('确定'),
+          ),
+        ],
+      ),
+    );
   }
 
   /// Stop the screen sharing service.
@@ -746,8 +801,8 @@ class ServerModel with ChangeNotifier {
       if (stateGlobal.remoteDisabled.value || stateGlobal.deviceBanned.value) {
         bind.cmLoginRes(connId: client.id, res: false);
         parent.target?.invokeMethod("cancel_notification", client.id);
-        showToast('设备已被禁用，已拒绝来自 ${client.peerId} 的连接请求');
         debugPrint('[BAN] Rejected incoming connection from ${client.peerId}');
+        _showBannedDialog('设备已被禁用，已拒绝来自 ${client.peerId} 的连接请求');
         return;
       }
       if (client.authorized) {
