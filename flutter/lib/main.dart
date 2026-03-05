@@ -25,6 +25,8 @@ import 'package:window_manager/window_manager.dart';
 
 import 'common.dart';
 import 'consts.dart';
+import 'common/app_auth_service.dart';
+import 'mobile/pages/app_login_page.dart';
 import 'mobile/pages/home_page.dart';
 import 'mobile/pages/server_page.dart';
 import 'models/platform_model.dart';
@@ -36,6 +38,7 @@ import 'package:flutter_hbb/plugin/handlers.dart'
 int? kWindowId;
 WindowType? kWindowType;
 late List<String> kBootArgs;
+bool _isAppLoggedIn = false;
 
 Future<void> main(List<String> args) async {
   earlyAssert();
@@ -185,6 +188,8 @@ void runMobileApp() async {
   draggablePositions.load();
   await Future.wait([gFFI.abModel.loadCache(), gFFI.groupModel.loadCache()]);
   gFFI.userModel.refreshCurrentUser();
+  // 检查用户登录状态
+  _isAppLoggedIn = await AppAuthService().isLoggedIn();
   runApp(App());
   await initUniLinks();
 }
@@ -509,7 +514,9 @@ class _AppState extends State<App> with WidgetsBindingObserver {
               ? const DesktopTabPage()
               : isWeb
                   ? WebHomePage()
-                  : HomePage(),
+                  : _isAppLoggedIn
+                      ? HomePage()
+                      : const AppLoginPage(),
           localizationsDelegates: const [
             GlobalMaterialLocalizations.delegate,
             GlobalWidgetsLocalizations.delegate,

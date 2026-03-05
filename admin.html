@@ -1046,48 +1046,34 @@
       border-collapse: collapse;
     }
 
-    th.sortable {
-      cursor: pointer;
-      user-select: none;
-    }
-
-    th.sortable:hover {
-      color: var(--cyan);
-    }
-
-    .sort-arrow {
+    .sort-btns {
       display: inline-flex;
       flex-direction: column;
-      gap: 1px;
-      margin-left: 5px;
+      gap: 2px;
+      margin-left: 6px;
       vertical-align: middle;
-      opacity: 0.3;
-      transition: opacity .2s;
-      font-size: 9px;
-      line-height: 1;
     }
 
-    th.sortable:hover .sort-arrow,
-    th.sort-active .sort-arrow {
-      opacity: 1;
-    }
-
-    th.sort-active {
-      color: var(--cyan);
-    }
-
-    th.sort-active.sort-asc .sort-up {
-      color: var(--cyan);
-    }
-
-    th.sort-active.sort-desc .sort-down {
-      color: var(--cyan);
-    }
-
-    .sort-up,
-    .sort-down {
-      color: var(--muted2);
+    .sort-btn {
       display: block;
+      background: none;
+      border: none;
+      padding: 0;
+      cursor: pointer;
+      font-size: 8px;
+      line-height: 1;
+      color: var(--muted2);
+      transition: color .15s, transform .1s;
+    }
+
+    .sort-btn:hover {
+      color: var(--text);
+      transform: scale(1.3);
+    }
+
+    .sort-btn.active {
+      color: var(--cyan);
+      transform: scale(1.2);
     }
 
     thead {
@@ -2903,10 +2889,12 @@
               <th>IP 地址</th>
               <th>软件版本</th>
               <th>远控状态</th>
-              <th id="th-firstSeen" class="sortable" onclick="toggleSort('firstSeen')">首次接入<span
-                  class="sort-arrow"><span class="sort-up">▲</span><span class="sort-down">▼</span></span></th>
-              <th id="th-lastSeen" class="sortable" onclick="toggleSort('lastSeen')">最近上线<span class="sort-arrow"><span
-                    class="sort-up">▲</span><span class="sort-down">▼</span></span></th>
+              <th>首次接入<span class="sort-btns"><button id="btn-firstSeen-asc" class="sort-btn"
+                    onclick="doSort('firstSeen','asc')" title="升序">▲</button><button id="btn-firstSeen-desc"
+                    class="sort-btn" onclick="doSort('firstSeen','desc')" title="降序">▼</button></span></th>
+              <th>最近上线<span class="sort-btns"><button id="btn-lastSeen-asc" class="sort-btn"
+                    onclick="doSort('lastSeen','asc')" title="升序">▲</button><button id="btn-lastSeen-desc"
+                    class="sort-btn" onclick="doSort('lastSeen','desc')" title="降序">▼</button></span></th>
               <th>状态</th>
               <th>操作</th>
             </tr>
@@ -3286,27 +3274,33 @@
     }
 
     // ── 渲染 ──
-    let sortBy = 'lastSeen';
-    let sortDir = 'desc';
+    let sortBy = null;
+    let sortDir = null;
 
-    document.addEventListener('DOMContentLoaded', () => {
-      const th = document.getElementById('th-lastSeen');
-      if (th) th.classList.add('sort-active', 'sort-desc');
-    });
+    function updateSortBtnStyles() {
+      ['firstSeen', 'lastSeen'].forEach(field => {
+        ['asc', 'desc'].forEach(dir => {
+          const btn = document.getElementById(`btn-${field}-${dir}`);
+          if (!btn) return;
+          if (sortBy === field && sortDir === dir) {
+            btn.classList.add('active');
+          } else {
+            btn.classList.remove('active');
+          }
+        });
+      });
+    }
 
-    function toggleSort(field) {
-      if (sortBy === field) {
-        sortDir = sortDir === 'desc' ? 'asc' : 'desc';
+    function doSort(field, dir) {
+      // 再次点击同一个按钮 → 取消排序
+      if (sortBy === field && sortDir === dir) {
+        sortBy = null;
+        sortDir = null;
       } else {
         sortBy = field;
-        sortDir = 'desc';
+        sortDir = dir;
       }
-      ['firstSeen', 'lastSeen'].forEach(f => {
-        const th = document.getElementById('th-' + f);
-        if (!th) return;
-        th.classList.remove('sort-active', 'sort-asc', 'sort-desc');
-        if (f === sortBy) th.classList.add('sort-active', sortDir === 'asc' ? 'sort-asc' : 'sort-desc');
-      });
+      updateSortBtnStyles();
       render();
     }
 
@@ -3325,6 +3319,7 @@
       });
 
       list.sort((a, b) => {
+        if (!sortBy) return 0;
         const va = new Date(a[sortBy] || 0).getTime();
         const vb = new Date(b[sortBy] || 0).getTime();
         return sortDir === 'asc' ? va - vb : vb - va;

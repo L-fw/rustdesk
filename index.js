@@ -45,6 +45,7 @@ function decryptPassword(encrypted) {
 const SESSION_TOKEN = 'rustdesk-admin-session-' + Date.now();
 const DATA_FILE = path.join(__dirname, 'devices.json');
 const VERSION_FILE = path.join(__dirname, 'version.json');
+const USERS_FILE = path.join(__dirname, 'users.json');
 const APK_DIR = path.join(__dirname, 'apk');
 
 // 心跳超时：超过此时间没有心跳视为会话已断开（毫秒）
@@ -174,6 +175,175 @@ function authMiddleware(req, res, next) {
   if (token !== SESSION_TOKEN) return res.status(401).json({ code: 401, msg: '未授权' });
   next();
 }
+
+// ───────────────────────────────────────────────────────
+// 用户数据管理
+// ───────────────────────────────────────────────────────
+function loadUsers() {
+  if (!fs.existsSync(USERS_FILE)) return {};
+  try { return JSON.parse(fs.readFileSync(USERS_FILE, 'utf8')); }
+  catch { return {}; }
+}
+
+function saveUsers(users) {
+  fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2));
+}
+
+// 短信验证码内存存储: { phone: { code, expireAt } }
+const smsCodeStore = new Map();
+const SMS_CODE_EXPIRE_MS = 5 * 60 * 1000; // 5 分钟
+
+function generateUserToken() {
+  return crypto.randomBytes(32).toString('hex');
+}
+
+// ───────────────────────────────────────────────────────
+// 用户注册接口
+// POST /api/user/register
+// Body: { username, password, phone, activation_code }
+// ───────────────────────────────────────────────────────
+app.post('/api/user/register', (req, res) => {
+  const { username, password, phone, activation_code } = req.body || {};
+
+  if (!username || !password) {
+    return res.status(400).json({ code: 400, msg: '用户名和密码不能为空' });
+  }
+  if (!activation_code) {
+    return res.status(400).json({ code: 400, msg: '激活码不能为空' });
+  }
+
+  const users = loadUsers();
+  if (users[username]) {
+    return res.status(400).json({ code: 400, msg: '用户名已存在' });
+  }
+
+  // 检查手机号是否已注册
+  if (phone) {
+    const existingUser = Object.values(users).find(u => u.phone === phone);
+    if (existingUser) {
+      return res.status(400).json({ code: 400, msg: '该手机号已被注册' });
+    }
+  }
+
+  const passwordHash = crypto.createHash('sha256').update(password).digest('hex');
+  users[username] = {
+    username,
+    password_hash: passwordHash,
+    phone: phone || '',
+    activation_code,
+    activated: true,
+    created_at: new Date().toISOString(),
+  };
+  saveUsers(users);
+
+  console.log(`[USER] Registered: ${username}, phone: ${phone || 'N/A'}`);
+  res.json({ code: 200, msg: '注册成功' });
+});
+
+// ───────────────────────────────────────────────────────
+// 用户登录接口（用户名+密码+激活码）
+// POST /api/user/login
+// Body: { username, password, activation_code }
+// ───────────────────────────────────────────────────────
+app.post('/api/user/login', (req, res) => {
+  const { username, password, activation_code } = req.body || {};
+
+  if (!username || !password) {
+    return res.status(400).json({ code: 400, msg: '用户名和密码不能为空' });
+  }
+
+  const users = loadUsers();
+  const user = users[username];
+  if (!user) {
+    return res.status(401).json({ code: 401, msg: '用户名或密码错误' });
+  }
+
+  const passwordHash = crypto.createHash('sha256').update(password).digest('hex');
+  if (user.password_hash !== passwordHash) {
+    return res.status(401).json({ code: 401, msg: '用户名或密码错误' });
+  }
+
+  if (user.activation_code && activation_code !== user.activation_code) {
+    return res.status(401).json({ code: 401, msg: '激活码错误' });
+  }
+
+  const token = generateUserToken();
+  // 存储 token 到用户信息
+  user.token = token;
+  user.last_login = new Date().toISOString();
+  saveUsers(users);
+
+  console.log(`[USER] Login: ${username}`);
+  res.json({
+    code: 200,
+    token,
+    user: { username: user.username, phone: user.phone },
+  });
+});
+
+// ───────────────────────────────────────────────────────
+// 发送短信验证码（模拟）
+// POST /api/user/sms/send
+// Body: { phone }
+// ───────────────────────────────────────────────────────
+app.post('/api/user/sms/send', (req, res) => {
+  const { phone } = req.body || {};
+  if (!phone) {
+    return res.status(400).json({ code: 400, msg: '手机号不能为空' });
+  }
+
+  // 模拟验证码：固定 123456
+  const code = '123456';
+  smsCodeStore.set(phone, {
+    code,
+    expireAt: Date.now() + SMS_CODE_EXPIRE_MS,
+  });
+
+  console.log(`[SMS] Sent code to ${phone}: ${code} (mock)`);
+  res.json({ code: 200, msg: '验证码已发送' });
+});
+
+// ───────────────────────────────────────────────────────
+// 手机号+验证码登录
+// POST /api/user/sms/login
+// Body: { phone, code }
+// ───────────────────────────────────────────────────────
+app.post('/api/user/sms/login', (req, res) => {
+  const { phone, code } = req.body || {};
+  if (!phone || !code) {
+    return res.status(400).json({ code: 400, msg: '手机号和验证码不能为空' });
+  }
+
+  // 验证码校验
+  const stored = smsCodeStore.get(phone);
+  if (!stored || stored.code !== code) {
+    return res.status(401).json({ code: 401, msg: '验证码错误' });
+  }
+  if (Date.now() > stored.expireAt) {
+    smsCodeStore.delete(phone);
+    return res.status(401).json({ code: 401, msg: '验证码已过期' });
+  }
+  smsCodeStore.delete(phone);
+
+  // 查找对应手机号的用户
+  const users = loadUsers();
+  const user = Object.values(users).find(u => u.phone === phone);
+  if (!user) {
+    return res.status(401).json({ code: 401, msg: '该手机号未注册' });
+  }
+
+  const token = generateUserToken();
+  user.token = token;
+  user.last_login = new Date().toISOString();
+  saveUsers(users);
+
+  console.log(`[USER] SMS Login: ${phone} => ${user.username}`);
+  res.json({
+    code: 200,
+    token,
+    user: { username: user.username, phone: user.phone },
+  });
+});
 
 // ───────────────────────────────────────────────────────
 // 版本检查接口（APP 调用）
