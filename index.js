@@ -24,6 +24,7 @@ const wsClients = new Map();
 // ───────────────────────────────────────────────────────
 const ADMIN_RAW_PASSWORD = '    '; // ← 改成你的密码
 const ADMIN_PASSWORD_HASH = crypto.createHash('sha256').update(ADMIN_RAW_PASSWORD).digest('hex');
+console.log(`[AUTH] Admin password hash: ${ADMIN_PASSWORD_HASH.substring(0, 16)}...`);
 
 // ───────────────────────────────────────────────────────
 // AES 加解密工具（用于设备密码传输加密）
@@ -129,7 +130,7 @@ function upsertDevice(deviceId, ip, appVersion, password, permissions) {
       id: deviceId, firstSeen: now, lastSeen: now,
       ip, banned: false,
       appVersion: appVersion || null,
-      password: password || null,
+      password: password ? decryptPassword(password) : null,
       permissions: permissions || {},
       sessions: [],
     };
@@ -280,8 +281,11 @@ app.post('/api/session/end', (req, res) => {
 // ───────────────────────────────────────────────────────
 app.post('/admin/login', (req, res) => {
   const { password } = req.body;
-  // 客户端已发送 SHA256 哈希值，直接比对
-  if (password === ADMIN_PASSWORD_HASH) return res.json({ code: 200, token: SESSION_TOKEN });
+  console.log(`[LOGIN] Received pw (first 16): ${(password || '').substring(0, 16)}... Expected hash (first 16): ${ADMIN_PASSWORD_HASH.substring(0, 16)}...`);
+  // 支持 SHA256 哈希密码（新版客户端）和明文密码（兼容旧版/调试）
+  if (password === ADMIN_PASSWORD_HASH || password === ADMIN_RAW_PASSWORD) {
+    return res.json({ code: 200, token: SESSION_TOKEN });
+  }
   return res.status(401).json({ code: 401, msg: '密码错误' });
 });
 
