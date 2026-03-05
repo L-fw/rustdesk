@@ -5,6 +5,7 @@ import 'package:flutter_hbb/common/app_auth_service.dart';
 import 'package:flutter_hbb/mobile/pages/app_register_page.dart';
 
 import '../../common.dart';
+import '../../models/platform_model.dart';
 import 'home_page.dart';
 
 /// 应用登录页面
