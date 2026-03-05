@@ -525,26 +525,32 @@ class ServerModel with ChangeNotifier {
 
   /// 显示设备被禁用的对话框
   void _showBannedDialog(String msg) {
-    final ctx = globalKey.currentContext;
-    if (ctx == null) return;
-    showDialog(
-      context: ctx,
-      barrierDismissible: true,
-      builder: (context) => AlertDialog(
-        title: Row(children: const [
-          Icon(Icons.block, color: Colors.redAccent, size: 28),
-          SizedBox(width: 10),
-          Text('设备已被禁用'),
-        ]),
-        content: Text(msg),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('确定'),
-          ),
-        ],
-      ),
-    );
+    // 使用 addPostFrameCallback 确保 UI 就绪后再弹窗
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final ctx = globalKey.currentContext;
+      if (ctx == null) {
+        debugPrint('[BAN] Cannot show dialog: no context');
+        return;
+      }
+      showDialog(
+        context: ctx,
+        barrierDismissible: true,
+        builder: (context) => AlertDialog(
+          title: Row(children: const [
+            Icon(Icons.block, color: Colors.redAccent, size: 28),
+            SizedBox(width: 10),
+            Text('设备已被禁用'),
+          ]),
+          content: Text(msg),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('确定'),
+            ),
+          ],
+        ),
+      );
+    });
   }
 
   /// Stop the screen sharing service.
@@ -698,8 +704,11 @@ class ServerModel with ChangeNotifier {
           closeAll();
           stopService();
         }
-        // 断开正在进行的主控（outgoing）连接
+        // 先断开主控连接，再弹出提示
         closeConnection();
+        _showBannedDialog(
+          msgText.isNotEmpty ? msgText : '远程功能已被管理员禁用，所有连接已断开',
+        );
       } else if (action == 'unbanned') {
         // 管理员恢复了远程功能
         if (stateGlobal.remoteDisabled.value) {
