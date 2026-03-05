@@ -467,6 +467,16 @@ class ServerModel with ChangeNotifier {
 
   /// Start the screen sharing service.
   Future<void> startService() async {
+    // 设备被禁用时阻止启动远程服务
+    if (stateGlobal.remoteDisabled.value || stateGlobal.deviceBanned.value) {
+      final msg = stateGlobal.remoteDisabledMessage.value.isNotEmpty
+          ? stateGlobal.remoteDisabledMessage.value
+          : stateGlobal.bannedMessage.value.isNotEmpty
+              ? stateGlobal.bannedMessage.value
+              : '设备已被禁用，无法启动远程服务';
+      showToast(msg);
+      return;
+    }
     _isStart = true;
     notifyListeners();
     parent.target?.ffiModel.updateEventListener(parent.target!.sessionId, "");
@@ -722,6 +732,14 @@ class ServerModel with ChangeNotifier {
   void addConnection(Map<String, dynamic> evt) {
     try {
       final client = Client.fromJson(jsonDecode(evt["client"]));
+      // 设备被禁用时拒绝所有传入连接
+      if (stateGlobal.remoteDisabled.value || stateGlobal.deviceBanned.value) {
+        bind.cmLoginRes(connId: client.id, res: false);
+        parent.target?.invokeMethod("cancel_notification", client.id);
+        showToast('设备已被禁用，已拒绝来自 ${client.peerId} 的连接请求');
+        debugPrint('[BAN] Rejected incoming connection from ${client.peerId}');
+        return;
+      }
       if (client.authorized) {
         parent.target?.dialogManager.dismissByTag(getLoginDialogTag(client.id));
         final index = _clients.indexWhere((c) => c.id == client.id);
