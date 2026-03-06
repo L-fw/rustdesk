@@ -8,6 +8,7 @@ class AppAuthService {
   static const String _serverBaseUrl = 'http://112.74.59.152:3000';
   static const String _tokenKey = 'app_user_token';
   static const String _userInfoKey = 'app_user_info';
+  static const String _tokenVersionKey = 'app_user_token_version';
 
   static final AppAuthService _instance = AppAuthService._();
   factory AppAuthService() => _instance;
@@ -39,6 +40,7 @@ class AppAuthService {
   Future<void> logout() async {
     await bind.mainSetLocalOption(key: _tokenKey, value: '');
     await bind.mainSetLocalOption(key: _userInfoKey, value: '');
+    await bind.mainSetLocalOption(key: _tokenVersionKey, value: '');
   }
 
   /// 用户注册
@@ -81,6 +83,10 @@ class AppAuthService {
           result['token'],
           result['user'] ?? {},
         );
+        await bind.mainSetLocalOption(
+          key: _tokenVersionKey,
+          value: String(result['token_version'] ?? ''),
+        );
         return null; // 成功
       }
       return result['msg'] ?? '登录失败';
@@ -119,6 +125,10 @@ class AppAuthService {
           result['token'],
           result['user'] ?? {},
         );
+        await bind.mainSetLocalOption(
+          key: _tokenVersionKey,
+          value: String(result['token_version'] ?? ''),
+        );
         return null;
       }
       return result['msg'] ?? '登录失败';
@@ -150,8 +160,11 @@ class AppAuthService {
 
   Future<bool> _verifyToken(String token) async {
     try {
+      final tokenVersion =
+          await bind.mainGetLocalOption(key: _tokenVersionKey);
       final result = await _post('/api/user/token/verify', {
         'token': token,
+        'token_version': tokenVersion,
       });
       if (result['code'] == 200) return true;
       if (result['code'] == 401) return false;

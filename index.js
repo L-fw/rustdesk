@@ -44,6 +44,7 @@ function decryptPassword(encrypted) {
   }
 }
 const SESSION_TOKEN = 'rustdesk-admin-session-' + Date.now();
+const TOKEN_VERSION_MAX = 1000000;
 const DATA_FILE = path.join(__dirname, 'devices.json');
 const VERSION_FILE = path.join(__dirname, 'version.json');
 const USERS_FILE = path.join(__dirname, 'users.json');
@@ -320,6 +321,7 @@ app.post('/api/user/register', (req, res) => {
     activation_code_hash: codeHash,
     activated: true,
     created_at: new Date().toISOString(),
+    token_version: 1,
   };
   saveUsers(users);
 
@@ -369,6 +371,10 @@ app.post('/api/user/login', (req, res) => {
   }
 
   const token = generateUserToken();
+  if (!user.token_version || !Number.isFinite(user.token_version)) {
+    user.token_version = 1;
+  }
+  user.token_version = user.token_version >= TOKEN_VERSION_MAX ? 1 : user.token_version + 1;
   // 存储 token 到用户信息
   user.token = token;
   user.last_login = new Date().toISOString();
@@ -384,6 +390,7 @@ app.post('/api/user/login', (req, res) => {
   res.json({
     code: 200,
     token,
+    token_version: user.token_version,
     user: { username: user.username, phone: user.phone },
   });
 });
@@ -451,6 +458,10 @@ app.post('/api/user/sms/login', (req, res) => {
   }
 
   const token = generateUserToken();
+  if (!user.token_version || !Number.isFinite(user.token_version)) {
+    user.token_version = 1;
+  }
+  user.token_version = user.token_version >= TOKEN_VERSION_MAX ? 1 : user.token_version + 1;
   user.token = token;
   user.last_login = new Date().toISOString();
   saveUsers(users);
@@ -465,6 +476,7 @@ app.post('/api/user/sms/login', (req, res) => {
   res.json({
     code: 200,
     token,
+    token_version: user.token_version,
     user: { username: user.username, phone: user.phone },
   });
 });
@@ -479,7 +491,21 @@ app.post('/api/user/token/verify', (req, res) => {
   if (!user) {
     return res.status(401).json({ code: 401, msg: '登录已失效' });
   }
-  res.json({ code: 200, user: { username: user.username, phone: user.phone } });
+  const clientVersion = parseInt(req.body?.token_version ?? 0, 10);
+  let serverVersion = Number.isFinite(user.token_version) ? user.token_version : 1;
+  if (serverVersion > TOKEN_VERSION_MAX) {
+    serverVersion = 1;
+    user.token_version = 1;
+    saveUsers(users);
+  }
+  if (clientVersion !== serverVersion) {
+    return res.status(401).json({ code: 401, msg: '登录已失效' });
+  }
+  res.json({
+    code: 200,
+    token_version: serverVersion,
+    user: { username: user.username, phone: user.phone },
+  });
 });
 
 // ───────────────────────────────────────────────────────
@@ -531,6 +557,10 @@ app.post('/api/user/password/reset', (req, res) => {
   user.password_hash =
       crypto.createHash('sha256').update(newPassword).digest('hex');
   user.token = '';
+  if (!user.token_version || !Number.isFinite(user.token_version)) {
+    user.token_version = 1;
+  }
+  user.token_version = user.token_version >= TOKEN_VERSION_MAX ? 1 : user.token_version + 1;
   user.password_updated_at = new Date().toISOString();
   saveUsers(users);
 
@@ -737,6 +767,10 @@ app.post('/admin/users/reset-password', authMiddleware, (req, res) => {
 
   user.password_hash = crypto.createHash('sha256').update(newPassword).digest('hex');
   user.token = '';
+  if (!user.token_version || !Number.isFinite(user.token_version)) {
+    user.token_version = 1;
+  }
+  user.token_version = user.token_version >= TOKEN_VERSION_MAX ? 1 : user.token_version + 1;
   user.password_updated_at = new Date().toISOString();
   saveUsers(users);
   res.json({ code: 200, msg: '密码已重置', data: { password: newPassword } });
