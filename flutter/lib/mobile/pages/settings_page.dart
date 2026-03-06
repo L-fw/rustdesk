@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_hbb/common/app_auth_service.dart';
 import 'package:flutter_hbb/common/widgets/setting_widgets.dart';
 import 'package:flutter_hbb/desktop/pages/desktop_setting_page.dart';
 import 'package:get/get.dart';
@@ -18,6 +19,7 @@ import '../../consts.dart';
 import '../../models/model.dart';
 import '../../models/platform_model.dart';
 import '../widgets/dialog.dart';
+import 'app_login_page.dart';
 import 'home_page.dart';
 import 'scan_page.dart';
 import 'privacy_policy_page.dart';
@@ -102,6 +104,7 @@ class _SettingsState extends State<SettingsPage> with WidgetsBindingObserver {
   var _isUsingPublicServer = false;
   var _allowAskForNoteAtEndOfConnection = false;
   var _preventSleepWhileConnected = true;
+  var _appLoggedIn = false;
 
   _SettingsState() {
     _enableAbr = option2bool(
@@ -152,6 +155,7 @@ class _SettingsState extends State<SettingsPage> with WidgetsBindingObserver {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    _refreshAppLoginStatus();
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       var update = false;
@@ -238,6 +242,7 @@ class _SettingsState extends State<SettingsPage> with WidgetsBindingObserver {
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
+      _refreshAppLoginStatus();
       () async {
         final ibs = await checkAndUpdateIgnoreBatteryStatus();
         final sob = await checkAndUpdateStartOnBoot();
@@ -682,6 +687,16 @@ class _SettingsState extends State<SettingsPage> with WidgetsBindingObserver {
     final settings = SettingsList(
       sections: [
         customClientSection,
+        if (_appLoggedIn)
+          SettingsSection(title: const Text('账号'), tiles: [
+            SettingsTile(
+              title: const Text('退出登录'),
+              leading: const Icon(Icons.logout),
+              onPressed: (context) {
+                _confirmLogout();
+              },
+            ),
+          ]),
         // 隐藏账户登录入口
         // if (!bind.isDisableAccount())
         //   SettingsSection(
@@ -982,6 +997,49 @@ class _SettingsState extends State<SettingsPage> with WidgetsBindingObserver {
       ],
     );
     return settings;
+  }
+
+  Future<void> _refreshAppLoginStatus() async {
+    final loggedIn = await AppAuthService().isLoggedIn();
+    if (!mounted) return;
+    if (_appLoggedIn != loggedIn) {
+      setState(() => _appLoggedIn = loggedIn);
+    }
+    if (!loggedIn) {
+      _redirectToLogin();
+    }
+  }
+
+  Future<void> _confirmLogout() async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('退出登录'),
+        content: const Text('确认退出当前账号？'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('取消'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('确定'),
+          ),
+        ],
+      ),
+    );
+    if (ok != true) return;
+    await AppAuthService().logout();
+    if (!mounted) return;
+    _redirectToLogin();
+  }
+
+  void _redirectToLogin() {
+    if (!mounted) return;
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(builder: (_) => const AppLoginPage()),
+      (route) => false,
+    );
   }
 
   Future<bool> canStartOnBoot() async {

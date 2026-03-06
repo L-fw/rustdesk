@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_hbb/common/app_auth_service.dart';
 import 'package:flutter_hbb/mobile/pages/server_page.dart';
 import 'package:flutter_hbb/mobile/pages/settings_page.dart';
 import 'package:flutter_hbb/web/settings_page.dart';
@@ -7,6 +8,7 @@ import '../../common.dart';
 import '../../common/widgets/chat_page.dart';
 import '../../models/platform_model.dart';
 import '../../models/state_model.dart';
+import 'app_login_page.dart';
 import 'connection_page.dart';
 
 abstract class PageShape extends Widget {
@@ -24,7 +26,7 @@ class HomePage extends StatefulWidget {
   HomePageState createState() => HomePageState();
 }
 
-class HomePageState extends State<HomePage> {
+class HomePageState extends State<HomePage> with WidgetsBindingObserver {
   var _selectedIndex = 0;
   int get selectedIndex => _selectedIndex;
   final List<PageShape> _pages = [];
@@ -39,7 +41,9 @@ class HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     initPages();
+    _checkLoginStatus();
     // Listen for device banned status
     ever(stateGlobal.deviceBanned, (banned) {
       if (banned) {
@@ -54,6 +58,19 @@ class HomePageState extends State<HomePage> {
         _dismissRemoteDisabledDialog();
       }
     });
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _checkLoginStatus();
+    }
   }
 
   void _showBannedDialog() {
@@ -117,6 +134,19 @@ class HomePageState extends State<HomePage> {
       _pages.add(ServerPage());
     }
     _pages.add(SettingsPage());
+  }
+
+  Future<void> _checkLoginStatus() async {
+    final ok = await AppAuthService().isLoggedIn();
+    if (!ok && mounted) {
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (_) => const AppLoginPage()),
+        (route) => false,
+      );
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('登录已失效，请重新登录')),
+      );
+    }
   }
 
   @override

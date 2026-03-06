@@ -1,5 +1,5 @@
 // ═══════════════════════════════════════════════════════
-// RustDesk 设备管理后台 + 版本检查 API
+// Gamwing 设备管理后台 + 版本检查 API
 // 端口：3000
 // ═══════════════════════════════════════════════════════
 
@@ -469,6 +469,19 @@ app.post('/api/user/sms/login', (req, res) => {
   });
 });
 
+app.post('/api/user/token/verify', (req, res) => {
+  const { token } = req.body || {};
+  if (!token) {
+    return res.status(400).json({ code: 400, msg: '缺少 token' });
+  }
+  const users = loadUsers();
+  const user = Object.values(users).find(u => u.token === token);
+  if (!user) {
+    return res.status(401).json({ code: 401, msg: '登录已失效' });
+  }
+  res.json({ code: 200, user: { username: user.username, phone: user.phone } });
+});
+
 // ───────────────────────────────────────────────────────
 // 忘记密码：手机号+验证码重置密码
 // POST /api/user/password/reset
@@ -699,6 +712,36 @@ app.delete('/admin/devices/:id', authMiddleware, (req, res) => {
   res.json({ code: 200, msg: '已删除' });
 });
 
+app.post('/admin/users/reset-password', authMiddleware, (req, res) => {
+  const { username, phone, password, random } = req.body || {};
+  if (!username && !phone) {
+    return res.status(400).json({ code: 400, msg: '缺少用户名或手机号' });
+  }
+  let newPassword = String(password || '');
+  if (random) {
+    newPassword = crypto.randomBytes(6).toString('hex');
+  }
+  if (!newPassword) {
+    return res.status(400).json({ code: 400, msg: '缺少新密码' });
+  }
+  if (newPassword.length < 6) {
+    return res.status(400).json({ code: 400, msg: '密码长度不能少于6位' });
+  }
+  const users = loadUsers();
+  let user = null;
+  if (username && users[username]) user = users[username];
+  if (!user && phone) {
+    user = Object.values(users).find(u => u.phone === phone) || null;
+  }
+  if (!user) return res.status(404).json({ code: 404, msg: '用户不存在' });
+
+  user.password_hash = crypto.createHash('sha256').update(newPassword).digest('hex');
+  user.token = '';
+  user.password_updated_at = new Date().toISOString();
+  saveUsers(users);
+  res.json({ code: 200, msg: '密码已重置', data: { password: newPassword } });
+});
+
 // ───────────────────────────────────────────────────────
 // 版本管理 API（管理后台调用）
 // ───────────────────────────────────────────────────────
@@ -757,6 +800,24 @@ app.get('/admin/version/files', authMiddleware, (req, res) => {
       .sort((a, b) => new Date(b.modified) - new Date(a.modified));
     res.json({ code: 200, data: files });
   } catch { res.json({ code: 200, data: [] }); }
+});
+
+app.delete('/admin/version/files/:filename', authMiddleware, (req, res) => {
+  const raw = String(req.params.filename || '');
+  const filename = path.basename(raw);
+  if (!filename || filename !== raw || !filename.toLowerCase().endsWith('.apk')) {
+    return res.status(400).json({ code: 400, msg: '文件名不合法' });
+  }
+  const filePath = path.join(APK_DIR, filename);
+  if (!fs.existsSync(filePath)) {
+    return res.status(404).json({ code: 404, msg: '文件不存在' });
+  }
+  try {
+    fs.unlinkSync(filePath);
+    res.json({ code: 200, msg: '已删除' });
+  } catch (e) {
+    res.status(500).json({ code: 500, msg: e.message || '删除失败' });
+  }
 });
 
 app.get('/admin/activation-codes', authMiddleware, (req, res) => {

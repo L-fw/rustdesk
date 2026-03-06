@@ -16,7 +16,12 @@ class AppAuthService {
   /// 检查是否已登录
   Future<bool> isLoggedIn() async {
     final token = await bind.mainGetLocalOption(key: _tokenKey);
-    return token.isNotEmpty;
+    if (token.isEmpty) return false;
+    final ok = await _verifyToken(token);
+    if (!ok) {
+      await logout();
+    }
+    return ok;
   }
 
   /// 获取已保存的 token
@@ -134,11 +139,25 @@ class AppAuthService {
         'new_password': newPassword,
       });
       if (result['code'] == 200) {
+        await logout();
         return null;
       }
       return result['msg'] ?? '重置失败';
     } catch (e) {
       return '网络错误: $e';
+    }
+  }
+
+  Future<bool> _verifyToken(String token) async {
+    try {
+      final result = await _post('/api/user/token/verify', {
+        'token': token,
+      });
+      if (result['code'] == 200) return true;
+      if (result['code'] == 401) return false;
+      return true;
+    } catch (_) {
+      return true;
     }
   }
 

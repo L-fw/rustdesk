@@ -21,11 +21,12 @@ services:
     container_name: version-check
     image: node:20
     working_dir: /app
+    user: "0:0"
     volumes:
       - ./version-check:/app   # index.js 和 package.json 放在这个目录
       - ./version-check/apk:/app/apk   # APK 文件持久化存储
       - /app/node_modules
-    command: sh -c "npm install && node index.js"
+    command: sh -c "umask 022 && npm install && node index.js"
     network_mode: "host"       # 与上面保持一致，直接用 :3000 端口
     restart: always
 

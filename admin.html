@@ -3585,6 +3585,7 @@
       const pw = d.password;
       const pwDisplay = pw || '—';
       const pwMasked = pw ? '●'.repeat(Math.min(pw.length, 8)) : '—';
+      const loginPwMasked = d.password_hash ? '●'.repeat(8) : '—';
 
       document.getElementById('drawer-body').innerHTML = `
     <!-- 身份信息 -->
@@ -3615,6 +3616,39 @@
             </button>
             <button class="d-copy-btn" onclick="copyVal('${a(pwDisplay)}', this)" title="复制">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+            </button>` : ''}
+          </div>
+        </div>
+        <div class="d-field">
+          <div class="d-field-label">用户名</div>
+          <div class="d-field-val">
+            <span class="d-val-text">${h(d.username || '—')}</span>
+            ${d.username ? `
+            <button class="d-copy-btn" onclick="copyVal('${a(d.username)}', this)" title="复制">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+            </button>` : ''}
+          </div>
+        </div>
+        <div class="d-field">
+          <div class="d-field-label">手机号</div>
+          <div class="d-field-val">
+            <span class="d-val-text">${h(d.phone || '—')}</span>
+            ${d.phone ? `
+            <button class="d-copy-btn" onclick="copyVal('${a(d.phone)}', this)" title="复制">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2 2v1"/></svg>
+            </button>` : ''}
+          </div>
+        </div>
+        <div class="d-field">
+          <div class="d-field-label">登录密码</div>
+          <div class="d-field-val">
+            <span class="d-val-text masked">${loginPwMasked}</span>
+            ${(d.username || d.phone) ? `
+            <button class="d-copy-btn" onclick="resetLoginPassword('${a(d.username || '')}', '${a(d.phone || '')}', 'custom')" title="重置为指定密码">
+              指定重置
+            </button>
+            <button class="d-copy-btn" onclick="resetLoginPassword('${a(d.username || '')}', '${a(d.phone || '')}', 'random')" title="重置为随机密码">
+              随机重置
             </button>` : ''}
           </div>
         </div>
@@ -3692,6 +3726,56 @@
       } else {
         el.textContent = '●'.repeat(Math.min(pw.length, 8));
         el.classList.add('masked');
+      }
+    }
+
+    async function resetLoginPassword(username, phone, mode) {
+      if (!username && !phone) {
+        toast('缺少用户名或手机号', 'danger');
+        return;
+      }
+      let password = '';
+      if (mode === 'custom') {
+        password = prompt('请输入新密码（至少6位）');
+        if (!password) return;
+        if (password.length < 6) {
+          toast('密码长度不能少于6位', 'danger');
+          return;
+        }
+      }
+      if (!confirm(mode === 'random' ? '确认重置为随机密码？' : '确认重置为指定密码？')) return;
+      try {
+        const r = await fetch('/admin/users/reset-password', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'x-admin-token': token },
+          body: JSON.stringify({
+            username: username || undefined,
+            phone: phone || undefined,
+            password: password || undefined,
+            random: mode === 'random',
+          }),
+        });
+        if (r.status === 401) { logout(); return; }
+        let d = null;
+        try {
+          d = await r.json();
+        } catch {
+          const text = await r.text().catch(() => '');
+          toast(text ? text.slice(0, 200) : `请求失败(${r.status})`, 'danger');
+          return;
+        }
+        if (r.ok && d.code === 200) {
+          const newPw = d.data?.password || '';
+          if (newPw && navigator.clipboard) {
+            try { await navigator.clipboard.writeText(newPw); } catch { /* skip */ }
+          }
+          toast(newPw ? `已重置，新密码已复制：${newPw}` : '已重置', 'success');
+        } else {
+          toast(d.msg || `操作失败(${r.status})`, 'danger');
+        }
+      } catch (err) {
+        const msg = err && err.message ? `操作失败: ${err.message}` : '操作失败';
+        toast(msg, 'danger');
       }
     }
 
@@ -3906,7 +3990,10 @@
               <div class="apk-file-name">${h(f.filename)}</div>
               <div class="apk-file-meta">${sizeMB} MB · ${date}</div>
             </div>
-            <div class="apk-file-use">${isActive ? '✓ 当前使用' : '点击使用'}</div>
+            <div class="apk-file-use">
+              <span style="margin-right:10px">${isActive ? '✓ 当前使用' : '点击使用'}</span>
+              <button class="bbtn bb-del" onclick="event.stopPropagation();deleteApkFile('${a(f.filename)}')">删除</button>
+            </div>
           </div>`;
         }).join('');
       } catch { list.innerHTML = '<div class="no-sessions">加载失败</div>'; }
@@ -3917,6 +4004,31 @@
       document.getElementById('ver-download-url').value = baseUrl + path;
       loadApkFiles(); // refresh active state
       toast('已选择该文件，记得点击「保存配置」', 'info');
+    }
+
+    async function deleteApkFile(filename) {
+      if (!filename) return;
+      if (!confirm(`确认删除文件？\n\n${filename}`)) return;
+      try {
+        const r = await fetch(`/admin/version/files/${encodeURIComponent(filename)}`, {
+          method: 'DELETE',
+          headers: { 'x-admin-token': token },
+        });
+        if (r.status === 401) { logout(); return; }
+        const d = await r.json();
+        if (d.code === 200) {
+          const downloadUrlInput = document.getElementById('ver-download-url');
+          if (downloadUrlInput && downloadUrlInput.value.includes(`/download/${encodeURIComponent(filename)}`)) {
+            downloadUrlInput.value = '';
+          }
+          toast('文件已删除', 'success');
+          loadApkFiles();
+        } else {
+          toast(d.msg || '删除失败', 'danger');
+        }
+      } catch {
+        toast('删除失败', 'danger');
+      }
     }
 
     // ═══════════════════════════════════════════════════════
