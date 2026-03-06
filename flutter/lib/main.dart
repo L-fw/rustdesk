@@ -189,7 +189,7 @@ void runMobileApp() async {
   await Future.wait([gFFI.abModel.loadCache(), gFFI.groupModel.loadCache()]);
   gFFI.userModel.refreshCurrentUser();
   // 检查用户登录状态
-  _isAppLoggedIn = await AppAuthService().isLoggedIn();
+  _isAppLoggedIn = kAppModeShareOnly || await AppAuthService().isLoggedIn();
   runApp(App());
   await initUniLinks();
 }
@@ -514,7 +514,7 @@ class _AppState extends State<App> with WidgetsBindingObserver {
               ? const DesktopTabPage()
               : isWeb
                   ? WebHomePage()
-                  : _isAppLoggedIn
+                  : kAppModeShareOnly || _isAppLoggedIn
                       ? HomePage()
                       : const AppLoginPage(),
           localizationsDelegates: const [

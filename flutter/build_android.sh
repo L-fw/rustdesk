@@ -4,6 +4,10 @@ MODE=${MODE:=release}
 $ANDROID_NDK_HOME/toolchains/aarch64-linux-android-4.9/prebuilt/linux-x86_64/bin/aarch64-linux-android-strip android/app/src/main/jniLibs/arm64-v8a/*
 flutter build apk --target-platform android-arm64,android-arm --${MODE} --obfuscate --split-debug-info ./split-debug-info
 flutter build apk --split-per-abi --target-platform android-arm64,android-arm --${MODE} --obfuscate --split-debug-info ./split-debug-info
+flutter build apk --target-platform android-arm64,android-arm --${MODE} --obfuscate --split-debug-info ./split-debug-info --dart-define=APP_MODE=share_only
+cp build/app/outputs/flutter-apk/app-${MODE}.apk build/app/outputs/flutter-apk/app-${MODE}-share-only.apk
+flutter build apk --split-per-abi --target-platform android-arm64,android-arm --${MODE} --obfuscate --split-debug-info ./split-debug-info --dart-define=APP_MODE=share_only
+for f in build/app/outputs/flutter-apk/app-*-${MODE}.apk; do cp "$f" "${f/-${MODE}.apk/-${MODE}-share-only.apk}"; done
 flutter build appbundle --target-platform  android-arm64,android-arm --${MODE} --obfuscate --split-debug-info ./split-debug-info
 
 # build in linux

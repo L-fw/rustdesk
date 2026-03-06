@@ -7,6 +7,7 @@ import 'package:flutter_hbb/web/settings_page.dart';
 import 'package:get/get.dart';
 import '../../common.dart';
 import '../../common/widgets/chat_page.dart';
+import '../../consts.dart';
 import '../../models/platform_model.dart';
 import '../../models/state_model.dart';
 import 'app_login_page.dart';
@@ -55,7 +56,9 @@ class HomePageState extends State<HomePage> with WidgetsBindingObserver {
     // Listen for remote disabled status (WebSocket push)
     ever(stateGlobal.remoteDisabled, (disabled) {
       if (disabled) {
-        _showRemoteDisabledDialog();
+        if (stateGlobal.isInMainPage) {
+          _showRemoteDisabledDialog();
+        }
       } else {
         _dismissRemoteDisabledDialog();
       }
@@ -92,7 +95,7 @@ class HomePageState extends State<HomePage> with WidgetsBindingObserver {
   }
 
   void _showRemoteDisabledDialog() {
-    if (!mounted) return;
+    if (!mounted || !stateGlobal.isInMainPage) return;
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -127,7 +130,7 @@ class HomePageState extends State<HomePage> with WidgetsBindingObserver {
 
   void initPages() {
     _pages.clear();
-    if (!bind.isIncomingOnly()) {
+    if (!kAppModeShareOnly && !bind.isIncomingOnly()) {
       _pages.add(ConnectionPage(
         appBarActions: [],
       ));
@@ -139,6 +142,7 @@ class HomePageState extends State<HomePage> with WidgetsBindingObserver {
   }
 
   Future<void> _checkLoginStatus() async {
+    if (kAppModeShareOnly) return;
     final ok = await AppAuthService().isLoggedIn();
     if (!ok && mounted) {
       await _showLoginExpiredDialog();

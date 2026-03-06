@@ -77,6 +77,8 @@ class _RemotePageState extends State<RemotePage> with WidgetsBindingObserver {
   final FocusNode _mobileFocusNode = FocusNode();
   final FocusNode _physicalFocusNode = FocusNode();
   var _showEdit = false; // use soft keyboard
+  Worker? _remoteDisabledWorker;
+  var _remoteDisabledDialogShowing = false;
 
   InputModel get inputModel => gFFI.inputModel;
   SessionID get sessionId => gFFI.sessionId;
@@ -123,6 +125,11 @@ class _RemotePageState extends State<RemotePage> with WidgetsBindingObserver {
       _disableAndroidSoftKeyboard(
           isKeyboardVisible: keyboardVisibilityController.isVisible);
     });
+    _remoteDisabledWorker = ever(stateGlobal.remoteDisabled, (disabled) {
+      if (disabled) {
+        _showRemoteDisabledDialog();
+      }
+    });
     WidgetsBinding.instance.addObserver(this);
   }
 
@@ -147,6 +154,7 @@ class _RemotePageState extends State<RemotePage> with WidgetsBindingObserver {
         overlays: SystemUiOverlay.values);
     WakelockManager.disable(_uniqueKey);
     await keyboardSubscription.cancel();
+    _remoteDisabledWorker?.dispose();
     removeSharedStates(widget.id);
     // `on_voice_call_closed` should be called when the connection is ended.
     // The inner logic of `on_voice_call_closed` will check if the voice call is active.
@@ -235,6 +243,42 @@ class _RemotePageState extends State<RemotePage> with WidgetsBindingObserver {
     }
     // update for Scaffold
     setState(() {});
+  }
+
+  Future<void> _showRemoteDisabledDialog() async {
+    if (!mounted || _remoteDisabledDialogShowing) return;
+    _remoteDisabledDialogShowing = true;
+    await showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => WillPopScope(
+        onWillPop: () async => false,
+        child: AlertDialog(
+          title: Row(children: [
+            const Icon(Icons.block, color: Colors.redAccent, size: 28),
+            const SizedBox(width: 10),
+            const Text('远程功能已禁用'),
+          ]),
+          content: Obx(() => Text(
+                stateGlobal.remoteDisabledMessage.value.isNotEmpty
+                    ? stateGlobal.remoteDisabledMessage.value
+                    : '远程功能已被管理员禁用，远程连接已断开。\n请退出当前远程会话。',
+              )),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                closeConnection();
+              },
+              child: const Text('退出远程'),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (mounted) {
+      _remoteDisabledDialogShowing = false;
+    }
   }
 
   void _handleIOSSoftKeyboardInput(String newValue) {
