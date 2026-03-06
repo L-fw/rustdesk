@@ -10,6 +10,7 @@ const multer = require('multer');
 const http = require('http');
 const { WebSocketServer, WebSocket } = require('ws');
 const crypto = require('crypto');
+const { initSQLiteDatabase } = require('./sqlite_db');
 const app = express();
 app.use(express.json());
 
@@ -46,7 +47,8 @@ const SESSION_TOKEN = 'rustdesk-admin-session-' + Date.now();
 const DATA_FILE = path.join(__dirname, 'devices.json');
 const VERSION_FILE = path.join(__dirname, 'version.json');
 const USERS_FILE = path.join(__dirname, 'users.json');
-const ACTIVATION_CODES_FILE = path.join(__dirname, 'activation_codes.json');
+const ACTIVATION_CODES_FILE = path.join(path.dirname(DATA_FILE), 'activation_codes.json');
+const LEGACY_ACTIVATION_CODES_FILE = path.join(__dirname, 'version-check', 'activation_codes.json');
 const APK_DIR = path.join(__dirname, 'apk');
 
 // 心跳超时：超过此时间没有心跳视为会话已断开（毫秒）
@@ -54,6 +56,7 @@ const SESSION_TIMEOUT_MS = 90 * 1000; // 90秒
 
 // 确保 APK 目录存在
 if (!fs.existsSync(APK_DIR)) fs.mkdirSync(APK_DIR, { recursive: true });
+initSQLiteDatabase(__dirname);
 
 // ───────────────────────────────────────────────────────
 // 版本配置管理（持久化到 version.json）
@@ -759,13 +762,21 @@ app.get('/admin/version/files', authMiddleware, (req, res) => {
 app.get('/admin/activation-codes', authMiddleware, (req, res) => {
   const nowMs = Date.now();
   const codes = loadActivationCodes();
+  let mutated = false;
+  for (const [hash, e] of Object.entries(codes)) {
+    if (e && e.revoked) {
+      delete codes[hash];
+      mutated = true;
+    }
+  }
+  if (mutated) saveActivationCodes(codes);
   const list = Object.entries(codes).map(([hash, e]) => {
     const maxUses = Number.isFinite(e.maxUses) ? e.maxUses : 1;
     const usedCount = Number.isFinite(e.usedCount) ? e.usedCount : 0;
     const expiresMs = e.expiresAt ? Date.parse(e.expiresAt) : NaN;
     const expired = !Number.isNaN(expiresMs) && nowMs > expiresMs;
     const usedUp = usedCount >= maxUses;
-    const status = e.revoked ? 'revoked' : expired ? 'expired' : usedUp ? 'used_up' : 'active';
+    const status = expired ? 'expired' : usedUp ? 'used_up' : 'active';
     return {
       hash,
       createdAt: e.createdAt || null,
@@ -775,7 +786,7 @@ app.get('/admin/activation-codes', authMiddleware, (req, res) => {
       status,
       note: e.note || '',
       lastUsedAt: e.lastUsedAt || null,
-      revokedAt: e.revokedAt || null,
+      revokedAt: null,
     };
   }).sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
   res.json({ code: 200, data: list });
@@ -837,11 +848,9 @@ app.post('/admin/activation-codes/revoke', authMiddleware, (req, res) => {
   const codes = loadActivationCodes();
   const entry = codes[hash];
   if (!entry) return res.status(404).json({ code: 404, msg: '激活码不存在' });
-  entry.revoked = true;
-  entry.revokedAt = new Date().toISOString();
-  codes[hash] = entry;
+  delete codes[hash];
   saveActivationCodes(codes);
-  res.json({ code: 200, msg: '已禁用' });
+  res.json({ code: 200, msg: '已删除' });
 });
 
 app.get('/health', (_req, res) => res.json({ status: 'ok', time: new Date().toISOString() }));
