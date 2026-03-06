@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_hbb/common/app_auth_service.dart';
 import 'package:flutter_hbb/common/widgets/setting_widgets.dart';
 import 'package:flutter_hbb/desktop/pages/desktop_setting_page.dart';
@@ -105,6 +106,7 @@ class _SettingsState extends State<SettingsPage> with WidgetsBindingObserver {
   var _allowAskForNoteAtEndOfConnection = false;
   var _preventSleepWhileConnected = true;
   var _appLoggedIn = false;
+  var _loginStatusDialogShowing = false;
 
   _SettingsState() {
     _enableAbr = option2bool(
@@ -1006,7 +1008,7 @@ class _SettingsState extends State<SettingsPage> with WidgetsBindingObserver {
       setState(() => _appLoggedIn = loggedIn);
     }
     if (!loggedIn) {
-      _redirectToLogin();
+      await _showLoginExpiredDialog();
     }
   }
 
@@ -1040,6 +1042,41 @@ class _SettingsState extends State<SettingsPage> with WidgetsBindingObserver {
       MaterialPageRoute(builder: (_) => const AppLoginPage()),
       (route) => false,
     );
+  }
+
+  Future<void> _showLoginExpiredDialog() async {
+    if (!mounted || _loginStatusDialogShowing) return;
+    _loginStatusDialogShowing = true;
+    await showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => WillPopScope(
+        onWillPop: () async => false,
+        child: AlertDialog(
+          title: const Text('账号异常'),
+          content: const Text('账号已在其他设备登录'),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                SystemNavigator.pop();
+              },
+              child: const Text('直接退出'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                _redirectToLogin();
+              },
+              child: const Text('重新登录'),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (mounted) {
+      _loginStatusDialogShowing = false;
+    }
   }
 
   Future<bool> canStartOnBoot() async {

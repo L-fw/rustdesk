@@ -386,8 +386,8 @@ class _AppRegisterPageState extends State<AppRegisterPage> {
           borderSide: BorderSide(color: MyTheme.accent, width: 1.5),
         ),
         contentPadding:
-            const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        isDense: true,
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        isDense: false,
       ),
     );
   }

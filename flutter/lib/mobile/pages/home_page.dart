@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_hbb/common/app_auth_service.dart';
 import 'package:flutter_hbb/mobile/pages/server_page.dart';
 import 'package:flutter_hbb/mobile/pages/settings_page.dart';
@@ -31,6 +32,7 @@ class HomePageState extends State<HomePage> with WidgetsBindingObserver {
   int get selectedIndex => _selectedIndex;
   final List<PageShape> _pages = [];
   bool get isChatPageCurrentTab => false;
+  var _loginStatusDialogShowing = false;
 
   void refreshPages() {
     setState(() {
@@ -139,13 +141,45 @@ class HomePageState extends State<HomePage> with WidgetsBindingObserver {
   Future<void> _checkLoginStatus() async {
     final ok = await AppAuthService().isLoggedIn();
     if (!ok && mounted) {
-      Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(builder: (_) => const AppLoginPage()),
-        (route) => false,
-      );
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('登录已失效，请重新登录')),
-      );
+      await _showLoginExpiredDialog();
+    }
+  }
+
+  Future<void> _showLoginExpiredDialog() async {
+    if (!mounted || _loginStatusDialogShowing) return;
+    _loginStatusDialogShowing = true;
+    await showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => WillPopScope(
+        onWillPop: () async => false,
+        child: AlertDialog(
+          title: const Text('账号异常'),
+          content: const Text('账号已在其他设备登录'),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                SystemNavigator.pop();
+              },
+              child: const Text('直接退出'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                Navigator.of(context).pushAndRemoveUntil(
+                  MaterialPageRoute(builder: (_) => const AppLoginPage()),
+                  (route) => false,
+                );
+              },
+              child: const Text('重新登录'),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (mounted) {
+      _loginStatusDialogShowing = false;
     }
   }
 
