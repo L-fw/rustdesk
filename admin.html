@@ -3507,6 +3507,7 @@
 
     // ── 设备详情抽屉 ──
     let drawerDeviceId = null;
+    const tempLoginPwByDeviceId = {};
 
     function openDrawer(id) {
       const device = devices.find(d => d.id === id);
@@ -3522,6 +3523,9 @@
       document.getElementById('device-drawer').classList.remove('open');
       document.getElementById('drawer-backdrop').classList.remove('open');
       document.body.style.overflow = '';
+      if (drawerDeviceId) {
+        delete tempLoginPwByDeviceId[drawerDeviceId];
+      }
       drawerDeviceId = null;
     }
 
@@ -3585,7 +3589,8 @@
       const pw = d.password;
       const pwDisplay = pw || '—';
       const pwMasked = pw ? '●'.repeat(Math.min(pw.length, 8)) : '—';
-      const loginPwMasked = d.password_hash ? '●'.repeat(8) : '—';
+      const tempLoginPw = tempLoginPwByDeviceId[d.id] || '';
+      const loginPwMasked = tempLoginPw ? tempLoginPw : (d.password_hash ? '●'.repeat(8) : '—');
 
       document.getElementById('drawer-body').innerHTML = `
     <!-- 身份信息 -->
@@ -3635,20 +3640,24 @@
             <span class="d-val-text">${h(d.phone || '—')}</span>
             ${d.phone ? `
             <button class="d-copy-btn" onclick="copyVal('${a(d.phone)}', this)" title="复制">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2 2v1"/></svg>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
             </button>` : ''}
           </div>
         </div>
         <div class="d-field">
           <div class="d-field-label">登录密码</div>
           <div class="d-field-val">
-            <span class="d-val-text masked">${loginPwMasked}</span>
+            <span class="d-val-text ${tempLoginPw ? '' : 'masked'}">${loginPwMasked}</span>
             ${(d.username || d.phone) ? `
-            <button class="d-copy-btn" onclick="resetLoginPassword('${a(d.username || '')}', '${a(d.phone || '')}', 'custom')" title="重置为指定密码">
+            <button class="d-copy-btn" onclick="resetLoginPassword('${a(d.username || '')}', '${a(d.phone || '')}', 'custom', '${a(d.id)}')" title="重置为指定密码">
               指定重置
             </button>
-            <button class="d-copy-btn" onclick="resetLoginPassword('${a(d.username || '')}', '${a(d.phone || '')}', 'random')" title="重置为随机密码">
+            <button class="d-copy-btn" onclick="resetLoginPassword('${a(d.username || '')}', '${a(d.phone || '')}', 'random', '${a(d.id)}')" title="重置为随机密码">
               随机重置
+            </button>` : ''}
+            ${tempLoginPw ? `
+            <button class="d-copy-btn" onclick="copyVal('${a(tempLoginPw)}', this)" title="复制">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
             </button>` : ''}
           </div>
         </div>
@@ -3729,7 +3738,7 @@
       }
     }
 
-    async function resetLoginPassword(username, phone, mode) {
+    async function resetLoginPassword(username, phone, mode, deviceId) {
       if (!username && !phone) {
         toast('缺少用户名或手机号', 'danger');
         return;
@@ -3765,11 +3774,12 @@
           return;
         }
         if (r.ok && d.code === 200) {
-          const newPw = d.data?.password || '';
-          if (newPw && navigator.clipboard) {
-            try { await navigator.clipboard.writeText(newPw); } catch { /* skip */ }
+          const newPw = mode === 'custom' ? password : (d.data?.password || '');
+          if (newPw && deviceId) {
+            tempLoginPwByDeviceId[deviceId] = newPw;
+            refreshDrawerIfOpen();
           }
-          toast(newPw ? `已重置，新密码已复制：${newPw}` : '已重置', 'success');
+          toast(newPw ? `已重置，新密码：${newPw}` : '已重置', 'success');
         } else {
           toast(d.msg || `操作失败(${r.status})`, 'danger');
         }

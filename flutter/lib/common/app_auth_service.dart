@@ -85,7 +85,7 @@ class AppAuthService {
         );
         await bind.mainSetLocalOption(
           key: _tokenVersionKey,
-          value: String(result['token_version'] ?? ''),
+          value: '${result['token_version'] ?? ''}',
         );
         return null; // 成功
       }
@@ -127,7 +127,7 @@ class AppAuthService {
         );
         await bind.mainSetLocalOption(
           key: _tokenVersionKey,
-          value: String(result['token_version'] ?? ''),
+          value: '${result['token_version'] ?? ''}',
         );
         return null;
       }
