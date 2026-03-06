@@ -1002,6 +1002,7 @@ class _SettingsState extends State<SettingsPage> with WidgetsBindingObserver {
   }
 
   Future<void> _refreshAppLoginStatus() async {
+    if (kAppModeShareOnly) return;
     final loggedIn = await AppAuthService().isLoggedIn();
     if (!mounted) return;
     if (_appLoggedIn != loggedIn) {
