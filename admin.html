@@ -4052,7 +4052,7 @@
 
       try {
         const xhr = new XMLHttpRequest();
-        xhr.open('POST', '/admin/version/upload');
+        xhr.open('POST', `/admin/version/upload?client_type=${encodeURIComponent(_versionClientType)}`);
         xhr.setRequestHeader('x-admin-token', token);
 
         xhr.upload.onprogress = e => {
@@ -4096,7 +4096,7 @@
     async function loadApkFiles() {
       const list = document.getElementById('apk-file-list');
       try {
-        const r = await fetch('/admin/version/files', { headers: { 'x-admin-token': token } });
+        const r = await fetch(`/admin/version/files?client_type=${encodeURIComponent(_versionClientType)}`, { headers: { 'x-admin-token': token } });
         const d = await r.json();
         if (!d.data || !d.data.length) {
           list.innerHTML = '<div class="no-sessions">暂无已上传文件</div>';
@@ -4104,7 +4104,7 @@
         }
         const currentUrl = document.getElementById('ver-download-url').value;
         list.innerHTML = d.data.map(f => {
-          const dlPath = `/download/${encodeURIComponent(f.filename)}`;
+          const dlPath = `/download/${_versionClientType}/${encodeURIComponent(f.filename)}`;
           const isActive = currentUrl.includes(dlPath);
           const sizeMB = (f.size / 1024 / 1024).toFixed(1);
           const date = f.modified ? new Date(f.modified).toLocaleDateString('zh-CN') : '—';
@@ -4134,7 +4134,7 @@
       if (!filename) return;
       if (!confirm(`确认删除文件？\n\n${filename}`)) return;
       try {
-        const r = await fetch(`/admin/version/files/${encodeURIComponent(filename)}`, {
+        const r = await fetch(`/admin/version/files/${encodeURIComponent(filename)}?client_type=${encodeURIComponent(_versionClientType)}`, {
           method: 'DELETE',
           headers: { 'x-admin-token': token },
         });
@@ -4142,7 +4142,7 @@
         const d = await r.json();
         if (d.code === 200) {
           const downloadUrlInput = document.getElementById('ver-download-url');
-          if (downloadUrlInput && downloadUrlInput.value.includes(`/download/${encodeURIComponent(filename)}`)) {
+          if (downloadUrlInput && downloadUrlInput.value.includes(`/download/${_versionClientType}/${encodeURIComponent(filename)}`)) {
             downloadUrlInput.value = '';
           }
           toast('文件已删除', 'success');

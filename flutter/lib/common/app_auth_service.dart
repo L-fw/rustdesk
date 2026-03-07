@@ -181,11 +181,13 @@ class AppAuthService {
   /// 通用 POST 请求
   Future<Map<String, dynamic>> _post(
       String path, Map<String, dynamic> body) async {
+    final serverUri = Uri.parse(_serverBaseUrl);
     final client = HttpClient();
     client.connectionTimeout = const Duration(seconds: 10);
+    client.badCertificateCallback =
+        (X509Certificate _, String host, int __) => host == serverUri.host;
     try {
-      final request =
-          await client.postUrl(Uri.parse('$_serverBaseUrl$path'));
+      final request = await client.postUrl(serverUri.resolve(path));
       request.headers.set('Content-Type', 'application/json');
       try {
         final deviceId = await bind.mainGetMyId();

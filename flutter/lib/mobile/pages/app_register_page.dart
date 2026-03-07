@@ -371,6 +371,14 @@ class _AppRegisterPageState extends State<AppRegisterPage> {
       style: const TextStyle(fontSize: 15),
       decoration: InputDecoration(
         labelText: label,
+        floatingLabelBehavior: FloatingLabelBehavior.always,
+        labelStyle: TextStyle(color: Colors.grey.shade600, fontSize: 15),
+        floatingLabelStyle: TextStyle(
+          color: MyTheme.accent,
+          fontSize: 13,
+          fontWeight: FontWeight.w500,
+          backgroundColor: Theme.of(context).cardColor,
+        ),
         prefixIcon: Icon(icon, size: 20),
         suffixIcon: suffix,
         border: OutlineInputBorder(

@@ -50,13 +50,20 @@ const VERSION_FILE = path.join(__dirname, 'version.json');
 const USERS_FILE = path.join(__dirname, 'users.json');
 const ACTIVATION_CODES_FILE = path.join(path.dirname(DATA_FILE), 'activation_codes.json');
 const LEGACY_ACTIVATION_CODES_FILE = path.join(__dirname, 'version-check', 'activation_codes.json');
-const APK_DIR = path.join(__dirname, 'apk');
+const APK_ROOT_RELATIVE_PATH = './apk';
+const APK_FULL_RELATIVE_PATH = './apk/full';
+const APK_SHARE_ONLY_RELATIVE_PATH = './apk/share_only';
+const APK_ROOT_DIR = path.join(__dirname, APK_ROOT_RELATIVE_PATH);
+const APK_DIR_FULL = path.join(__dirname, APK_FULL_RELATIVE_PATH);
+const APK_DIR_SHARE_ONLY = path.join(__dirname, APK_SHARE_ONLY_RELATIVE_PATH);
 
 // 心跳超时：超过此时间没有心跳视为会话已断开（毫秒）
 const SESSION_TIMEOUT_MS = 90 * 1000; // 90秒
 
 // 确保 APK 目录存在
-if (!fs.existsSync(APK_DIR)) fs.mkdirSync(APK_DIR, { recursive: true });
+[APK_ROOT_DIR, APK_DIR_FULL, APK_DIR_SHARE_ONLY].forEach(dir => {
+  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+});
 initSQLiteDatabase(__dirname);
 
 // ───────────────────────────────────────────────────────
@@ -68,7 +75,7 @@ const DEFAULT_VERSION_CONFIG = {
       latestVersion: '1.8.0',
       minRequired: '1.4.5',
       forceUpdate: false,
-      downloadUrl: 'http://112.74.59.152/download/rustdesk-latest.apk',
+      downloadUrl: '/download/full/rustdesk-latest.apk',
       updateLog: '1. 修复连接稳定性问题\n2. 优化画面传输质量',
       releaseUrl: 'http://112.74.59.152/releases/tag/1.8.0',
     },
@@ -76,7 +83,7 @@ const DEFAULT_VERSION_CONFIG = {
       latestVersion: '1.8.0',
       minRequired: '1.4.5',
       forceUpdate: false,
-      downloadUrl: 'http://112.74.59.152/download/rustdesk-latest.apk',
+      downloadUrl: '/download/share_only/rustdesk-latest.apk',
       updateLog: '1. 修复连接稳定性问题\n2. 优化画面传输质量',
       releaseUrl: 'http://112.74.59.152/releases/tag/1.8.0',
     },
@@ -92,6 +99,15 @@ function cloneDefaultVersionConfig() {
 
 function normalizeVersionClientType(clientType) {
   return VERSION_CLIENT_TYPES.has(clientType) ? clientType : 'full';
+}
+
+function getVersionClientTypeFromReq(req) {
+  return normalizeVersionClientType(
+      req.query.client_type || req.body?.clientType || req.body?.client_type);
+}
+
+function getApkDirByClientType(clientType) {
+  return clientType === 'share_only' ? APK_DIR_SHARE_ONLY : APK_DIR_FULL;
 }
 
 function mergeVersionFields(target, source) {
@@ -144,7 +160,8 @@ function saveVersionConfig(config) {
 
 // multer 配置：APK 上传
 const apkStorage = multer.diskStorage({
-  destination: (_req, _file, cb) => cb(null, APK_DIR),
+  destination: (req, _file, cb) =>
+      cb(null, getApkDirByClientType(getVersionClientTypeFromReq(req))),
   filename: (_req, file, cb) => {
     // 保留原始文件名，如有同名则覆盖
     cb(null, file.originalname);
@@ -160,7 +177,9 @@ const uploadApk = multer({
 });
 
 // 静态文件服务：提供 APK 下载
-app.use('/download', express.static(APK_DIR));
+app.use('/download/full', express.static(APK_DIR_FULL));
+app.use('/download/share_only', express.static(APK_DIR_SHARE_ONLY));
+app.use('/download', express.static(APK_DIR_FULL));
 
 // ───────────────────────────────────────────────────────
 // 设备数据管理
@@ -861,6 +880,7 @@ app.post('/admin/version', authMiddleware, (req, res) => {
 
 // 上传 APK 文件
 app.post('/admin/version/upload', authMiddleware, (req, res) => {
+  const clientType = getVersionClientTypeFromReq(req);
   uploadApk.single('apk')(req, res, (err) => {
     if (err) {
       console.error('[UPLOAD] Error:', err.message);
@@ -870,37 +890,42 @@ app.post('/admin/version/upload', authMiddleware, (req, res) => {
       return res.status(400).json({ code: 400, msg: '未选择文件' });
     }
     const filename = req.file.filename;
-    const downloadPath = `/download/${encodeURIComponent(filename)}`;
-    console.log(`[UPLOAD] APK uploaded: ${filename} (${(req.file.size / 1024 / 1024).toFixed(1)}MB)`);
+    const downloadPath = `/download/${clientType}/${encodeURIComponent(filename)}`;
+    console.log(
+        `[UPLOAD] APK uploaded [${clientType}]: ${filename} (${(req.file.size / 1024 / 1024).toFixed(1)}MB)`);
     res.json({
       code: 200,
       msg: '上传成功',
-      data: { filename, size: req.file.size, downloadPath },
+      data: { filename, size: req.file.size, downloadPath, clientType },
     });
   });
 });
 
 // 获取已上传的 APK 文件列表
 app.get('/admin/version/files', authMiddleware, (req, res) => {
+  const clientType = getVersionClientTypeFromReq(req);
+  const apkDir = getApkDirByClientType(clientType);
   try {
-    const files = fs.readdirSync(APK_DIR)
+    const files = fs.readdirSync(apkDir)
       .filter(f => f.toLowerCase().endsWith('.apk'))
       .map(f => {
-        const stat = fs.statSync(path.join(APK_DIR, f));
+        const stat = fs.statSync(path.join(apkDir, f));
         return { filename: f, size: stat.size, modified: stat.mtime.toISOString() };
       })
       .sort((a, b) => new Date(b.modified) - new Date(a.modified));
-    res.json({ code: 200, data: files });
+    res.json({ code: 200, data: files, clientType });
   } catch { res.json({ code: 200, data: [] }); }
 });
 
 app.delete('/admin/version/files/:filename', authMiddleware, (req, res) => {
+  const clientType = getVersionClientTypeFromReq(req);
+  const apkDir = getApkDirByClientType(clientType);
   const raw = String(req.params.filename || '');
   const filename = path.basename(raw);
   if (!filename || filename !== raw || !filename.toLowerCase().endsWith('.apk')) {
     return res.status(400).json({ code: 400, msg: '文件名不合法' });
   }
-  const filePath = path.join(APK_DIR, filename);
+  const filePath = path.join(apkDir, filename);
   if (!fs.existsSync(filePath)) {
     return res.status(404).json({ code: 404, msg: '文件不存在' });
   }
