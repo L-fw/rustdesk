@@ -64,22 +64,78 @@ initSQLiteDatabase(__dirname);
 // ───────────────────────────────────────────────────────
 const DEFAULT_VERSION_CONFIG = {
   android: {
-    latestVersion: '1.8.0',
-    minRequired: '1.4.5',
-    forceUpdate: false,
-    downloadUrl: 'http://112.74.59.152/download/rustdesk-latest.apk',
-    updateLog: '1. 修复连接稳定性问题\n2. 优化画面传输质量',
-    releaseUrl: 'http://112.74.59.152/releases/tag/1.8.0',
+    full: {
+      latestVersion: '1.8.0',
+      minRequired: '1.4.5',
+      forceUpdate: false,
+      downloadUrl: 'http://112.74.59.152/download/rustdesk-latest.apk',
+      updateLog: '1. 修复连接稳定性问题\n2. 优化画面传输质量',
+      releaseUrl: 'http://112.74.59.152/releases/tag/1.8.0',
+    },
+    share_only: {
+      latestVersion: '1.8.0',
+      minRequired: '1.4.5',
+      forceUpdate: false,
+      downloadUrl: 'http://112.74.59.152/download/rustdesk-latest.apk',
+      updateLog: '1. 修复连接稳定性问题\n2. 优化画面传输质量',
+      releaseUrl: 'http://112.74.59.152/releases/tag/1.8.0',
+    },
   },
 };
+
+const VERSION_CLIENT_TYPES = new Set(['full', 'share_only']);
+const VERSION_CONFIG_FIELDS = ['latestVersion', 'minRequired', 'forceUpdate', 'downloadUrl', 'updateLog', 'releaseUrl'];
+
+function cloneDefaultVersionConfig() {
+  return JSON.parse(JSON.stringify(DEFAULT_VERSION_CONFIG));
+}
+
+function normalizeVersionClientType(clientType) {
+  return VERSION_CLIENT_TYPES.has(clientType) ? clientType : 'full';
+}
+
+function mergeVersionFields(target, source) {
+  if (!source || typeof source !== 'object') return;
+  for (const key of VERSION_CONFIG_FIELDS) {
+    if (source[key] !== undefined) {
+      target[key] = key === 'forceUpdate' ? !!source[key] : source[key];
+    }
+  }
+}
+
+function normalizeVersionConfig(rawConfig) {
+  const normalized = cloneDefaultVersionConfig();
+  if (!rawConfig || typeof rawConfig !== 'object') {
+    return normalized;
+  }
+  const android = rawConfig.android;
+  if (!android || typeof android !== 'object') {
+    return normalized;
+  }
+  if (android.full || android.share_only) {
+    mergeVersionFields(normalized.android.full, android.full);
+    mergeVersionFields(normalized.android.share_only, android.share_only);
+    return normalized;
+  }
+  mergeVersionFields(normalized.android.full, android);
+  mergeVersionFields(normalized.android.share_only, android);
+  return normalized;
+}
 
 function loadVersionConfig() {
   if (!fs.existsSync(VERSION_FILE)) {
     saveVersionConfig(DEFAULT_VERSION_CONFIG);
-    return JSON.parse(JSON.stringify(DEFAULT_VERSION_CONFIG));
+    return cloneDefaultVersionConfig();
   }
-  try { return JSON.parse(fs.readFileSync(VERSION_FILE, 'utf8')); }
-  catch { return JSON.parse(JSON.stringify(DEFAULT_VERSION_CONFIG)); }
+  try {
+    const parsed = JSON.parse(fs.readFileSync(VERSION_FILE, 'utf8'));
+    const normalized = normalizeVersionConfig(parsed);
+    if (JSON.stringify(parsed) !== JSON.stringify(normalized)) {
+      saveVersionConfig(normalized);
+    }
+    return normalized;
+  }
+  catch { return cloneDefaultVersionConfig(); }
 }
 
 function saveVersionConfig(config) {
@@ -128,7 +184,7 @@ function saveDevices(devices) {
   fs.writeFileSync(DATA_FILE, JSON.stringify(devices, null, 2));
 }
 
-function upsertDevice(deviceId, ip, appVersion, password, permissions, username, phone) {
+function upsertDevice(deviceId, ip, appVersion, password, permissions, username, phone, clientType) {
   const devices = loadDevices();
   const now = new Date().toISOString();
   if (!devices[deviceId]) {
@@ -137,6 +193,7 @@ function upsertDevice(deviceId, ip, appVersion, password, permissions, username,
       ip, banned: false,
       username: username || null,
       phone: phone || null,
+      clientType: clientType || null,
       appVersion: appVersion || null,
       password: password ? decryptPassword(password) : null,
       permissions: permissions || {},
@@ -147,6 +204,7 @@ function upsertDevice(deviceId, ip, appVersion, password, permissions, username,
     devices[deviceId].ip = ip;
     if (username) devices[deviceId].username = username;
     if (phone) devices[deviceId].phone = phone;
+    if (clientType) devices[deviceId].clientType = clientType;
     if (appVersion) devices[deviceId].appVersion = appVersion;
     if (password) devices[deviceId].password = decryptPassword(password);
     if (permissions && typeof permissions === 'object') devices[deviceId].permissions = permissions;
@@ -328,7 +386,7 @@ app.post('/api/user/register', (req, res) => {
   const bindDeviceId = req.headers['x-device-id'];
   if (bindDeviceId) {
     const bindIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
-    upsertDevice(bindDeviceId, bindIp, null, null, null, username, normalizedPhone);
+    upsertDevice(bindDeviceId, bindIp, null, null, null, username, normalizedPhone, 'full');
   }
 
   entry.usedCount = usedCount + 1;
@@ -383,7 +441,7 @@ app.post('/api/user/login', (req, res) => {
   const bindDeviceId = req.headers['x-device-id'];
   if (bindDeviceId) {
     const bindIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
-    upsertDevice(bindDeviceId, bindIp, null, null, null, user.username, user.phone);
+    upsertDevice(bindDeviceId, bindIp, null, null, null, user.username, user.phone, 'full');
   }
 
   console.log(`[USER] Login: ${username}`);
@@ -469,7 +527,7 @@ app.post('/api/user/sms/login', (req, res) => {
   const bindDeviceId = req.headers['x-device-id'];
   if (bindDeviceId) {
     const bindIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
-    upsertDevice(bindDeviceId, bindIp, null, null, null, user.username, user.phone);
+    upsertDevice(bindDeviceId, bindIp, null, null, null, user.username, user.phone, 'full');
   }
 
   console.log(`[USER] SMS Login: ${normalizedPhone} => ${user.username}`);
@@ -575,18 +633,19 @@ app.post('/api/user/password/reset', (req, res) => {
 // Body:   { os, os_version, arch, app_version }   ← 新增 app_version
 // ───────────────────────────────────────────────────────
 app.post('/api/version/check', (req, res) => {
-  const { os, os_version, arch, app_version, password, permissions } = req.body || {};
+  const { os, os_version, arch, app_version, password, permissions, client_type } = req.body || {};
   const deviceId = req.headers['x-device-id'] || 'unknown';
   const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
 
-  const device = upsertDevice(deviceId, ip, app_version, password, permissions);
+  const normalizedClientType = normalizeVersionClientType(client_type);
+  const device = upsertDevice(deviceId, ip, app_version, password, permissions, null, null, normalizedClientType);
 
   console.log(JSON.stringify({ time: new Date().toISOString(), deviceId, ip, os, os_version, arch, app_version }));
 
   if (device.banned) return res.json({ banned: true, msg: '设备已被禁用，请联系管理员' });
 
   const versionConfig = loadVersionConfig();
-  const cfg = versionConfig.android;
+  const cfg = versionConfig.android[normalizedClientType] || versionConfig.android.full;
   return res.json({
     url: cfg.releaseUrl,
     latestVersion: cfg.latestVersion,
@@ -784,23 +843,20 @@ app.post('/admin/users/reset-password', authMiddleware, (req, res) => {
 
 // 获取版本配置
 app.get('/admin/version', authMiddleware, (req, res) => {
+  const clientType = normalizeVersionClientType(req.query.client_type);
   const config = loadVersionConfig();
-  res.json({ code: 200, data: config.android });
+  res.json({ code: 200, data: config.android[clientType], clientType });
 });
 
 // 更新版本配置
 app.post('/admin/version', authMiddleware, (req, res) => {
-  const { latestVersion, minRequired, forceUpdate, downloadUrl, updateLog, releaseUrl } = req.body || {};
+  const body = req.body || {};
+  const clientType = normalizeVersionClientType(body.clientType);
   const config = loadVersionConfig();
-  if (latestVersion !== undefined) config.android.latestVersion = latestVersion;
-  if (minRequired !== undefined) config.android.minRequired = minRequired;
-  if (forceUpdate !== undefined) config.android.forceUpdate = !!forceUpdate;
-  if (downloadUrl !== undefined) config.android.downloadUrl = downloadUrl;
-  if (updateLog !== undefined) config.android.updateLog = updateLog;
-  if (releaseUrl !== undefined) config.android.releaseUrl = releaseUrl;
+  mergeVersionFields(config.android[clientType], body);
   saveVersionConfig(config);
-  console.log(`[VERSION] Config updated:`, JSON.stringify(config.android));
-  res.json({ code: 200, msg: '版本配置已更新', data: config.android });
+  console.log(`[VERSION] Config updated [${clientType}]:`, JSON.stringify(config.android[clientType]));
+  res.json({ code: 200, msg: '版本配置已更新', data: config.android[clientType], clientType });
 });
 
 // 上传 APK 文件

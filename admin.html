@@ -957,6 +957,14 @@
       gap: 10px;
     }
 
+    .toolbar .tb-title {
+      margin-bottom: 0;
+    }
+
+    .tb-title-text {
+      white-space: nowrap;
+    }
+
     .filter-tabs {
       display: flex;
       gap: 3px;
@@ -964,6 +972,19 @@
       border: 1px solid var(--line);
       border-radius: var(--radius-sm);
       padding: 3px;
+    }
+
+    .role-tabs {
+      display: flex;
+      gap: 3px;
+      background: var(--deep);
+      border: 1px solid var(--line);
+      border-radius: var(--radius-sm);
+      padding: 3px;
+    }
+
+    .tb-title .role-tabs {
+      margin-left: 6px;
     }
 
     .ftab {
@@ -1025,6 +1046,13 @@
     .search-input:focus {
       border-color: var(--cyan);
       box-shadow: 0 0 0 3px rgba(0, 212, 160, .07);
+    }
+
+    .tbl-wrap.role-user td:nth-child(2),
+    .tbl-wrap.role-user th:nth-child(2),
+    .tbl-wrap.role-user td:nth-child(3),
+    .tbl-wrap.role-user th:nth-child(3) {
+      display: none;
     }
 
     .search-input::placeholder {
@@ -2362,6 +2390,12 @@
       line-height: 1.5;
     }
 
+    .ver-client-tabs {
+      display: flex;
+      gap: 6px;
+      margin: 2px 0 16px;
+    }
+
     .ver-toggle {
       display: flex;
       align-items: center;
@@ -2505,8 +2539,15 @@
     .upload-zone input[type=file] {
       position: absolute;
       inset: 0;
+      z-index: 2;
       opacity: 0;
       cursor: pointer;
+    }
+
+    .upload-zone-icon,
+    .upload-zone-text,
+    .upload-zone-sub {
+      pointer-events: none;
     }
 
     .upload-progress {
@@ -2669,6 +2710,10 @@
       }
 
       .filter-tabs {
+        flex-wrap: wrap;
+      }
+
+      .role-tabs {
         flex-wrap: wrap;
       }
     }
@@ -2846,7 +2891,13 @@
       <div class="toolbar-outer">
         <div class="toolbar">
           <div class="tb-title">
-            <div class="tb-title-dot"></div>设备列表
+            <div class="tb-title-dot"></div>
+            <span class="tb-title-text">设备列表</span>
+            <div class="role-tabs">
+              <button class="ftab active" data-role-filter="all" onclick="setRoleFilter('all',this)">全部身份</button>
+              <button class="ftab" data-role-filter="user" onclick="setRoleFilter('user',this)">用户</button>
+              <button class="ftab" data-role-filter="tech" onclick="setRoleFilter('tech',this)">技术</button>
+            </div>
           </div>
           <div class="tb-right">
             <div class="filter-tabs">
@@ -2960,6 +3011,10 @@
       <button class="ver-drawer-close" onclick="closeVersionDrawer()">✕</button>
     </div>
     <div class="ver-drawer-body">
+      <div class="ver-client-tabs" id="ver-client-tabs">
+        <button class="ftab" data-client-type="share_only" onclick="setVersionClientType('share_only', this)">用户版</button>
+        <button class="ftab active" data-client-type="full" onclick="setVersionClientType('full', this)">完整版</button>
+      </div>
       <div class="ver-section-title" style="margin-top:0;border-top:none;padding-top:0">
         <div class="ver-section-dot"></div>版本号设置
       </div>
@@ -3004,8 +3059,8 @@
       <div class="ver-section-title">
         <div class="ver-section-dot"></div>上传 APK
       </div>
-      <div class="upload-zone" id="upload-zone">
-        <input type="file" accept=".apk" onchange="handleApkUpload(this.files[0])" />
+      <div class="upload-zone" id="upload-zone" tabindex="0">
+        <input type="file" id="upload-apk-input" accept=".apk" onchange="handleApkUpload(this.files[0]); this.value='';" />
         <div class="upload-zone-icon">📦</div>
         <div class="upload-zone-text">点击选择或拖拽 APK 文件到此处</div>
         <div class="upload-zone-sub">支持 .apk 格式，最大 200MB</div>
@@ -3102,6 +3157,7 @@
     let devices = [];
     let timer = null;
     let curFilter = 'all';
+    let curRoleFilter = 'all';
     let selected = new Set();
 
     // ── 选择管理 ──
@@ -3310,9 +3366,23 @@
     // ── 过滤 ──
     function setFilter(f, btn) {
       curFilter = f;
-      document.querySelectorAll('.ftab').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.filter-tabs .ftab').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       render();
+    }
+
+    function setRoleFilter(f, btn) {
+      curRoleFilter = f;
+      document.querySelectorAll('.role-tabs .ftab').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      render();
+    }
+
+    function getClientType(d) {
+      if (d.clientType === 'share_only' || d.clientType === 'full') {
+        return d.clientType;
+      }
+      return '';
     }
 
     function isOutdated(v) {
@@ -3353,6 +3423,12 @@
 
     function render() {
       const kw = document.getElementById('search').value.toLowerCase();
+      const tbody = document.getElementById('tbody');
+      const tableWrap = document.querySelector('.tbl-wrap');
+      const isUserRoleView = curRoleFilter === 'user';
+      if (tableWrap) {
+        tableWrap.classList.toggle('role-user', isUserRoleView);
+      }
       let list = devices.filter(d => {
         const match =
           (d.username || '').toLowerCase().includes(kw) ||
@@ -3361,6 +3437,9 @@
           (d.ip || '').toLowerCase().includes(kw) ||
           (d.appVersion || '').toLowerCase().includes(kw);
         if (!match) return false;
+        const clientType = getClientType(d);
+        if (curRoleFilter === 'user' && clientType !== 'share_only') return false;
+        if (curRoleFilter === 'tech' && clientType !== 'full') return false;
         if (curFilter === 'remoting') return d.remoting;
         if (curFilter === 'normal') return !d.banned;
         if (curFilter === 'banned') return d.banned;
@@ -3375,9 +3454,8 @@
         return sortDir === 'asc' ? va - vb : vb - va;
       });
 
-      const tbody = document.getElementById('tbody');
       if (!list.length) {
-        tbody.innerHTML = `<tr><td colspan="9" class="placeholder">暂无设备记录</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="${isUserRoleView ? 7 : 9}" class="placeholder">暂无设备记录</td></tr>`;
         return;
       }
 
@@ -3835,6 +3913,7 @@
     // ═══════════════════════════════════════════════════════
     let versionConfig = null;
     let _forceUpdate = false;
+    let _versionClientType = 'full';
 
     function openVersionDrawer() {
       loadVersionConfigFromServer();
@@ -3856,14 +3935,23 @@
       if (document.getElementById('ver-drawer').classList.contains('open')) closeVersionDrawer();
     });
 
+    function setVersionClientType(clientType, btn) {
+      _versionClientType = clientType === 'share_only' ? 'share_only' : 'full';
+      document.querySelectorAll('#ver-client-tabs .ftab').forEach(b => b.classList.remove('active'));
+      if (btn) btn.classList.add('active');
+      loadVersionConfigFromServer();
+    }
+
     async function loadVersionConfigFromServer() {
       try {
-        const r = await fetch('/admin/version', { headers: { 'x-admin-token': token } });
+        const r = await fetch(`/admin/version?client_type=${encodeURIComponent(_versionClientType)}`, { headers: { 'x-admin-token': token } });
         if (r.status === 401) return;
         const d = await r.json();
         if (d.code === 200 && d.data) {
           versionConfig = d.data;
-          LATEST_VERSION = d.data.latestVersion || LATEST_VERSION;
+          if (_versionClientType === 'full') {
+            LATEST_VERSION = d.data.latestVersion || LATEST_VERSION;
+          }
           _forceUpdate = !!d.data.forceUpdate;
           // populate form
           document.getElementById('ver-latest').value = d.data.latestVersion || '';
@@ -3874,6 +3962,7 @@
           const track = document.getElementById('ver-force-track');
           if (_forceUpdate) track.classList.add('on');
           else track.classList.remove('on');
+          loadApkFiles();
         }
       } catch { /* skip */ }
     }
@@ -3890,6 +3979,7 @@
       btn.disabled = true; btn.textContent = '保存中…';
       try {
         const body = {
+          clientType: _versionClientType,
           latestVersion: document.getElementById('ver-latest').value.trim(),
           minRequired: document.getElementById('ver-min').value.trim(),
           forceUpdate: _forceUpdate,
@@ -3904,8 +3994,10 @@
         });
         const d = await r.json();
         if (d.code === 200) {
-          toast('版本配置已保存', 'success');
-          LATEST_VERSION = body.latestVersion || LATEST_VERSION;
+          toast((_versionClientType === 'share_only' ? '用户版' : '完整版') + '版本配置已保存', 'success');
+          if (_versionClientType === 'full') {
+            LATEST_VERSION = body.latestVersion || LATEST_VERSION;
+          }
           versionConfig = d.data;
           render(); // re-render table with new version check
         } else {
@@ -3918,7 +4010,21 @@
     // ── APK 上传 ──
     (function () {
       const zone = document.getElementById('upload-zone');
+      const input = document.getElementById('upload-apk-input');
       if (!zone) return;
+      if (input) {
+        const openPicker = () => input.click();
+        zone.addEventListener('dblclick', e => {
+          e.preventDefault();
+          openPicker();
+        });
+        zone.addEventListener('keydown', e => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            openPicker();
+          }
+        });
+      }
       zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('dragover'); });
       zone.addEventListener('dragleave', () => zone.classList.remove('dragover'));
       zone.addEventListener('drop', e => {
