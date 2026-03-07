@@ -502,11 +502,16 @@ class ServerModel with ChangeNotifier {
     try {
       final deviceId = await bind.mainGetMyId();
       if (deviceId.isEmpty) return false;
+      final appVersion = await bind.mainGetVersion();
       final url = Uri.parse('http://112.74.59.152:3000/api/version/check');
+      final body = jsonEncode({
+        'app_version': appVersion,
+        'client_type': kAppModeShareOnly ? 'share_only' : 'full',
+      });
       final resp = await http.post(url, headers: {
         'Content-Type': 'application/json',
         'X-Device-Id': deviceId,
-      }, body: jsonEncode({})).timeout(const Duration(seconds: 5));
+      }, body: body).timeout(const Duration(seconds: 5));
       if (resp.statusCode == 200) {
         final data = jsonDecode(resp.body) as Map<String, dynamic>;
         if (data['banned'] == true) {

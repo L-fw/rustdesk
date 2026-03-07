@@ -119,6 +119,28 @@ function mergeVersionFields(target, source) {
   }
 }
 
+function parseVersionSegments(version) {
+  if (typeof version !== 'string') return [];
+  const matches = version.match(/\d+/g);
+  if (!matches) return [];
+  return matches
+      .map(segment => Number.parseInt(segment, 10))
+      .filter(segment => Number.isFinite(segment));
+}
+
+function compareVersion(versionA, versionB) {
+  const left = parseVersionSegments(versionA);
+  const right = parseVersionSegments(versionB);
+  const length = Math.max(left.length, right.length);
+  for (let i = 0; i < length; i += 1) {
+    const a = left[i] ?? 0;
+    const b = right[i] ?? 0;
+    if (a < b) return -1;
+    if (a > b) return 1;
+  }
+  return 0;
+}
+
 function normalizeVersionConfig(rawConfig) {
   const normalized = cloneDefaultVersionConfig();
   if (!rawConfig || typeof rawConfig !== 'object') {
@@ -700,6 +722,21 @@ app.post('/api/version/check', (req, res) => {
   const versionConfig = loadVersionConfig();
   const resolvedClientType = normalizedClientType || device?.clientType || 'full';
   const cfg = versionConfig.android[resolvedClientType] || versionConfig.android.full;
+  const effectiveAppVersion = app_version || device?.appVersion || '';
+  if (cfg.minRequired && effectiveAppVersion && compareVersion(effectiveAppVersion, cfg.minRequired) < 0) {
+    const clientTypeLabel = resolvedClientType === 'share_only' ? '用户版' : '完整版';
+    return res.json({
+      banned: true,
+      msg: `${clientTypeLabel}当前版本 ${effectiveAppVersion} 低于最低要求版本 ${cfg.minRequired}，已拒绝连接`,
+      minRequired: cfg.minRequired,
+      latestVersion: cfg.latestVersion,
+      forceUpdate: true,
+      downloadUrl: cfg.downloadUrl,
+      updateLog: cfg.updateLog,
+      url: cfg.releaseUrl,
+      clientType: resolvedClientType,
+    });
+  }
   return res.json({
     url: cfg.releaseUrl,
     latestVersion: cfg.latestVersion,
@@ -707,6 +744,7 @@ app.post('/api/version/check', (req, res) => {
     forceUpdate: cfg.forceUpdate,
     downloadUrl: cfg.downloadUrl,
     updateLog: cfg.updateLog,
+    clientType: resolvedClientType,
   });
 });
 
