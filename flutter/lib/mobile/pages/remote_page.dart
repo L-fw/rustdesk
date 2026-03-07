@@ -22,6 +22,7 @@ import '../../common/widgets/remote_input.dart';
 import '../../models/input_model.dart';
 import '../../models/model.dart';
 import '../../models/platform_model.dart';
+import '../../models/state_model.dart';
 import '../../utils/image.dart';
 import '../widgets/dialog.dart';
 import '../widgets/custom_scale_widget.dart';
@@ -125,8 +126,8 @@ class _RemotePageState extends State<RemotePage> with WidgetsBindingObserver {
       _disableAndroidSoftKeyboard(
           isKeyboardVisible: keyboardVisibilityController.isVisible);
     });
-    _remoteDisabledWorker = ever(stateGlobal.remoteDisabled, (disabled) {
-      if (disabled) {
+    _remoteDisabledWorker = ever<bool>(stateGlobal.remoteDisabled, (disabled) {
+      if (disabled == true) {
         _showRemoteDisabledDialog();
       }
     });
