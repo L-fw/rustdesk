@@ -1048,6 +1048,111 @@
       box-shadow: 0 0 0 3px rgba(0, 212, 160, .07);
     }
 
+    .pager {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-top: 14px;
+      flex-wrap: wrap;
+    }
+
+    .pager-left {
+      font-family: var(--mono);
+      font-size: 12px;
+      letter-spacing: .08em;
+      color: var(--muted);
+      text-transform: uppercase;
+    }
+
+    .pager-right {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .pbtn,
+    .pnum {
+      font-family: var(--mono);
+      font-size: 12px;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      padding: 6px 10px;
+      border-radius: var(--radius-xs);
+      border: 1px solid var(--line2);
+      background: var(--card2);
+      color: var(--muted);
+      cursor: pointer;
+      transition: all .15s;
+      white-space: nowrap;
+      font-weight: 500;
+      line-height: 1;
+    }
+
+    .pbtn:hover,
+    .pnum:hover {
+      color: var(--text);
+      border-color: var(--cyan);
+    }
+
+    .pbtn:disabled {
+      opacity: .45;
+      cursor: not-allowed;
+      border-color: var(--line2);
+      color: var(--muted2);
+    }
+
+    .pnum.active {
+      background: var(--cyan);
+      color: #000;
+      border-color: rgba(0, 212, 160, .45);
+      box-shadow: 0 2px 8px rgba(0, 212, 160, .25);
+    }
+
+    .page-nums {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .p-ellipsis {
+      font-family: var(--mono);
+      font-size: 12px;
+      color: var(--muted2);
+      padding: 0 4px;
+    }
+
+    .page-size {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-family: var(--mono);
+      font-size: 12px;
+      color: var(--muted);
+      letter-spacing: .06em;
+      text-transform: uppercase;
+    }
+
+    .page-size input {
+      width: 70px;
+      background: var(--card);
+      border: 1px solid var(--line);
+      color: var(--text);
+      font-family: var(--mono);
+      font-size: 13px;
+      padding: 6px 8px;
+      outline: none;
+      border-radius: var(--radius-xs);
+      transition: border-color .2s, box-shadow .2s;
+    }
+
+    .page-size input:focus {
+      border-color: var(--cyan);
+      box-shadow: 0 0 0 3px rgba(0, 212, 160, .07);
+    }
+
     .tbl-wrap.role-user td:nth-child(2),
     .tbl-wrap.role-user th:nth-child(2),
     .tbl-wrap.role-user td:nth-child(3),
@@ -3149,7 +3254,7 @@
                 <circle cx="11" cy="11" r="8" />
                 <path d="m21 21-4.35-4.35" />
               </svg>
-              <input class="search-input" id="search" placeholder="搜索 用户名 / 手机号 / 版本…" oninput="render()" />
+              <input class="search-input" id="search" placeholder="搜索 用户名 / 手机号 / 版本…" oninput="onSearchInput()" />
             </div>
           </div>
         </div>
@@ -3193,6 +3298,21 @@
             </tr>
           </tbody>
         </table>
+      </div>
+
+      <div class="pager">
+        <div class="pager-left" id="pager-info">共 0 台</div>
+        <div class="pager-right">
+          <button class="pbtn" id="page-prev" onclick="prevPage()">上一页</button>
+          <div class="page-nums" id="page-nums"></div>
+          <button class="pbtn" id="page-next" onclick="nextPage()">下一页</button>
+          <div class="page-size">
+            <span>每页</span>
+            <input id="page-size-input" type="number" min="5" max="500" step="5"
+              onblur="setPageSize(this.value)" onkeydown="if(event.key==='Enter'){setPageSize(this.value)}" />
+            <span>条</span>
+          </div>
+        </div>
       </div>
 
       <div class="hint">每 15 秒自动刷新</div>
@@ -3431,6 +3551,90 @@
     let curFilter = 'all';
     let curRoleFilter = 'all';
     let selected = new Set();
+    let pageSize = parseInt(localStorage.getItem('devicePageSize') || '20', 10);
+    if (!Number.isFinite(pageSize) || pageSize < 5) pageSize = 20;
+    let currentPage = 1;
+
+    function initPager() {
+      const input = document.getElementById('page-size-input');
+      if (input) input.value = pageSize;
+      updatePager(0);
+    }
+
+    function setPageSize(val) {
+      const n = parseInt(val, 10);
+      if (!Number.isFinite(n)) return;
+      pageSize = Math.max(5, Math.min(500, n));
+      localStorage.setItem('devicePageSize', String(pageSize));
+      const input = document.getElementById('page-size-input');
+      if (input && input.value !== String(pageSize)) input.value = pageSize;
+      currentPage = 1;
+      render();
+    }
+
+    function prevPage() {
+      if (currentPage > 1) {
+        currentPage -= 1;
+        render();
+      }
+    }
+
+    function nextPage() {
+      currentPage += 1;
+      render();
+    }
+
+    function goPage(n) {
+      currentPage = n;
+      render();
+    }
+
+    function onSearchInput() {
+      currentPage = 1;
+      render();
+    }
+
+    function updatePager(total) {
+      const totalPages = total ? Math.max(1, Math.ceil(total / pageSize)) : 0;
+      if (totalPages === 0) {
+        currentPage = 0;
+      } else {
+        if (currentPage < 1) currentPage = 1;
+        if (currentPage > totalPages) currentPage = totalPages;
+      }
+      const info = document.getElementById('pager-info');
+      if (info) {
+        info.textContent = totalPages
+          ? `第 ${currentPage}/${totalPages} 页 · 共 ${total} 台`
+          : `共 ${total} 台`;
+      }
+      const prevBtn = document.getElementById('page-prev');
+      const nextBtn = document.getElementById('page-next');
+      if (prevBtn) prevBtn.disabled = currentPage <= 1;
+      if (nextBtn) nextBtn.disabled = totalPages === 0 || currentPage >= totalPages;
+      const nums = document.getElementById('page-nums');
+      if (!nums) return;
+      if (totalPages <= 1) {
+        nums.innerHTML = '';
+        return;
+      }
+      const buttons = [];
+      let start = Math.max(1, currentPage - 2);
+      let end = Math.min(totalPages, start + 4);
+      if (end - start < 4) start = Math.max(1, end - 4);
+      if (start > 1) {
+        buttons.push(`<button class="pnum" onclick="goPage(1)">1</button>`);
+        if (start > 2) buttons.push(`<span class="p-ellipsis">…</span>`);
+      }
+      for (let i = start; i <= end; i++) {
+        buttons.push(`<button class="pnum ${i === currentPage ? 'active' : ''}" onclick="goPage(${i})">${i}</button>`);
+      }
+      if (end < totalPages) {
+        if (end < totalPages - 1) buttons.push(`<span class="p-ellipsis">…</span>`);
+        buttons.push(`<button class="pnum" onclick="goPage(${totalPages})">${totalPages}</button>`);
+      }
+      nums.innerHTML = buttons.join('');
+    }
 
     // ── 选择管理 ──
     function toggleAll(cb) {
@@ -3602,6 +3806,7 @@
     function showMain() {
       document.getElementById('login-page').style.display = 'none';
       document.getElementById('main-page').style.display = 'block';
+      initPager();
       load(); loadVersionConfigFromServer(); clearInterval(timer); timer = setInterval(load, 15000);
     }
 
@@ -3640,6 +3845,7 @@
       curFilter = f;
       document.querySelectorAll('.filter-tabs .ftab').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
+      currentPage = 1;
       render();
     }
 
@@ -3647,6 +3853,7 @@
       curRoleFilter = f;
       document.querySelectorAll('.role-tabs .ftab').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
+      currentPage = 1;
       render();
     }
 
@@ -3726,12 +3933,18 @@
         return sortDir === 'asc' ? va - vb : vb - va;
       });
 
+      const total = list.length;
+      updatePager(total);
       if (!list.length) {
         tbody.innerHTML = `<tr><td colspan="${isUserRoleView ? 7 : 9}" class="placeholder">暂无设备记录</td></tr>`;
         return;
       }
 
-      tbody.innerHTML = list.map((d, i) => {
+      const start = (currentPage - 1) * pageSize;
+      const end = start + pageSize;
+      const pageList = list.slice(start, end);
+
+      tbody.innerHTML = pageList.map((d, i) => {
         let vBadge;
         if (!d.appVersion) {
           vBadge = `<span class="version-tag v-unknown">未知</span>`;
