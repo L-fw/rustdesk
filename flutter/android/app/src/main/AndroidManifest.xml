@@ -37,8 +37,6 @@
             <intent-filter android:priority="1000">
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
                 <action android:name="android.intent.action.QUICKBOOT_POWERON" />
-                <!--ACTION_BOOT_COMPLETED for debug test on no root device-->
-                <action android:name="com.gamwing.support.DEBUG_BOOT_COMPLETED" />
             </intent-filter>
         </receiver>
 

@@ -1003,12 +1003,18 @@ class _SettingsState extends State<SettingsPage> with WidgetsBindingObserver {
 
   Future<void> _refreshAppLoginStatus() async {
     if (kAppModeShareOnly) return;
-    final loggedIn = await AppAuthService().isLoggedIn();
+    final auth = AppAuthService();
+    final cachedToken = await auth.getToken();
+    final hasCachedLogin = cachedToken.isNotEmpty;
+    if (mounted && _appLoggedIn != hasCachedLogin) {
+      setState(() => _appLoggedIn = hasCachedLogin);
+    }
+    final loggedIn = await auth.isLoggedIn();
     if (!mounted) return;
     if (_appLoggedIn != loggedIn) {
       setState(() => _appLoggedIn = loggedIn);
     }
-    if (!loggedIn) {
+    if (hasCachedLogin && !loggedIn) {
       await _showLoginExpiredDialog();
     }
   }
@@ -1032,7 +1038,10 @@ class _SettingsState extends State<SettingsPage> with WidgetsBindingObserver {
       ),
     );
     if (ok != true) return;
-    await AppAuthService().logout();
+    if (mounted && _appLoggedIn) {
+      setState(() => _appLoggedIn = false);
+    }
+    unawaited(AppAuthService().logout());
     if (!mounted) return;
     _redirectToLogin();
   }

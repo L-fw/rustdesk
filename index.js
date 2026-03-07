@@ -613,7 +613,7 @@ app.post('/api/version/check', (req, res) => {
 //   Body:   { session_id }
 // ───────────────────────────────────────────────────────
 app.post('/api/session/start', (req, res) => {
-  const { session_id, peer_id } = req.body || {};
+  const { session_id, peer_id, username, phone } = req.body || {};
   const deviceId = req.headers['x-device-id'] || 'unknown';
   const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
 
@@ -629,6 +629,8 @@ app.post('/api/session/start', (req, res) => {
     device.sessions.push({
       sessionId: session_id,
       peerId: peer_id || null,
+      username: username || device.username || null,
+      phone: phone || device.phone || null,
       startTime: now,
       lastHeartbeat: now,
       ended: false,
