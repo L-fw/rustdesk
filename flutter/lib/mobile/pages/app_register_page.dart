@@ -20,6 +20,12 @@ class _AppRegisterPageState extends State<AppRegisterPage> {
   final _phoneController = TextEditingController();
   final _smsCodeController = TextEditingController();
   final _activationCodeController = TextEditingController();
+  final _usernameFocus = FocusNode();
+  final _passwordFocus = FocusNode();
+  final _confirmPasswordFocus = FocusNode();
+  final _phoneFocus = FocusNode();
+  final _smsCodeFocus = FocusNode();
+  final _activationCodeFocus = FocusNode();
 
   bool _obscurePassword = true;
   bool _obscureConfirm = true;
@@ -40,6 +46,12 @@ class _AppRegisterPageState extends State<AppRegisterPage> {
     _phoneController.dispose();
     _smsCodeController.dispose();
     _activationCodeController.dispose();
+    _usernameFocus.dispose();
+    _passwordFocus.dispose();
+    _confirmPasswordFocus.dispose();
+    _phoneFocus.dispose();
+    _smsCodeFocus.dispose();
+    _activationCodeFocus.dispose();
     _countdownTimer?.cancel();
     super.dispose();
   }
@@ -168,6 +180,7 @@ class _AppRegisterPageState extends State<AppRegisterPage> {
                 // Username
                 _buildTextField(
                   controller: _usernameController,
+                  focusNode: _usernameFocus,
                   label: '用户名',
                   icon: Icons.person_outline,
                 ),
@@ -175,6 +188,7 @@ class _AppRegisterPageState extends State<AppRegisterPage> {
                 // Password
                 _buildTextField(
                   controller: _passwordController,
+                  focusNode: _passwordFocus,
                   label: '密码',
                   icon: Icons.lock_outline,
                   obscure: _obscurePassword,
@@ -195,6 +209,7 @@ class _AppRegisterPageState extends State<AppRegisterPage> {
                 // Confirm Password
                 _buildTextField(
                   controller: _confirmPasswordController,
+                  focusNode: _confirmPasswordFocus,
                   label: '确认密码',
                   icon: Icons.lock_outline,
                   obscure: _obscureConfirm,
@@ -215,6 +230,7 @@ class _AppRegisterPageState extends State<AppRegisterPage> {
                 // Phone
                 _buildTextField(
                   controller: _phoneController,
+                  focusNode: _phoneFocus,
                   label: '手机号',
                   icon: Icons.phone_android,
                   keyboardType: TextInputType.phone,
@@ -226,6 +242,7 @@ class _AppRegisterPageState extends State<AppRegisterPage> {
                     Expanded(
                       child: _buildTextField(
                         controller: _smsCodeController,
+                        focusNode: _smsCodeFocus,
                         label: '验证码',
                         icon: Icons.sms_outlined,
                         keyboardType: TextInputType.number,
@@ -260,6 +277,7 @@ class _AppRegisterPageState extends State<AppRegisterPage> {
                 // Activation Code
                 _buildTextField(
                   controller: _activationCodeController,
+                  focusNode: _activationCodeFocus,
                   label: '激活码',
                   icon: Icons.vpn_key_outlined,
                 ),
@@ -358,45 +376,57 @@ class _AppRegisterPageState extends State<AppRegisterPage> {
 
   Widget _buildTextField({
     required TextEditingController controller,
+    required FocusNode focusNode,
     required String label,
     required IconData icon,
     bool obscure = false,
     Widget? suffix,
     TextInputType? keyboardType,
   }) {
-    return TextField(
-      controller: controller,
-      obscureText: obscure,
-      keyboardType: keyboardType,
-      style: const TextStyle(fontSize: 15),
-      decoration: InputDecoration(
-        labelText: label,
-        floatingLabelBehavior: FloatingLabelBehavior.always,
-        labelStyle: TextStyle(color: Colors.grey.shade600, fontSize: 15),
-        floatingLabelStyle: TextStyle(
-          color: MyTheme.accent,
-          fontSize: 13,
-          fontWeight: FontWeight.w500,
-          backgroundColor: Theme.of(context).cardColor,
-        ),
-        prefixIcon: Icon(icon, size: 20),
-        suffixIcon: suffix,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: BorderSide(color: Colors.grey.shade300),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: BorderSide(color: Colors.grey.shade300),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: BorderSide(color: MyTheme.accent, width: 1.5),
-        ),
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-        isDense: false,
-      ),
+    return AnimatedBuilder(
+      animation: focusNode,
+      builder: (context, _) {
+        final hasFocus = focusNode.hasFocus;
+        return TextField(
+          controller: controller,
+          focusNode: focusNode,
+          obscureText: obscure,
+          keyboardType: keyboardType,
+          style: const TextStyle(fontSize: 15),
+          decoration: InputDecoration(
+            labelText: hasFocus ? label : null,
+            hintText: hasFocus ? null : label,
+            floatingLabelBehavior: hasFocus
+                ? FloatingLabelBehavior.always
+                : FloatingLabelBehavior.never,
+            labelStyle: TextStyle(color: Colors.grey.shade600, fontSize: 15),
+            hintStyle: TextStyle(color: Colors.grey.shade600, fontSize: 15),
+            floatingLabelStyle: TextStyle(
+              color: MyTheme.accent,
+              fontSize: 13,
+              fontWeight: FontWeight.w500,
+              backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+            ),
+            prefixIcon: Icon(icon, size: 20),
+            suffixIcon: suffix,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+              borderSide: BorderSide(color: Colors.grey.shade300),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+              borderSide: BorderSide(color: Colors.grey.shade300),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+              borderSide: BorderSide(color: MyTheme.accent, width: 1.5),
+            ),
+            contentPadding:
+                const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+            isDense: false,
+          ),
+        );
+      },
     );
   }
 }

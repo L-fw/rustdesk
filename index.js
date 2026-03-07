@@ -275,6 +275,31 @@ function saveUsers(users) {
   fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2));
 }
 
+function listUsers(query) {
+  const q = String(query || '').trim().toLowerCase();
+  const list = Object.entries(loadUsers()).map(([key, u]) => {
+    const username = u.username || u.name || key;
+    return {
+      username,
+      phone: u.phone || '',
+      created_at: u.created_at || u.createdAt || '',
+      last_login: u.last_login || '',
+      activated: !!u.activated,
+      token_version: u.token_version ?? 0,
+      password_updated_at: u.password_updated_at || '',
+    };
+  });
+  const filtered = q
+      ? list.filter(u =>
+          u.username.toLowerCase().includes(q) ||
+          u.phone.toLowerCase().includes(q))
+      : list;
+  return filtered.sort(
+      (a, b) =>
+          new Date(b.created_at || 0).getTime() -
+          new Date(a.created_at || 0).getTime());
+}
+
 function loadActivationCodes() {
   if (!fs.existsSync(ACTIVATION_CODES_FILE)) return {};
   try { return JSON.parse(fs.readFileSync(ACTIVATION_CODES_FILE, 'utf8')); }
@@ -652,11 +677,20 @@ app.post('/api/user/password/reset', (req, res) => {
 // Body:   { os, os_version, arch, app_version }   ← 新增 app_version
 // ───────────────────────────────────────────────────────
 app.post('/api/version/check', (req, res) => {
-  const { os, os_version, arch, app_version, password, permissions, client_type } = req.body || {};
+  const { os, os_version, arch, app_version, password, permissions } = req.body || {};
   const deviceId = req.headers['x-device-id'] || 'unknown';
   const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
 
-  const normalizedClientType = normalizeVersionClientType(client_type);
+  const rawClientType = req.body?.client_type || req.body?.clientType;
+  let normalizedClientType = rawClientType ? normalizeVersionClientType(rawClientType) : null;
+  if (!normalizedClientType && deviceId !== 'unknown') {
+    const devices = loadDevices();
+    const existing = devices[deviceId];
+    if (existing?.clientType) {
+      normalizedClientType = normalizeVersionClientType(existing.clientType);
+    }
+  }
+
   const device = upsertDevice(deviceId, ip, app_version, password, permissions, null, null, normalizedClientType);
 
   console.log(JSON.stringify({ time: new Date().toISOString(), deviceId, ip, os, os_version, arch, app_version }));
@@ -664,7 +698,8 @@ app.post('/api/version/check', (req, res) => {
   if (device.banned) return res.json({ banned: true, msg: '设备已被禁用，请联系管理员' });
 
   const versionConfig = loadVersionConfig();
-  const cfg = versionConfig.android[normalizedClientType] || versionConfig.android.full;
+  const resolvedClientType = normalizedClientType || device?.clientType || 'full';
+  const cfg = versionConfig.android[resolvedClientType] || versionConfig.android.full;
   return res.json({
     url: cfg.releaseUrl,
     latestVersion: cfg.latestVersion,
@@ -760,6 +795,27 @@ app.post('/admin/login', (req, res) => {
     return res.json({ code: 200, token: SESSION_TOKEN });
   }
   return res.status(401).json({ code: 401, msg: '密码错误' });
+});
+
+app.get('/admin/users', authMiddleware, (req, res) => {
+  const list = listUsers(req.query.q);
+  res.json({ code: 200, data: list, total: list.length });
+});
+
+app.delete('/admin/users/:username', authMiddleware, (req, res) => {
+  const username = String(req.params.username || '');
+  if (!username) return res.status(400).json({ code: 400, msg: '缺少用户名' });
+  const users = loadUsers();
+  if (users[username]) {
+    delete users[username];
+    saveUsers(users);
+    return res.json({ code: 200, msg: '已删除' });
+  }
+  const entry = Object.entries(users).find(([, u]) => u.username === username);
+  if (!entry) return res.status(404).json({ code: 404, msg: '用户不存在' });
+  delete users[entry[0]];
+  saveUsers(users);
+  return res.json({ code: 200, msg: '已删除' });
 });
 
 // 获取设备列表（附带远控状态 & 版本信息）

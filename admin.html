@@ -2062,6 +2062,12 @@
       min-height: 38px;
     }
 
+    .d-field-val.multiline {
+      align-items: flex-start;
+      flex-direction: column;
+      gap: 6px;
+    }
+
     .d-val-text {
       flex: 1;
       overflow: hidden;
@@ -2500,6 +2506,235 @@
       border-radius: 50%;
     }
 
+    .user-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .user-search {
+      position: relative;
+      flex: 1;
+    }
+
+    .user-search input {
+      width: 100%;
+      background: var(--deep);
+      border: 1px solid var(--line2);
+      color: var(--text);
+      font-family: var(--mono);
+      font-size: 14px;
+      padding: 10px 12px 10px 34px;
+      outline: none;
+      border-radius: var(--radius-xs);
+      transition: border-color .2s, box-shadow .2s;
+    }
+
+    .user-search input:focus {
+      border-color: var(--purple);
+      box-shadow: 0 0 0 3px rgba(167, 139, 250, .1);
+    }
+
+    .user-search svg {
+      position: absolute;
+      left: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--muted);
+      pointer-events: none;
+    }
+
+    .user-stats {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .user-pill {
+      background: var(--card3);
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 6px 10px;
+      font-family: var(--mono);
+      font-size: 12px;
+      color: var(--muted);
+      letter-spacing: .06em;
+    }
+
+    .user-list {
+      display: grid;
+      gap: 10px;
+    }
+
+    .user-card {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 12px 14px;
+      background: var(--card3);
+      border: 1px solid var(--line);
+      border-radius: var(--radius-xs);
+      cursor: pointer;
+      transition: border-color .2s, box-shadow .2s, transform .2s;
+    }
+
+    .user-card:hover {
+      border-color: rgba(167, 139, 250, .5);
+      box-shadow: 0 8px 20px rgba(15, 23, 42, .15);
+      transform: translateY(-1px);
+    }
+
+    .user-card.active {
+      border-color: var(--purple);
+      box-shadow: 0 10px 24px rgba(167, 139, 250, .2);
+    }
+
+    .user-info {
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .user-name {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .user-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      font-family: var(--mono);
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .user-actions {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-shrink: 0;
+    }
+
+    .user-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 600;
+      color: #000;
+      background: var(--cyan);
+    }
+
+    .user-tag.offline {
+      background: #94a3b8;
+      color: #0f172a;
+    }
+
+    .user-detail {
+      margin-top: 18px;
+      display: none;
+      gap: 12px;
+    }
+
+    #user-drawer .ver-drawer-head {
+      padding: 22px 22px 16px;
+    }
+
+    #user-drawer .ver-drawer-body {
+      padding: 14px 18px 22px;
+    }
+
+    .user-view-detail #user-list {
+      display: none;
+    }
+
+    .user-view-detail .user-toolbar {
+      display: none;
+    }
+
+    .user-view-detail .user-detail {
+      display: grid;
+      margin-top: 8px;
+    }
+
+    .user-detail-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .user-detail-title {
+      font-family: var(--display);
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .user-back {
+      font-family: var(--mono);
+      font-size: 13px;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      padding: 8px 14px;
+      border-radius: 999px;
+      border: 1px solid rgba(167, 139, 250, .5);
+      background: rgba(167, 139, 250, .18);
+      color: var(--text);
+      cursor: pointer;
+      transition: all .15s;
+    }
+
+    .user-back:hover {
+      color: var(--text);
+      border-color: var(--purple);
+      background: rgba(167, 139, 250, .3);
+      box-shadow: 0 6px 16px rgba(167, 139, 250, .2);
+    }
+
+    .user-detail-grid {
+      display: grid;
+      gap: 10px;
+    }
+
+    .user-detail-card {
+      padding: 14px;
+      background: var(--card2);
+      border: 1px solid var(--line);
+      border-radius: var(--radius-xs);
+      display: grid;
+      gap: 10px;
+    }
+
+    .user-detail-card-title {
+      font-family: var(--mono);
+      font-size: 12px;
+      color: var(--muted2);
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+
+    .user-detail-list {
+      display: grid;
+      gap: 8px;
+      font-family: var(--mono);
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .user-detail-list span {
+      color: var(--text);
+      font-weight: 600;
+    }
+
     /* upload zone */
     .upload-zone {
       border: 2px dashed var(--line2);
@@ -2811,6 +3046,7 @@
         </div>
         <button class="btn-version" onclick="openVersionDrawer()" title="版本管理">📦 版本管理</button>
         <button class="btn-version" onclick="openActivationDrawer()" title="激活码管理">🔑 激活码</button>
+        <button class="btn-version" onclick="openUserDrawer()" title="用户管理">👤 用户管理</button>
         <button class="btn-theme" id="theme-btn" onclick="toggleTheme()" title="切换主题">🌙</button>
         <button class="btn-out" onclick="logout()">退出登录</button>
       </div>
@@ -3077,6 +3313,42 @@
       </div>
       <div id="apk-file-list">
         <div class="no-sessions">加载中…</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="ver-drawer-backdrop" id="user-backdrop" onclick="closeUserDrawer()"></div>
+  <div class="ver-drawer" id="user-drawer">
+    <div class="ver-drawer-head">
+      <div class="ver-drawer-head-accent"></div>
+      <div class="ver-drawer-label">用户管理</div>
+      <div class="ver-drawer-title">注册账号列表</div>
+      <button class="ver-drawer-close" onclick="closeUserDrawer()">✕</button>
+    </div>
+    <div class="ver-drawer-body">
+      <div class="user-toolbar">
+        <div class="user-search">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            stroke-width="2" stroke-linecap="round">
+            <circle cx="11" cy="11" r="8" />
+            <path d="m21 21-4.35-4.35" />
+          </svg>
+          <input id="user-search" placeholder="搜索 用户名 / 手机号…" oninput="onUserSearchChange()" />
+        </div>
+        <div class="user-stats">
+          <div class="user-pill" id="user-total">总用户 0</div>
+          <div class="user-pill" id="user-active">已激活 0</div>
+        </div>
+      </div>
+      <div id="user-list" class="user-list">
+        <div class="no-sessions">加载中…</div>
+      </div>
+      <div class="user-detail" id="user-detail">
+        <div class="user-detail-head">
+          <div class="user-detail-title" id="user-detail-title">用户详情</div>
+          <button class="user-back" onclick="clearUserSelection()">返回列表</button>
+        </div>
+        <div class="user-detail-grid" id="user-detail-grid"></div>
       </div>
     </div>
   </div>
@@ -3590,6 +3862,7 @@
     // ── 设备详情抽屉 ──
     let drawerDeviceId = null;
     const tempLoginPwByDeviceId = {};
+    const tempLoginPwByUserKey = {};
 
     function openDrawer(id) {
       const device = devices.find(d => d.id === id);
@@ -3679,6 +3952,46 @@
       const loginPwMasked = tempLoginPw ? tempLoginPw : (d.password_hash ? '●'.repeat(8) : '—');
 
       document.getElementById('drawer-body').innerHTML = `
+    <!-- 基础信息 -->
+    <div class="dsec dsec-blue">
+      <div class="dsec-head">
+        <div class="dsec-head-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+        </div>
+        设备信息
+      </div>
+      <div class="dsec-body">
+        <div class="info-grid">
+          <span class="info-key">IP 地址</span>
+          <span class="info-val">${h(d.ip || '—')}</span>
+          <span class="info-key">软件版本</span>
+          <span class="info-val">${vBadge}</span>
+          <span class="info-key">设备状态</span>
+          <span class="info-val"><span class="badge ${d.banned ? 'b-ban' : 'b-ok'}"><span class="bdot"></span>${d.banned ? '已禁用' : '正常'}</span></span>
+          <span class="info-key">远控状态</span>
+          <span class="info-val">${d.remoting ? '<span class="badge b-remote"><span class="bdot"></span>远控中</span>' : '<span class="badge b-idle"><span class="bdot"></span>空闲</span>'}</span>
+          <span class="info-key">首次接入</span>
+          <span class="info-val">${fmt(d.firstSeen)}</span>
+          <span class="info-key">最近上线</span>
+          <span class="info-val">${fmt(d.lastSeen)}</span>
+          ${d.activeSessions?.length ? `<span class="info-key">操控方</span><span class="info-val">${h(d.activeSessions[0].peerId || '—')}</span>` : ''}
+        </div>
+      </div>
+    </div>
+
+    <!-- 权限 -->
+    <div class="dsec dsec-purple">
+      <div class="dsec-head">
+        <div class="dsec-head-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        </div>
+        开放权限
+      </div>
+      <div class="dsec-body">
+        <div class="perm-grid">${permHTML}</div>
+      </div>
+    </div>
+
     <!-- 身份信息 -->
     <div class="dsec dsec-cyan">
       <div class="dsec-head">
@@ -3750,46 +4063,6 @@
       </div>
     </div>
 
-    <!-- 权限 -->
-    <div class="dsec dsec-purple">
-      <div class="dsec-head">
-        <div class="dsec-head-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-        </div>
-        开放权限
-      </div>
-      <div class="dsec-body">
-        <div class="perm-grid">${permHTML}</div>
-      </div>
-    </div>
-
-    <!-- 基础信息 -->
-    <div class="dsec dsec-blue">
-      <div class="dsec-head">
-        <div class="dsec-head-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
-        </div>
-        设备信息
-      </div>
-      <div class="dsec-body">
-        <div class="info-grid">
-          <span class="info-key">IP 地址</span>
-          <span class="info-val">${h(d.ip || '—')}</span>
-          <span class="info-key">软件版本</span>
-          <span class="info-val">${vBadge}</span>
-          <span class="info-key">设备状态</span>
-          <span class="info-val"><span class="badge ${d.banned ? 'b-ban' : 'b-ok'}"><span class="bdot"></span>${d.banned ? '已禁用' : '正常'}</span></span>
-          <span class="info-key">远控状态</span>
-          <span class="info-val">${d.remoting ? '<span class="badge b-remote"><span class="bdot"></span>远控中</span>' : '<span class="badge b-idle"><span class="bdot"></span>空闲</span>'}</span>
-          <span class="info-key">首次接入</span>
-          <span class="info-val">${fmt(d.firstSeen)}</span>
-          <span class="info-key">最近上线</span>
-          <span class="info-val">${fmt(d.lastSeen)}</span>
-          ${d.activeSessions?.length ? `<span class="info-key">操控方</span><span class="info-val">${h(d.activeSessions[0].peerId || '—')}</span>` : ''}
-        </div>
-      </div>
-    </div>
-
     <!-- 会话记录 -->
     <div class="dsec dsec-yellow">
       <div class="dsec-head">
@@ -3824,7 +4097,7 @@
       }
     }
 
-    async function resetLoginPassword(username, phone, mode, deviceId) {
+    async function resetLoginPassword(username, phone, mode, deviceId, userKeyValue) {
       if (!username && !phone) {
         toast('缺少用户名或手机号', 'danger');
         return;
@@ -3864,6 +4137,10 @@
           if (newPw && deviceId) {
             tempLoginPwByDeviceId[deviceId] = newPw;
             refreshDrawerIfOpen();
+          }
+          if (newPw && userKeyValue) {
+            tempLoginPwByUserKey[userKeyValue] = newPw;
+            renderUserDetail();
           }
           toast(newPw ? `已重置，新密码：${newPw}` : '已重置', 'success');
         } else {
@@ -3908,6 +4185,276 @@
       clearTimeout(tt); tt = setTimeout(() => el.className = '', 3000);
     }
 
+    let _userList = [];
+    let _userSearch = '';
+    let _userSelected = null;
+
+    function openUserDrawer() {
+      _userSelected = null;
+      loadUsersFromServer();
+      document.getElementById('user-drawer').classList.add('open');
+      document.getElementById('user-backdrop').classList.add('open');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeUserDrawer() {
+      document.getElementById('user-drawer').classList.remove('open');
+      document.getElementById('user-backdrop').classList.remove('open');
+      document.body.style.overflow = '';
+      Object.keys(tempLoginPwByUserKey).forEach(k => delete tempLoginPwByUserKey[k]);
+    }
+
+    function clearUserSelection() {
+      _userSelected = null;
+      renderUserList();
+      renderUserDetail();
+    }
+
+    function onUserSearchChange() {
+      _userSearch = document.getElementById('user-search').value || '';
+      loadUsersFromServer();
+    }
+
+    async function loadUsersFromServer() {
+      try {
+        const r = await fetch(`/admin/users?q=${encodeURIComponent(_userSearch)}`, { headers: { 'x-admin-token': token } });
+        if (r.status === 401) { logout(); return; }
+        const d = await r.json();
+        if (d.code === 200 && Array.isArray(d.data)) {
+          _userList = d.data;
+        } else {
+          _userList = [];
+        }
+        if (_userSelected && !isUserInList(_userSelected)) _userSelected = null;
+        renderUserList();
+        renderUserDetail();
+      } catch {
+        _userList = [];
+        renderUserList();
+        renderUserDetail();
+      }
+    }
+
+    function userKey(u) {
+      return `${u.username || ''}::${u.phone || ''}`;
+    }
+
+    function isUserInList(u) {
+      const key = userKey(u);
+      return _userList.some(item => userKey(item) === key);
+    }
+
+    function selectUser(index) {
+      _userSelected = _userList[index] || null;
+      renderUserList();
+      renderUserDetail();
+    }
+
+    function renderUserList() {
+      const list = document.getElementById('user-list');
+      const total = _userList.length;
+      const activeCount = _userList.filter(u => u.activated).length;
+      const totalEl = document.getElementById('user-total');
+      const activeEl = document.getElementById('user-active');
+      if (totalEl) totalEl.textContent = `总用户 ${total}`;
+      if (activeEl) activeEl.textContent = `已激活 ${activeCount}`;
+      if (!total) {
+        list.innerHTML = '<div class="no-sessions">暂无用户</div>';
+        return;
+      }
+      const selectedKey = _userSelected ? userKey(_userSelected) : '';
+      list.innerHTML = _userList.map((u, i) => {
+        const created = fmt(u.created_at);
+        const lastLogin = fmt(u.last_login);
+        const tag = u.activated ? '<span class="user-tag">已激活</span>' : '<span class="user-tag offline">未激活</span>';
+        const activeClass = selectedKey && userKey(u) === selectedKey ? 'active' : '';
+        return `<div class="user-card ${activeClass}" onclick="selectUser(${i})">
+          <div class="user-info">
+            <div class="user-name">${h(u.username || '—')} ${tag}</div>
+            <div class="user-meta">
+              <span>手机号: ${h(u.phone || '—')}</span>
+              <span>注册: ${created}</span>
+              <span>最近登录: ${lastLogin}</span>
+            </div>
+          </div>
+          <div class="user-actions">
+            <button class="bbtn bb-del" onclick="event.stopPropagation();deleteUser('${a(u.username || '')}')">删除</button>
+          </div>
+        </div>`;
+      }).join('');
+    }
+
+    function renderUserDetail() {
+      const titleEl = document.getElementById('user-detail-title');
+      const detailGrid = document.getElementById('user-detail-grid');
+      const detailWrap = document.querySelector('#user-drawer .ver-drawer-body');
+      const drawerTitleEl = document.querySelector('#user-drawer .ver-drawer-title');
+      if (!_userSelected) {
+        if (titleEl) titleEl.textContent = '用户详情';
+        if (detailGrid) detailGrid.innerHTML = '';
+        if (detailWrap) detailWrap.classList.remove('user-view-detail');
+        if (drawerTitleEl) drawerTitleEl.textContent = '注册账号列表';
+        return;
+      }
+      const u = _userSelected;
+      if (titleEl) titleEl.textContent = '用户详情';
+      if (drawerTitleEl) drawerTitleEl.textContent = `用户名：${u.username || '—'}`;
+      const deviceMatches = devices.filter(d =>
+        (u.username && d.username === u.username) ||
+        (u.phone && d.phone === u.phone));
+      const deviceMap = new Map();
+      deviceMatches.forEach(d => deviceMap.set(d.id, d));
+      const deviceList = [...deviceMap.values()];
+      const deviceItems = deviceList.length
+        ? deviceList.map(d => {
+          const status = d.banned ? '已禁用' : '正常';
+          const remote = d.remoting ? '远控中' : '空闲';
+          return `<div>设备 ${h(d.id || '—')} · 版本 <span>${h(d.appVersion || '—')}</span> · ${status} · ${remote}</div>`;
+        }).join('')
+        : '<div>暂无关联设备</div>';
+      if (detailGrid) {
+        const primaryDevice = deviceList[0] || {};
+      const deviceIdText = primaryDevice.id || '—';
+      const deviceIpText = primaryDevice.ip || '—';
+      const deviceVersionText = primaryDevice.appVersion || '—';
+      const userKeyText = userKey(u);
+      const tempUserLoginPw = tempLoginPwByUserKey[userKeyText] || '';
+      const userLoginPwMasked = tempUserLoginPw ? tempUserLoginPw : (u.password_hash ? '●'.repeat(8) : '—');
+        detailGrid.innerHTML = `
+          <div class="dsec dsec-purple">
+            <div class="dsec-head">
+              <div class="dsec-head-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+              </div>
+              身份凭据
+            </div>
+            <div class="dsec-body">
+              <div class="d-field">
+                <div class="d-field-label">用户名</div>
+                <div class="d-field-val">
+                  <span class="d-val-text">${h(u.username || '—')}</span>
+                  ${u.username ? `
+                  <button class="d-copy-btn" onclick="copyVal('${a(u.username)}', this)" title="复制">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                  </button>` : ''}
+                </div>
+              </div>
+              <div class="d-field">
+                <div class="d-field-label">手机号</div>
+                <div class="d-field-val">
+                  <span class="d-val-text">${h(u.phone || '—')}</span>
+                  ${u.phone ? `
+                  <button class="d-copy-btn" onclick="copyVal('${a(u.phone)}', this)" title="复制">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                  </button>` : ''}
+                </div>
+              </div>
+              <div class="d-field">
+                <div class="d-field-label">登录密码</div>
+                <div class="d-field-val">
+                  <span class="d-val-text ${tempUserLoginPw ? '' : 'masked'}">${userLoginPwMasked}</span>
+                  ${(u.username || u.phone) ? `
+                  <button class="d-copy-btn" onclick="resetLoginPassword('${a(u.username || '')}', '${a(u.phone || '')}', 'custom', null, '${a(userKeyText)}')" title="重置为指定密码">
+                    指定重置
+                  </button>
+                  <button class="d-copy-btn" onclick="resetLoginPassword('${a(u.username || '')}', '${a(u.phone || '')}', 'random', null, '${a(userKeyText)}')" title="重置为随机密码">
+                    随机重置
+                  </button>` : ''}
+                  ${tempUserLoginPw ? `
+                  <button class="d-copy-btn" onclick="copyVal('${a(tempUserLoginPw)}', this)" title="复制">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                  </button>` : ''}
+                </div>
+              </div>
+              <div class="d-field">
+                <div class="d-field-label">激活状态</div>
+                <div class="d-field-val"><span class="d-val-text">${u.activated ? '已激活' : '未激活'}</span></div>
+              </div>
+              <div class="d-field">
+                <div class="d-field-label">注册时间</div>
+                <div class="d-field-val"><span class="d-val-text">${fmt(u.created_at)}</span></div>
+              </div>
+              <div class="d-field">
+                <div class="d-field-label">最近登录</div>
+                <div class="d-field-val"><span class="d-val-text">${fmt(u.last_login)}</span></div>
+              </div>
+              <div class="d-field">
+                <div class="d-field-label">Token 版本</div>
+                <div class="d-field-val"><span class="d-val-text">${String(u.token_version ?? 0)}</span></div>
+              </div>
+            </div>
+          </div>
+          <div class="dsec dsec-blue">
+            <div class="dsec-head">
+              <div class="dsec-head-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+              </div>
+              设备详情
+            </div>
+            <div class="dsec-body">
+              <div class="d-field">
+                <div class="d-field-label">设备 ID</div>
+                <div class="d-field-val">
+                  <span class="d-val-text">${h(deviceIdText)}</span>
+                  ${primaryDevice.id ? `
+                  <button class="d-copy-btn" onclick="copyVal('${a(primaryDevice.id)}', this)" title="复制">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                  </button>` : ''}
+                </div>
+              </div>
+              <div class="d-field">
+                <div class="d-field-label">IP 地址</div>
+                <div class="d-field-val">
+                  <span class="d-val-text">${h(deviceIpText)}</span>
+                  ${primaryDevice.ip ? `
+                  <button class="d-copy-btn" onclick="copyVal('${a(primaryDevice.ip)}', this)" title="复制">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                  </button>` : ''}
+                </div>
+              </div>
+              <div class="d-field">
+                <div class="d-field-label">软件版本</div>
+                <div class="d-field-val">
+                  <span class="d-val-text">${h(deviceVersionText)}</span>
+                  ${primaryDevice.appVersion ? `
+                  <button class="d-copy-btn" onclick="copyVal('${a(primaryDevice.appVersion)}', this)" title="复制">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                  </button>` : ''}
+                </div>
+              </div>
+              <div class="d-field">
+                <div class="d-field-label">关联设备</div>
+                <div class="d-field-val multiline">
+                  <span class="d-val-text">数量：${deviceList.length}</span>
+                  ${deviceItems}
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+      if (detailWrap) detailWrap.classList.add('user-view-detail');
+    }
+
+    async function deleteUser(username) {
+      if (!username) return;
+      if (!confirm(`确认删除用户 ${username}？`)) return;
+      try {
+        const r = await fetch(`/admin/users/${encodeURIComponent(username)}`, {
+          method: 'DELETE',
+          headers: { 'x-admin-token': token },
+        });
+        if (r.status === 401) { logout(); return; }
+        const d = await r.json();
+        if (d.code === 200) {
+          toast('用户已删除', 'success');
+          loadUsersFromServer();
+        } else {
+          toast(d.msg || '删除失败', 'danger');
+        }
+      } catch { toast('删除失败，请检查网络', 'danger'); }
+    }
+
     // ═══════════════════════════════════════════════════════
     // 版本管理
     // ═══════════════════════════════════════════════════════
@@ -3933,6 +4480,7 @@
       if (e.key !== 'Escape') return;
       if (document.getElementById('act-drawer').classList.contains('open')) closeActivationDrawer();
       if (document.getElementById('ver-drawer').classList.contains('open')) closeVersionDrawer();
+      if (document.getElementById('user-drawer').classList.contains('open')) closeUserDrawer();
     });
 
     function setVersionClientType(clientType, btn) {
