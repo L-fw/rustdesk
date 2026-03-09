@@ -5,8 +5,8 @@ import 'package:flutter_hbb/common/app_auth_service.dart';
 
 import '../../common.dart';
 import '../../models/platform_model.dart';
-import 'privacy_policy.dart' as policy_pages;
-import '../terms_of_service.dart' as policy_pages;
+import 'privacy_policy.dart' as privacy_pages;
+import 'terms_of_service.dart' as terms_pages;
 
 /// 应用注册页面
 class AppRegisterPage extends StatefulWidget {
@@ -45,8 +45,8 @@ class _AppRegisterPageState extends State<AppRegisterPage> {
   bool _agreedToTerms = false;
   final String _agreedTermsVersionKey = 'agreed_terms_version';
   final String _agreedPrivacyVersionKey = 'agreed_privacy_version';
-  final String _currentTermsVersion = policy_pages.termsOfServiceVersion;
-  final String _currentPrivacyVersion = policy_pages.privacyPolicyVersion;
+  final String _currentTermsVersion = terms_pages.termsOfServiceVersion;
+  final String _currentPrivacyVersion = privacy_pages.privacyPolicyVersion;
 
   @override
   void initState() {
@@ -473,7 +473,7 @@ class _AppRegisterPageState extends State<AppRegisterPage> {
                     // Navigate to Terms of Service
                     Navigator.of(context).push(
                       MaterialPageRoute(
-                        builder: (_) => const policy_pages.TermsOfServicePage(),
+                        builder: (_) => const terms_pages.TermsOfServicePage(),
                       ),
                     );
                   },
