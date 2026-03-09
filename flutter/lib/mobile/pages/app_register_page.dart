@@ -547,7 +547,7 @@ class _AppRegisterPageState extends State<AppRegisterPage>
                     // Navigate to Privacy Policy
                     Navigator.of(context).push(
                       MaterialPageRoute(
-                        builder: (_) => const policy_pages.PrivacyPolicyPage(),
+                        builder: (_) => const privacy_pages.PrivacyPolicyPage(),
                       ),
                     );
                   },

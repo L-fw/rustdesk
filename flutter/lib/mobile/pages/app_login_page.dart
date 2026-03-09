@@ -515,7 +515,7 @@ class _AppLoginPageState extends State<AppLoginPage>
                     // Navigate to Privacy Policy
                     Navigator.of(context).push(
                       MaterialPageRoute(
-                        builder: (_) => const policy_pages.PrivacyPolicyPage(),
+                        builder: (_) => const privacy_pages.PrivacyPolicyPage(),
                       ),
                     );
                   },
