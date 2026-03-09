@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_hbb/common/app_auth_service.dart';
 
 import '../../common.dart';
+import '../../models/platform_model.dart';
 import 'privacy_policy.dart' as policy_pages;
 import '../terms_of_service.dart' as policy_pages;
 
