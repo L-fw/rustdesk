@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_hbb/common/app_auth_service.dart';
@@ -47,10 +48,16 @@ class _AppLoginPageState extends State<AppLoginPage>
   final String _agreedPrivacyVersionKey = 'agreed_privacy_version';
   final String _currentTermsVersion = terms_pages.termsOfServiceVersion;
   final String _currentPrivacyVersion = privacy_pages.privacyPolicyVersion;
+  final Map<String, AnimationController> _shakeControllers = {};
+  final Map<String, bool> _invalidFields = {};
 
   @override
   void initState() {
     super.initState();
+    _shakeControllers['username'] = _createShakeController();
+    _shakeControllers['password'] = _createShakeController();
+    _shakeControllers['phone'] = _createShakeController();
+    _shakeControllers['sms'] = _createShakeController();
     _tabController = TabController(length: 2, vsync: this);
     _tabController.addListener(() {
       if (_tabController.indexIsChanging) {
@@ -65,6 +72,9 @@ class _AppLoginPageState extends State<AppLoginPage>
   @override
   void dispose() {
     _tabController.dispose();
+    for (final controller in _shakeControllers.values) {
+      controller.dispose();
+    }
     _usernameController.dispose();
     _passwordController.dispose();
     _phoneController.dispose();
@@ -75,6 +85,28 @@ class _AppLoginPageState extends State<AppLoginPage>
     _smsCodeFocus.dispose();
     _countdownTimer?.cancel();
     super.dispose();
+  }
+
+  AnimationController _createShakeController() {
+    return AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 420),
+    );
+  }
+
+  void _setFieldError(String key, FocusNode node, String message) {
+    setState(() {
+      _errorMsg = message;
+      _invalidFields[key] = true;
+    });
+    _shakeControllers[key]?.forward(from: 0);
+    if (!node.hasFocus) node.requestFocus();
+  }
+
+  void _clearFieldError(String key) {
+    if (_invalidFields[key] == true) {
+      setState(() => _invalidFields[key] = false);
+    }
   }
 
   void _startCountdown() {
@@ -93,7 +125,7 @@ class _AppLoginPageState extends State<AppLoginPage>
   Future<void> _sendSmsCode() async {
     final phone = _phoneController.text.trim();
     if (phone.isEmpty) {
-      setState(() => _errorMsg = '请输入手机号');
+      _setFieldError('phone', _phoneFocus, '请输入手机号');
       return;
     }
     setState(() {
@@ -119,11 +151,11 @@ class _AppLoginPageState extends State<AppLoginPage>
     final password = _passwordController.text;
 
     if (username.isEmpty) {
-      setState(() => _errorMsg = '请输入用户名');
+      _setFieldError('username', _usernameFocus, '请输入用户名');
       return;
     }
     if (password.isEmpty) {
-      setState(() => _errorMsg = '请输入密码');
+      _setFieldError('password', _passwordFocus, '请输入密码');
       return;
     }
 
@@ -162,11 +194,11 @@ class _AppLoginPageState extends State<AppLoginPage>
     final code = _smsCodeController.text.trim();
 
     if (phone.isEmpty) {
-      setState(() => _errorMsg = '请输入手机号');
+      _setFieldError('phone', _phoneFocus, '请输入手机号');
       return;
     }
     if (code.isEmpty) {
-      setState(() => _errorMsg = '请输入验证码');
+      _setFieldError('sms', _smsCodeFocus, '请输入验证码');
       return;
     }
 
@@ -376,6 +408,7 @@ class _AppLoginPageState extends State<AppLoginPage>
       children: [
         // Username
         _buildTextField(
+          fieldKey: 'username',
           controller: _usernameController,
           focusNode: _usernameFocus,
           label: '用户名',
@@ -384,6 +417,7 @@ class _AppLoginPageState extends State<AppLoginPage>
         const SizedBox(height: 14),
         // Password
         _buildTextField(
+          fieldKey: 'password',
           controller: _passwordController,
           focusNode: _passwordFocus,
           label: '密码',
@@ -506,6 +540,7 @@ class _AppLoginPageState extends State<AppLoginPage>
       children: [
         // Phone
         _buildTextField(
+          fieldKey: 'phone',
           controller: _phoneController,
           focusNode: _phoneFocus,
           label: '手机号',
@@ -519,6 +554,7 @@ class _AppLoginPageState extends State<AppLoginPage>
           children: [
             Expanded(
               child: _buildTextField(
+                fieldKey: 'sms',
                 controller: _smsCodeController,
                 focusNode: _smsCodeFocus,
                 label: '验证码',
@@ -558,6 +594,7 @@ class _AppLoginPageState extends State<AppLoginPage>
   }
 
   Widget _buildTextField({
+    required String fieldKey,
     required TextEditingController controller,
     required FocusNode focusNode,
     required String label,
@@ -565,48 +602,75 @@ class _AppLoginPageState extends State<AppLoginPage>
     bool obscure = false,
     Widget? suffix,
     TextInputType? keyboardType,
+    ValueChanged<String>? onChanged,
   }) {
     return AnimatedBuilder(
-      animation: focusNode,
+      animation: Listenable.merge([
+        focusNode,
+        if (_shakeControllers[fieldKey] != null) _shakeControllers[fieldKey]!,
+      ]),
       builder: (context, _) {
         final hasFocus = focusNode.hasFocus;
-        return TextField(
-          controller: controller,
-          focusNode: focusNode,
-          obscureText: obscure,
-          keyboardType: keyboardType,
-          style: const TextStyle(fontSize: 15),
-          decoration: InputDecoration(
-            labelText: hasFocus ? label : null,
-            hintText: hasFocus ? null : label,
-            floatingLabelBehavior: hasFocus
-                ? FloatingLabelBehavior.always
-                : FloatingLabelBehavior.never,
-            labelStyle: TextStyle(color: Colors.grey.shade600, fontSize: 15),
-            hintStyle: TextStyle(color: Colors.grey.shade600, fontSize: 15),
-            floatingLabelStyle: TextStyle(
-              color: MyTheme.accent,
-              fontSize: 13,
-              fontWeight: FontWeight.w500,
-              backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        final isInvalid = _invalidFields[fieldKey] == true;
+        final shake = _shakeControllers[fieldKey];
+        final dx = shake == null
+            ? 0.0
+            : math.sin(shake.value * math.pi * 4) * 6 * (1 - shake.value);
+        return Transform.translate(
+          offset: Offset(dx, 0),
+          child: TextField(
+            controller: controller,
+            focusNode: focusNode,
+            obscureText: obscure,
+            keyboardType: keyboardType,
+            onChanged: (value) {
+              if ((value.isNotEmpty || value.trim().isNotEmpty) &&
+                  _invalidFields[fieldKey] == true) {
+                _clearFieldError(fieldKey);
+              }
+              if (onChanged != null) onChanged(value);
+            },
+            style: const TextStyle(fontSize: 15),
+            decoration: InputDecoration(
+              labelText: hasFocus ? label : null,
+              hintText: hasFocus ? null : label,
+              floatingLabelBehavior: hasFocus
+                  ? FloatingLabelBehavior.always
+                  : FloatingLabelBehavior.never,
+              labelStyle: TextStyle(color: Colors.grey.shade600, fontSize: 15),
+              hintStyle: TextStyle(color: Colors.grey.shade600, fontSize: 15),
+              floatingLabelStyle: TextStyle(
+                color: MyTheme.accent,
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
+                backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+              ),
+              prefixIcon: Icon(
+                icon,
+                size: 20,
+                color: isInvalid ? Colors.red : null,
+              ),
+              suffixIcon: suffix,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10),
+                borderSide: BorderSide(color: Colors.grey.shade300),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10),
+                borderSide: BorderSide(
+                    color: isInvalid ? Colors.red : Colors.grey.shade300),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10),
+                borderSide: BorderSide(
+                  color: isInvalid ? Colors.red : MyTheme.accent,
+                  width: 1.5,
+                ),
+              ),
+              contentPadding:
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+              isDense: false,
             ),
-            prefixIcon: Icon(icon, size: 20),
-            suffixIcon: suffix,
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(10),
-              borderSide: BorderSide(color: Colors.grey.shade300),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(10),
-              borderSide: BorderSide(color: Colors.grey.shade300),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(10),
-              borderSide: BorderSide(color: MyTheme.accent, width: 1.5),
-            ),
-            contentPadding:
-                const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-            isDense: false,
           ),
         );
       },

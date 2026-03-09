@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_hbb/common/app_auth_service.dart';
@@ -16,7 +17,8 @@ class AppRegisterPage extends StatefulWidget {
   State<AppRegisterPage> createState() => _AppRegisterPageState();
 }
 
-class _AppRegisterPageState extends State<AppRegisterPage> {
+class _AppRegisterPageState extends State<AppRegisterPage>
+    with SingleTickerProviderStateMixin {
   final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
@@ -47,10 +49,18 @@ class _AppRegisterPageState extends State<AppRegisterPage> {
   final String _agreedPrivacyVersionKey = 'agreed_privacy_version';
   final String _currentTermsVersion = terms_pages.termsOfServiceVersion;
   final String _currentPrivacyVersion = privacy_pages.privacyPolicyVersion;
+  final Map<String, AnimationController> _shakeControllers = {};
+  final Map<String, bool> _invalidFields = {};
 
   @override
   void initState() {
     super.initState();
+    _shakeControllers['username'] = _createShakeController();
+    _shakeControllers['password'] = _createShakeController();
+    _shakeControllers['confirmPassword'] = _createShakeController();
+    _shakeControllers['phone'] = _createShakeController();
+    _shakeControllers['sms'] = _createShakeController();
+    _shakeControllers['activation'] = _createShakeController();
     // Check local storage for agreed terms version
     _agreedToTerms = bind.mainGetLocalOption(key: _agreedTermsVersionKey) == _currentTermsVersion &&
                      bind.mainGetLocalOption(key: _agreedPrivacyVersionKey) == _currentPrivacyVersion;
@@ -58,6 +68,9 @@ class _AppRegisterPageState extends State<AppRegisterPage> {
 
   @override
   void dispose() {
+    for (final controller in _shakeControllers.values) {
+      controller.dispose();
+    }
     _usernameController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
@@ -72,6 +85,28 @@ class _AppRegisterPageState extends State<AppRegisterPage> {
     _activationCodeFocus.dispose();
     _countdownTimer?.cancel();
     super.dispose();
+  }
+
+  AnimationController _createShakeController() {
+    return AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 420),
+    );
+  }
+
+  void _setFieldError(String key, FocusNode node, String message) {
+    setState(() {
+      _errorMsg = message;
+      _invalidFields[key] = true;
+    });
+    _shakeControllers[key]?.forward(from: 0);
+    if (!node.hasFocus) node.requestFocus();
+  }
+
+  void _clearFieldError(String key) {
+    if (_invalidFields[key] == true) {
+      setState(() => _invalidFields[key] = false);
+    }
   }
 
   void _startCountdown() {
@@ -110,7 +145,7 @@ class _AppRegisterPageState extends State<AppRegisterPage> {
   Future<void> _sendSmsCode() async {
     final phone = _phoneController.text.trim();
     if (phone.isEmpty) {
-      setState(() => _errorMsg = '请输入手机号');
+      _setFieldError('phone', _phoneFocus, '请输入手机号');
       return;
     }
     setState(() {
@@ -139,31 +174,31 @@ class _AppRegisterPageState extends State<AppRegisterPage> {
     final activationCode = _activationCodeController.text.trim();
 
     if (username.isEmpty) {
-      setState(() => _errorMsg = '请输入用户名');
+      _setFieldError('username', _usernameFocus, '请输入用户名');
       return;
     }
     if (password.isEmpty) {
-      setState(() => _errorMsg = '请输入密码');
+      _setFieldError('password', _passwordFocus, '请输入密码');
       return;
     }
     if (!_isPasswordValid(password)) {
-      setState(() => _errorMsg = '密码需为6-20位字符，且包含字母和数字');
+      _setFieldError('password', _passwordFocus, '密码需为6-20位字符，且包含字母和数字');
       return;
     }
     if (password != confirmPassword) {
-      setState(() => _errorMsg = '两次密码输入不一致');
+      _setFieldError('confirmPassword', _confirmPasswordFocus, '两次密码输入不一致');
       return;
     }
     if (phone.isEmpty) {
-      setState(() => _errorMsg = '请输入手机号');
+      _setFieldError('phone', _phoneFocus, '请输入手机号');
       return;
     }
     if (smsCode.isEmpty) {
-      setState(() => _errorMsg = '请输入验证码');
+      _setFieldError('sms', _smsCodeFocus, '请输入验证码');
       return;
     }
     if (activationCode.isEmpty) {
-      setState(() => _errorMsg = '请输入激活码');
+      _setFieldError('activation', _activationCodeFocus, '请输入激活码');
       return;
     }
     if (!_agreedToTerms) {
@@ -226,6 +261,7 @@ class _AppRegisterPageState extends State<AppRegisterPage> {
               children: [
                 // Username
                 _buildTextField(
+                  fieldKey: 'username',
                   controller: _usernameController,
                   focusNode: _usernameFocus,
                   label: '用户名',
@@ -234,6 +270,7 @@ class _AppRegisterPageState extends State<AppRegisterPage> {
                 const SizedBox(height: 14),
                 // Password
                 _buildTextField(
+                  fieldKey: 'password',
                   controller: _passwordController,
                   focusNode: _passwordFocus,
                   label: '密码',
@@ -243,6 +280,9 @@ class _AppRegisterPageState extends State<AppRegisterPage> {
                     final error = _validatePasswordFormat(value);
                     if (error != _passwordFormatError) {
                       setState(() => _passwordFormatError = error);
+                    }
+                    if (error == null && _invalidFields['password'] == true) {
+                      _clearFieldError('password');
                     }
                   },
                   suffix: IconButton(
@@ -271,11 +311,18 @@ class _AppRegisterPageState extends State<AppRegisterPage> {
                 const SizedBox(height: 14),
                 // Confirm Password
                 _buildTextField(
+                  fieldKey: 'confirmPassword',
                   controller: _confirmPasswordController,
                   focusNode: _confirmPasswordFocus,
                   label: '确认密码',
                   icon: Icons.lock_outline,
                   obscure: _obscureConfirm,
+                  onChanged: (value) {
+                    if (value == _passwordController.text &&
+                        _invalidFields['confirmPassword'] == true) {
+                      _clearFieldError('confirmPassword');
+                    }
+                  },
                   suffix: IconButton(
                     icon: Icon(
                       _obscureConfirm
@@ -292,6 +339,7 @@ class _AppRegisterPageState extends State<AppRegisterPage> {
                 const SizedBox(height: 14),
                 // Phone
                 _buildTextField(
+                  fieldKey: 'phone',
                   controller: _phoneController,
                   focusNode: _phoneFocus,
                   label: '手机号',
@@ -304,6 +352,7 @@ class _AppRegisterPageState extends State<AppRegisterPage> {
                   children: [
                     Expanded(
                       child: _buildTextField(
+                        fieldKey: 'sms',
                         controller: _smsCodeController,
                         focusNode: _smsCodeFocus,
                         label: '验证码',
@@ -339,6 +388,7 @@ class _AppRegisterPageState extends State<AppRegisterPage> {
                 const SizedBox(height: 14),
                 // Activation Code
                 _buildTextField(
+                  fieldKey: 'activation',
                   controller: _activationCodeController,
                   focusNode: _activationCodeFocus,
                   label: '激活码',
@@ -518,6 +568,7 @@ class _AppRegisterPageState extends State<AppRegisterPage> {
   }
 
   Widget _buildTextField({
+    required String fieldKey,
     required TextEditingController controller,
     required FocusNode focusNode,
     required String label,
@@ -528,47 +579,72 @@ class _AppRegisterPageState extends State<AppRegisterPage> {
     ValueChanged<String>? onChanged,
   }) {
     return AnimatedBuilder(
-      animation: focusNode,
+      animation: Listenable.merge([
+        focusNode,
+        if (_shakeControllers[fieldKey] != null) _shakeControllers[fieldKey]!,
+      ]),
       builder: (context, _) {
         final hasFocus = focusNode.hasFocus;
-        return TextField(
-          controller: controller,
-          focusNode: focusNode,
-          obscureText: obscure,
-          keyboardType: keyboardType,
-          onChanged: onChanged,
-          style: const TextStyle(fontSize: 15),
-          decoration: InputDecoration(
-            labelText: hasFocus ? label : null,
-            hintText: hasFocus ? null : label,
-            floatingLabelBehavior: hasFocus
-                ? FloatingLabelBehavior.always
-                : FloatingLabelBehavior.never,
-            labelStyle: TextStyle(color: Colors.grey.shade600, fontSize: 15),
-            hintStyle: TextStyle(color: Colors.grey.shade600, fontSize: 15),
-            floatingLabelStyle: TextStyle(
-              color: MyTheme.accent,
-              fontSize: 13,
-              fontWeight: FontWeight.w500,
-              backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        final isInvalid = _invalidFields[fieldKey] == true;
+        final shake = _shakeControllers[fieldKey];
+        final dx = shake == null
+            ? 0.0
+            : math.sin(shake.value * math.pi * 4) * 6 * (1 - shake.value);
+        return Transform.translate(
+          offset: Offset(dx, 0),
+          child: TextField(
+            controller: controller,
+            focusNode: focusNode,
+            obscureText: obscure,
+            keyboardType: keyboardType,
+            onChanged: (value) {
+              if ((value.isNotEmpty || value.trim().isNotEmpty) &&
+                  _invalidFields[fieldKey] == true) {
+                _clearFieldError(fieldKey);
+              }
+              if (onChanged != null) onChanged(value);
+            },
+            style: const TextStyle(fontSize: 15),
+            decoration: InputDecoration(
+              labelText: hasFocus ? label : null,
+              hintText: hasFocus ? null : label,
+              floatingLabelBehavior: hasFocus
+                  ? FloatingLabelBehavior.always
+                  : FloatingLabelBehavior.never,
+              labelStyle: TextStyle(color: Colors.grey.shade600, fontSize: 15),
+              hintStyle: TextStyle(color: Colors.grey.shade600, fontSize: 15),
+              floatingLabelStyle: TextStyle(
+                color: MyTheme.accent,
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
+                backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+              ),
+              prefixIcon: Icon(
+                icon,
+                size: 20,
+                color: isInvalid ? Colors.red : null,
+              ),
+              suffixIcon: suffix,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10),
+                borderSide: BorderSide(color: Colors.grey.shade300),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10),
+                borderSide: BorderSide(
+                    color: isInvalid ? Colors.red : Colors.grey.shade300),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10),
+                borderSide: BorderSide(
+                  color: isInvalid ? Colors.red : MyTheme.accent,
+                  width: 1.5,
+                ),
+              ),
+              contentPadding:
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+              isDense: false,
             ),
-            prefixIcon: Icon(icon, size: 20),
-            suffixIcon: suffix,
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(10),
-              borderSide: BorderSide(color: Colors.grey.shade300),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(10),
-              borderSide: BorderSide(color: Colors.grey.shade300),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(10),
-              borderSide: BorderSide(color: MyTheme.accent, width: 1.5),
-            ),
-            contentPadding:
-                const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-            isDense: false,
           ),
         );
       },

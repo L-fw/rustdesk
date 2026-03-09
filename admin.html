@@ -4064,24 +4064,16 @@
       if (btn) btn.disabled = historyExportSessions.length === 0;
     }
 
-    function getOperatorInfo(session, device) {
-      const peerId = session.peerId;
-      const peerDevice = peerId ? devices.find(d => d.id === peerId) : null;
-      const username = session.peerUsername || peerDevice?.username || session.username || device.username || '—';
-      const phone = session.peerPhone || peerDevice?.phone || session.phone || device.phone || '—';
-      return { username, phone };
-    }
-
     function exportHistoryExcel() {
       if (!historyExportSessions.length) {
         toast('暂无会话记录', 'info');
         return;
       }
-      const device = devices.find(d => d.id === historyExportDeviceId) || {};
       const rows = historyExportSessions.map(s => {
         const active = !s.ended && (Date.now() - new Date(s.lastHeartbeat || s.startTime).getTime() < 90000);
         const status = active ? '进行中' : '已结束';
-        const operator = getOperatorInfo(s, device);
+        const username = s.username || '—';
+        const phone = s.phone || '—';
         const duration = s.endTime
           ? fmtDuration(new Date(s.endTime) - new Date(s.startTime))
           : active ? fmtDuration(Date.now() - new Date(s.startTime).getTime()) + ' (进行中)' : '—';
@@ -4090,8 +4082,8 @@
           s.sessionId || '—',
           status,
           s.peerId || '—',
-          operator.username,
-          operator.phone,
+          username,
+          phone,
           fmt(s.startTime),
           s.endTime ? fmt(s.endTime) : '—',
           duration,
@@ -4135,7 +4127,8 @@
           const badge = active
             ? `<span class="badge b-remote"><span class="bdot"></span>进行中</span>`
             : `<span class="badge b-idle"><span class="bdot"></span>已结束</span>`;
-          const operator = getOperatorInfo(s, device);
+          const username = s.username || device.username || '—';
+          const phone = s.phone || device.phone || '—';
           const duration = s.endTime
             ? fmtDuration(new Date(s.endTime) - new Date(s.startTime))
             : active ? fmtDuration(Date.now() - new Date(s.startTime).getTime()) + ' (进行中)' : '—';
@@ -4147,8 +4140,8 @@
         </div>
         <div class="si-detail">
           <span style="color:var(--text)">操控方</span><span>${h(s.peerId || '—')}</span>
-          <span style="color:var(--text)">用户名</span><span>${h(operator.username)}</span>
-          <span style="color:var(--text)">手机号</span><span>${h(operator.phone)}</span>
+          <span style="color:var(--text)">用户名</span><span>${h(username)}</span>
+          <span style="color:var(--text)">手机号</span><span>${h(phone)}</span>
           <span style="color:var(--text)">开始时间</span><span>${fmt(s.startTime)}</span>
           <span style="color:var(--text)">结束时间</span><span>${s.endTime ? fmt(s.endTime) : '—'}</span>
           <span style="color:var(--text)">持续时长</span><span>${duration}</span>
@@ -4236,9 +4229,8 @@
         const sb = active
           ? `<span class="badge b-remote" style="font-size:10px;padding:2px 7px"><span class="bdot"></span>进行中</span>`
           : `<span class="badge b-idle" style="font-size:10px;padding:2px 7px"><span class="bdot"></span>已结束</span>`;
-        const operator = getOperatorInfo(s, d);
-        const username = operator.username;
-        const phone = operator.phone;
+        const username = s.username || d.username || '—';
+        const phone = s.phone || d.phone || '—';
         const dur = s.endTime
           ? fmtDuration(new Date(s.endTime) - new Date(s.startTime))
           : active ? fmtDuration(Date.now() - new Date(s.startTime).getTime()) + ' (进行中)' : '—';
