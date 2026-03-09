@@ -15,6 +15,8 @@ const _warningBorder = Color(0x33FFB43C);
 const _warningText = Color(0xFFC8A060);
 const _accentBorder = Color(0x405B8FFF);
 
+const String privacyPolicyVersion = '1.0';
+
 class PrivacyPolicyPage extends StatelessWidget {
   const PrivacyPolicyPage({super.key});
 

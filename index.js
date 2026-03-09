@@ -73,6 +73,8 @@ const DEFAULT_VERSION_CONFIG = {
   android: {
     full: {
       latestVersion: '1.8.0',
+      latestTermsVersion: '1.0',
+      latestPrivacyVersion: '1.0',
       minRequired: '1.4.5',
       forceUpdate: false,
       downloadUrl: '/download/full/rustdesk-latest.apk',
@@ -81,6 +83,8 @@ const DEFAULT_VERSION_CONFIG = {
     },
     share_only: {
       latestVersion: '1.8.0',
+      latestTermsVersion: '1.0',
+      latestPrivacyVersion: '1.0',
       minRequired: '1.4.5',
       forceUpdate: false,
       downloadUrl: '/download/share_only/rustdesk-latest.apk',
@@ -91,7 +95,7 @@ const DEFAULT_VERSION_CONFIG = {
 };
 
 const VERSION_CLIENT_TYPES = new Set(['full', 'share_only']);
-const VERSION_CONFIG_FIELDS = ['latestVersion', 'minRequired', 'forceUpdate', 'downloadUrl', 'updateLog', 'releaseUrl'];
+const VERSION_CONFIG_FIELDS = ['latestVersion', 'latestTermsVersion', 'latestPrivacyVersion', 'minRequired', 'forceUpdate', 'downloadUrl', 'updateLog', 'releaseUrl'];
 
 function cloneDefaultVersionConfig() {
   return JSON.parse(JSON.stringify(DEFAULT_VERSION_CONFIG));
@@ -369,7 +373,16 @@ function generateUserToken() {
 // Body: { username, password, phone, sms_code, activation_code }
 // ───────────────────────────────────────────────────────
 app.post('/api/user/register', (req, res) => {
-  const { username, password, phone, sms_code, activation_code, agreed_terms_version, agreed_time } = req.body || {};
+  const { username, password, phone, sms_code, activation_code, agreed_terms_version, agreed_privacy_version, agreed_time } = req.body || {};
+
+  const versionConfig = loadVersionConfig();
+  const latestTermsVersion = versionConfig.android?.full?.latestTermsVersion || '1.0';
+  const latestPrivacyVersion = versionConfig.android?.full?.latestPrivacyVersion || '1.0';
+
+  if (!agreed_terms_version || compareVersion(agreed_terms_version, latestTermsVersion) < 0 ||
+    !agreed_privacy_version || compareVersion(agreed_privacy_version, latestPrivacyVersion) < 0) {
+    return res.status(400).json({ code: 400, msg: '请先同意最新版本的用户协议与隐私政策' });
+  }
 
   if (!username || !password) {
     return res.status(400).json({ code: 400, msg: '用户名和密码不能为空' });
@@ -449,6 +462,7 @@ app.post('/api/user/register', (req, res) => {
     created_at: new Date().toISOString(),
     token_version: 1,
     agreed_terms_version: agreed_terms_version || null,
+    agreed_privacy_version: agreed_privacy_version || null,
     agreed_time: agreed_time || null,
   };
   saveUsers(users);
@@ -481,7 +495,7 @@ app.post('/api/user/register', (req, res) => {
 // Body: { username, password }
 // ───────────────────────────────────────────────────────
 app.post('/api/user/login', (req, res) => {
-  const { username, password, agreed_terms_version, agreed_time } = req.body || {};
+  const { username, password, agreed_terms_version, agreed_privacy_version, agreed_time } = req.body || {};
 
   if (!username || !password) {
     return res.status(400).json({ code: 400, msg: '用户名和密码不能为空' });
@@ -498,6 +512,20 @@ app.post('/api/user/login', (req, res) => {
     return res.status(401).json({ code: 401, msg: '用户名或密码错误' });
   }
 
+  const versionConfig = loadVersionConfig();
+  const latestTermsVersion = versionConfig.android?.full?.latestTermsVersion || '1.0';
+  const latestPrivacyVersion = versionConfig.android?.full?.latestPrivacyVersion || '1.0';
+  const effectiveTermsVersion = agreed_terms_version || user.agreed_terms_version || '0.0';
+  const effectivePrivacyVersion = agreed_privacy_version || user.agreed_privacy_version || '0.0';
+  if (compareVersion(effectiveTermsVersion, latestTermsVersion) < 0 || compareVersion(effectivePrivacyVersion, latestPrivacyVersion) < 0) {
+    return res.status(403).json({
+      code: 403,
+      msg: '需同意最新用户协议与隐私政策',
+      latest_terms_version: latestTermsVersion,
+      latest_privacy_version: latestPrivacyVersion
+    });
+  }
+
   const token = generateUserToken();
   if (!user.token_version || !Number.isFinite(user.token_version)) {
     user.token_version = 1;
@@ -507,6 +535,7 @@ app.post('/api/user/login', (req, res) => {
   user.token = token;
   user.last_login = new Date().toISOString();
   if (agreed_terms_version) user.agreed_terms_version = agreed_terms_version;
+  if (agreed_privacy_version) user.agreed_privacy_version = agreed_privacy_version;
   if (agreed_time) user.agreed_time = agreed_time;
   saveUsers(users);
 
@@ -558,7 +587,7 @@ app.post('/api/user/sms/send', (req, res) => {
 // Body: { phone, code }
 // ───────────────────────────────────────────────────────
 app.post('/api/user/sms/login', (req, res) => {
-  const { phone, code, agreed_terms_version, agreed_time } = req.body || {};
+  const { phone, code, agreed_terms_version, agreed_privacy_version, agreed_time } = req.body || {};
   if (!phone || !code) {
     return res.status(400).json({ code: 400, msg: '手机号和验证码不能为空' });
   }
@@ -587,6 +616,20 @@ app.post('/api/user/sms/login', (req, res) => {
     return res.status(401).json({ code: 401, msg: '该手机号未注册' });
   }
 
+  const versionConfig = loadVersionConfig();
+  const latestTermsVersion = versionConfig.android?.full?.latestTermsVersion || '1.0';
+  const latestPrivacyVersion = versionConfig.android?.full?.latestPrivacyVersion || '1.0';
+  const effectiveTermsVersion = agreed_terms_version || user.agreed_terms_version || '0.0';
+  const effectivePrivacyVersion = agreed_privacy_version || user.agreed_privacy_version || '0.0';
+  if (compareVersion(effectiveTermsVersion, latestTermsVersion) < 0 || compareVersion(effectivePrivacyVersion, latestPrivacyVersion) < 0) {
+    return res.status(403).json({
+      code: 403,
+      msg: '需同意最新用户协议与隐私政策',
+      latest_terms_version: latestTermsVersion,
+      latest_privacy_version: latestPrivacyVersion
+    });
+  }
+
   const token = generateUserToken();
   if (!user.token_version || !Number.isFinite(user.token_version)) {
     user.token_version = 1;
@@ -595,6 +638,7 @@ app.post('/api/user/sms/login', (req, res) => {
   user.token = token;
   user.last_login = new Date().toISOString();
   if (agreed_terms_version) user.agreed_terms_version = agreed_terms_version;
+  if (agreed_privacy_version) user.agreed_privacy_version = agreed_privacy_version;
   if (agreed_time) user.agreed_time = agreed_time;
   saveUsers(users);
 
@@ -738,6 +782,8 @@ app.post('/api/version/check', (req, res) => {
       msg: `${clientTypeLabel}当前版本 ${effectiveAppVersion} 低于最低要求版本 ${cfg.minRequired}，已拒绝连接`,
       minRequired: cfg.minRequired,
       latestVersion: cfg.latestVersion,
+      latestTermsVersion: cfg.latestTermsVersion,
+      latestPrivacyVersion: cfg.latestPrivacyVersion,
       forceUpdate: true,
       downloadUrl: cfg.downloadUrl,
       updateLog: cfg.updateLog,
@@ -748,6 +794,8 @@ app.post('/api/version/check', (req, res) => {
   return res.json({
     url: cfg.releaseUrl,
     latestVersion: cfg.latestVersion,
+    latestTermsVersion: cfg.latestTermsVersion,
+    latestPrivacyVersion: cfg.latestPrivacyVersion,
     minRequired: cfg.minRequired,
     forceUpdate: cfg.forceUpdate,
     downloadUrl: cfg.downloadUrl,

@@ -61,6 +61,7 @@ class AppAuthService {
     required String smsCode,
     required String activationCode,
     String? agreedTermsVersion,
+    String? agreedPrivacyVersion,
     String? agreedTime,
   }) async {
     try {
@@ -71,6 +72,7 @@ class AppAuthService {
         'sms_code': smsCode,
         'activation_code': activationCode,
         if (agreedTermsVersion != null) 'agreed_terms_version': agreedTermsVersion,
+        if (agreedPrivacyVersion != null) 'agreed_privacy_version': agreedPrivacyVersion,
         if (agreedTime != null) 'agreed_time': agreedTime,
       });
       if (result['code'] == 200) {
@@ -86,6 +88,7 @@ class AppAuthService {
     required String username,
     required String password,
     String? agreedTermsVersion,
+    String? agreedPrivacyVersion,
     String? agreedTime,
   }) async {
     try {
@@ -93,6 +96,7 @@ class AppAuthService {
         'username': username,
         'password': password,
         if (agreedTermsVersion != null) 'agreed_terms_version': agreedTermsVersion,
+        if (agreedPrivacyVersion != null) 'agreed_privacy_version': agreedPrivacyVersion,
         if (agreedTime != null) 'agreed_time': agreedTime,
       });
       if (result['code'] == 200 && result['token'] != null) {
@@ -130,6 +134,7 @@ class AppAuthService {
     required String phone,
     required String code,
     String? agreedTermsVersion,
+    String? agreedPrivacyVersion,
     String? agreedTime,
   }) async {
     try {
@@ -137,6 +142,7 @@ class AppAuthService {
         'phone': phone,
         'code': code,
         if (agreedTermsVersion != null) 'agreed_terms_version': agreedTermsVersion,
+        if (agreedPrivacyVersion != null) 'agreed_privacy_version': agreedPrivacyVersion,
         if (agreedTime != null) 'agreed_time': agreedTime,
       });
       if (result['code'] == 200 && result['token'] != null) {

@@ -44,7 +44,9 @@ class _AppLoginPageState extends State<AppLoginPage>
 
   bool _agreedToTerms = false;
   final String _agreedTermsVersionKey = 'agreed_terms_version';
-  final String _currentTermsVersion = '1.0.0';
+  final String _agreedPrivacyVersionKey = 'agreed_privacy_version';
+  final String _currentTermsVersion = policy_pages.termsOfServiceVersion;
+  final String _currentPrivacyVersion = policy_pages.privacyPolicyVersion;
 
   @override
   void initState() {
@@ -56,7 +58,8 @@ class _AppLoginPageState extends State<AppLoginPage>
       }
     });
     // Check local storage for agreed terms version
-    _agreedToTerms = bind.mainGetLocalOption(key: _agreedTermsVersionKey) == _currentTermsVersion;
+    _agreedToTerms = bind.mainGetLocalOption(key: _agreedTermsVersionKey) == _currentTermsVersion &&
+                     bind.mainGetLocalOption(key: _agreedPrivacyVersionKey) == _currentPrivacyVersion;
   }
 
   @override
@@ -138,6 +141,7 @@ class _AppLoginPageState extends State<AppLoginPage>
       username: username,
       password: password,
       agreedTermsVersion: _currentTermsVersion,
+      agreedPrivacyVersion: _currentPrivacyVersion,
       agreedTime: DateTime.now().toIso8601String(),
     );
 
@@ -147,6 +151,7 @@ class _AppLoginPageState extends State<AppLoginPage>
         setState(() => _errorMsg = error);
       } else {
         bind.mainSetLocalOption(key: _agreedTermsVersionKey, value: _currentTermsVersion);
+        bind.mainSetLocalOption(key: _agreedPrivacyVersionKey, value: _currentPrivacyVersion);
         _goToHome();
       }
     }
@@ -179,6 +184,7 @@ class _AppLoginPageState extends State<AppLoginPage>
       phone: phone, 
       code: code,
       agreedTermsVersion: _currentTermsVersion,
+      agreedPrivacyVersion: _currentPrivacyVersion,
       agreedTime: DateTime.now().toIso8601String(),
     );
 
@@ -188,6 +194,7 @@ class _AppLoginPageState extends State<AppLoginPage>
         setState(() => _errorMsg = error);
       } else {
         bind.mainSetLocalOption(key: _agreedTermsVersionKey, value: _currentTermsVersion);
+        bind.mainSetLocalOption(key: _agreedPrivacyVersionKey, value: _currentPrivacyVersion);
         _goToHome();
       }
     }

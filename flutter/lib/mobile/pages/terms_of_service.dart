@@ -15,6 +15,8 @@ const _warningBg = Color(0x14FFB43C);
 const _warningBorder = Color(0x33FFB43C);
 const _warningText = Color(0xFFC8A060);
 
+const String termsOfServiceVersion = '1.0';
+
 class TermsOfServicePage extends StatelessWidget {
   const TermsOfServicePage({super.key});
 

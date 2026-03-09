@@ -43,13 +43,16 @@ class _AppRegisterPageState extends State<AppRegisterPage> {
 
   bool _agreedToTerms = false;
   final String _agreedTermsVersionKey = 'agreed_terms_version';
-  final String _currentTermsVersion = '1.0.0';
+  final String _agreedPrivacyVersionKey = 'agreed_privacy_version';
+  final String _currentTermsVersion = policy_pages.termsOfServiceVersion;
+  final String _currentPrivacyVersion = policy_pages.privacyPolicyVersion;
 
   @override
   void initState() {
     super.initState();
     // Check local storage for agreed terms version
-    _agreedToTerms = bind.mainGetLocalOption(key: _agreedTermsVersionKey) == _currentTermsVersion;
+    _agreedToTerms = bind.mainGetLocalOption(key: _agreedTermsVersionKey) == _currentTermsVersion &&
+                     bind.mainGetLocalOption(key: _agreedPrivacyVersionKey) == _currentPrivacyVersion;
   }
 
   @override
@@ -179,6 +182,7 @@ class _AppRegisterPageState extends State<AppRegisterPage> {
       smsCode: smsCode,
       activationCode: activationCode,
       agreedTermsVersion: _currentTermsVersion,
+      agreedPrivacyVersion: _currentPrivacyVersion,
       agreedTime: DateTime.now().toIso8601String(),
     );
 
@@ -188,6 +192,7 @@ class _AppRegisterPageState extends State<AppRegisterPage> {
         setState(() => _errorMsg = error);
       } else {
         bind.mainSetLocalOption(key: _agreedTermsVersionKey, value: _currentTermsVersion);
+        bind.mainSetLocalOption(key: _agreedPrivacyVersionKey, value: _currentPrivacyVersion);
         // 注册成功，返回登录页
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(

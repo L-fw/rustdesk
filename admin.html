@@ -3384,6 +3384,14 @@
         <input type="text" id="ver-min" placeholder="低于此版本强制更新" />
       </div>
       <div class="ver-field">
+        <div class="ver-field-label">用户协议版本</div>
+        <input type="text" id="ver-terms" placeholder="例如 1.0" />
+      </div>
+      <div class="ver-field">
+        <div class="ver-field-label">隐私政策版本</div>
+        <input type="text" id="ver-privacy" placeholder="例如 1.0" />
+      </div>
+      <div class="ver-field">
         <div class="ver-toggle" onclick="toggleForceUpdate()">
           <div class="ver-toggle-track" id="ver-force-track">
             <div class="ver-toggle-thumb"></div>
@@ -4719,6 +4727,8 @@
           _forceUpdate = !!d.data.forceUpdate;
           // populate form
           document.getElementById('ver-latest').value = d.data.latestVersion || '';
+          document.getElementById('ver-terms').value = d.data.latestTermsVersion || '';
+          document.getElementById('ver-privacy').value = d.data.latestPrivacyVersion || '';
           document.getElementById('ver-min').value = d.data.minRequired || '';
           document.getElementById('ver-download-url').value = d.data.downloadUrl || '';
           document.getElementById('ver-release-url').value = d.data.releaseUrl || '';
@@ -4745,6 +4755,8 @@
         const body = {
           clientType: _versionClientType,
           latestVersion: document.getElementById('ver-latest').value.trim(),
+          latestTermsVersion: document.getElementById('ver-terms').value.trim(),
+          latestPrivacyVersion: document.getElementById('ver-privacy').value.trim(),
           minRequired: document.getElementById('ver-min').value.trim(),
           forceUpdate: _forceUpdate,
           downloadUrl: document.getElementById('ver-download-url').value.trim(),
