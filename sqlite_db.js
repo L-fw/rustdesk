@@ -17,7 +17,9 @@ function initSQLiteDatabase(baseDir) {
         activated INTEGER DEFAULT 1,
         created_at TEXT,
         last_login TEXT,
-        password_updated_at TEXT
+        password_updated_at TEXT,
+        agreed_terms_version TEXT,
+        agreed_time TEXT
       )
     `);
     db.run(`

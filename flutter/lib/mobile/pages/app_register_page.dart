@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_hbb/common/app_auth_service.dart';
 
 import '../../common.dart';
+import 'privacy_policy.dart' as policy_pages;
+import '../terms_of_service.dart' as policy_pages;
 
 /// 应用注册页面
 class AppRegisterPage extends StatefulWidget {
@@ -38,6 +40,17 @@ class _AppRegisterPageState extends State<AppRegisterPage> {
   Timer? _countdownTimer;
 
   final _authService = AppAuthService();
+
+  bool _agreedToTerms = false;
+  final String _agreedTermsVersionKey = 'agreed_terms_version';
+  final String _currentTermsVersion = '1.0.0';
+
+  @override
+  void initState() {
+    super.initState();
+    // Check local storage for agreed terms version
+    _agreedToTerms = bind.mainGetLocalOption(key: _agreedTermsVersionKey) == _currentTermsVersion;
+  }
 
   @override
   void dispose() {
@@ -149,6 +162,10 @@ class _AppRegisterPageState extends State<AppRegisterPage> {
       setState(() => _errorMsg = '请输入激活码');
       return;
     }
+    if (!_agreedToTerms) {
+      setState(() => _errorMsg = '请先阅读并同意《用户协议》与《隐私政策》');
+      return;
+    }
 
     setState(() {
       _isLoading = true;
@@ -161,6 +178,8 @@ class _AppRegisterPageState extends State<AppRegisterPage> {
       phone: phone,
       smsCode: smsCode,
       activationCode: activationCode,
+      agreedTermsVersion: _currentTermsVersion,
+      agreedTime: DateTime.now().toIso8601String(),
     );
 
     if (mounted) {
@@ -168,6 +187,7 @@ class _AppRegisterPageState extends State<AppRegisterPage> {
       if (error != null) {
         setState(() => _errorMsg = error);
       } else {
+        bind.mainSetLocalOption(key: _agreedTermsVersionKey, value: _currentTermsVersion);
         // 注册成功，返回登录页
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -318,7 +338,10 @@ class _AppRegisterPageState extends State<AppRegisterPage> {
                   label: '激活码',
                   icon: Icons.vpn_key_outlined,
                 ),
-                const SizedBox(height: 24),
+                // Terms of Service Checkbox
+                _buildTermsCheckbox(isDark),
+
+                const SizedBox(height: 16),
 
                 // Error message
                 if (_errorMsg != null) ...[
@@ -408,6 +431,83 @@ class _AppRegisterPageState extends State<AppRegisterPage> {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildTermsCheckbox(bool isDark) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SizedBox(
+          width: 24,
+          height: 24,
+          child: Checkbox(
+            value: _agreedToTerms,
+            activeColor: MyTheme.accent,
+            onChanged: (val) {
+              setState(() => _agreedToTerms = val ?? false);
+            },
+          ),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Padding(
+            padding: const EdgeInsets.only(top: 2),
+            child: Wrap(
+              children: [
+                Text(
+                  '我已阅读并同意',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: isDark ? Colors.white54 : Colors.black54,
+                  ),
+                ),
+                GestureDetector(
+                  onTap: () {
+                    // Navigate to Terms of Service
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => const policy_pages.TermsOfServicePage(),
+                      ),
+                    );
+                  },
+                  child: Text(
+                    '《用户协议》',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: MyTheme.accent,
+                    ),
+                  ),
+                ),
+                Text(
+                  '与',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: isDark ? Colors.white54 : Colors.black54,
+                  ),
+                ),
+                GestureDetector(
+                  onTap: () {
+                    // Navigate to Privacy Policy
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => const policy_pages.PrivacyPolicyPage(),
+                      ),
+                    );
+                  },
+                  child: Text(
+                    '《隐私政策》',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: MyTheme.accent,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
     );
   }
 

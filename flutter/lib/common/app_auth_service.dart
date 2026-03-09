@@ -60,6 +60,8 @@ class AppAuthService {
     required String phone,
     required String smsCode,
     required String activationCode,
+    String? agreedTermsVersion,
+    String? agreedTime,
   }) async {
     try {
       final result = await _post('/api/user/register', {
@@ -68,6 +70,8 @@ class AppAuthService {
         'phone': phone,
         'sms_code': smsCode,
         'activation_code': activationCode,
+        if (agreedTermsVersion != null) 'agreed_terms_version': agreedTermsVersion,
+        if (agreedTime != null) 'agreed_time': agreedTime,
       });
       if (result['code'] == 200) {
         return null; // 成功
@@ -81,11 +85,15 @@ class AppAuthService {
   Future<String?> login({
     required String username,
     required String password,
+    String? agreedTermsVersion,
+    String? agreedTime,
   }) async {
     try {
       final result = await _post('/api/user/login', {
         'username': username,
         'password': password,
+        if (agreedTermsVersion != null) 'agreed_terms_version': agreedTermsVersion,
+        if (agreedTime != null) 'agreed_time': agreedTime,
       });
       if (result['code'] == 200 && result['token'] != null) {
         await _saveLoginInfo(
@@ -121,11 +129,15 @@ class AppAuthService {
   Future<String?> smsLogin({
     required String phone,
     required String code,
+    String? agreedTermsVersion,
+    String? agreedTime,
   }) async {
     try {
       final result = await _post('/api/user/sms/login', {
         'phone': phone,
         'code': code,
+        if (agreedTermsVersion != null) 'agreed_terms_version': agreedTermsVersion,
+        if (agreedTime != null) 'agreed_time': agreedTime,
       });
       if (result['code'] == 200 && result['token'] != null) {
         await _saveLoginInfo(

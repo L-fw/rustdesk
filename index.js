@@ -103,7 +103,7 @@ function normalizeVersionClientType(clientType) {
 
 function getVersionClientTypeFromReq(req) {
   return normalizeVersionClientType(
-      req.query.client_type || req.body?.clientType || req.body?.client_type);
+    req.query.client_type || req.body?.clientType || req.body?.client_type);
 }
 
 function getApkDirByClientType(clientType) {
@@ -124,8 +124,8 @@ function parseVersionSegments(version) {
   const matches = version.match(/\d+/g);
   if (!matches) return [];
   return matches
-      .map(segment => Number.parseInt(segment, 10))
-      .filter(segment => Number.isFinite(segment));
+    .map(segment => Number.parseInt(segment, 10))
+    .filter(segment => Number.isFinite(segment));
 }
 
 function compareVersion(versionA, versionB) {
@@ -183,7 +183,7 @@ function saveVersionConfig(config) {
 // multer 配置：APK 上传
 const apkStorage = multer.diskStorage({
   destination: (req, _file, cb) =>
-      cb(null, getApkDirByClientType(getVersionClientTypeFromReq(req))),
+    cb(null, getApkDirByClientType(getVersionClientTypeFromReq(req))),
   filename: (_req, file, cb) => {
     // 保留原始文件名，如有同名则覆盖
     cb(null, file.originalname);
@@ -309,17 +309,19 @@ function listUsers(query) {
       activated: !!u.activated,
       token_version: u.token_version ?? 0,
       password_updated_at: u.password_updated_at || '',
+      agreed_terms_version: u.agreed_terms_version || '',
+      agreed_time: u.agreed_time || '',
     };
   });
   const filtered = q
-      ? list.filter(u =>
-          u.username.toLowerCase().includes(q) ||
-          u.phone.toLowerCase().includes(q))
-      : list;
+    ? list.filter(u =>
+      u.username.toLowerCase().includes(q) ||
+      u.phone.toLowerCase().includes(q))
+    : list;
   return filtered.sort(
-      (a, b) =>
-          new Date(b.created_at || 0).getTime() -
-          new Date(a.created_at || 0).getTime());
+    (a, b) =>
+      new Date(b.created_at || 0).getTime() -
+      new Date(a.created_at || 0).getTime());
 }
 
 function loadActivationCodes() {
@@ -367,7 +369,7 @@ function generateUserToken() {
 // Body: { username, password, phone, sms_code, activation_code }
 // ───────────────────────────────────────────────────────
 app.post('/api/user/register', (req, res) => {
-  const { username, password, phone, sms_code, activation_code } = req.body || {};
+  const { username, password, phone, sms_code, activation_code, agreed_terms_version, agreed_time } = req.body || {};
 
   if (!username || !password) {
     return res.status(400).json({ code: 400, msg: '用户名和密码不能为空' });
@@ -446,6 +448,8 @@ app.post('/api/user/register', (req, res) => {
     activated: true,
     created_at: new Date().toISOString(),
     token_version: 1,
+    agreed_terms_version: agreed_terms_version || null,
+    agreed_time: agreed_time || null,
   };
   saveUsers(users);
 
@@ -477,7 +481,7 @@ app.post('/api/user/register', (req, res) => {
 // Body: { username, password }
 // ───────────────────────────────────────────────────────
 app.post('/api/user/login', (req, res) => {
-  const { username, password } = req.body || {};
+  const { username, password, agreed_terms_version, agreed_time } = req.body || {};
 
   if (!username || !password) {
     return res.status(400).json({ code: 400, msg: '用户名和密码不能为空' });
@@ -502,6 +506,8 @@ app.post('/api/user/login', (req, res) => {
   // 存储 token 到用户信息
   user.token = token;
   user.last_login = new Date().toISOString();
+  if (agreed_terms_version) user.agreed_terms_version = agreed_terms_version;
+  if (agreed_time) user.agreed_time = agreed_time;
   saveUsers(users);
 
   const bindDeviceId = req.headers['x-device-id'];
@@ -552,7 +558,7 @@ app.post('/api/user/sms/send', (req, res) => {
 // Body: { phone, code }
 // ───────────────────────────────────────────────────────
 app.post('/api/user/sms/login', (req, res) => {
-  const { phone, code } = req.body || {};
+  const { phone, code, agreed_terms_version, agreed_time } = req.body || {};
   if (!phone || !code) {
     return res.status(400).json({ code: 400, msg: '手机号和验证码不能为空' });
   }
@@ -588,6 +594,8 @@ app.post('/api/user/sms/login', (req, res) => {
   user.token_version = user.token_version >= TOKEN_VERSION_MAX ? 1 : user.token_version + 1;
   user.token = token;
   user.last_login = new Date().toISOString();
+  if (agreed_terms_version) user.agreed_terms_version = agreed_terms_version;
+  if (agreed_time) user.agreed_time = agreed_time;
   saveUsers(users);
 
   const bindDeviceId = req.headers['x-device-id'];
@@ -641,8 +649,8 @@ app.post('/api/user/password/reset', (req, res) => {
   const { phone, sms_code, new_password } = req.body || {};
   if (!phone || !sms_code || !new_password) {
     return res
-        .status(400)
-        .json({ code: 400, msg: '手机号、验证码和新密码不能为空' });
+      .status(400)
+      .json({ code: 400, msg: '手机号、验证码和新密码不能为空' });
   }
 
   const normalizedPhone = String(phone).trim();
@@ -679,7 +687,7 @@ app.post('/api/user/password/reset', (req, res) => {
   }
 
   user.password_hash =
-      crypto.createHash('sha256').update(newPassword).digest('hex');
+    crypto.createHash('sha256').update(newPassword).digest('hex');
   user.token = '';
   if (!user.token_version || !Number.isFinite(user.token_version)) {
     user.token_version = 1;
@@ -986,7 +994,7 @@ app.post('/admin/version/upload', authMiddleware, (req, res) => {
     const filename = req.file.filename;
     const downloadPath = `/download/${clientType}/${encodeURIComponent(filename)}`;
     console.log(
-        `[UPLOAD] APK uploaded [${clientType}]: ${filename} (${(req.file.size / 1024 / 1024).toFixed(1)}MB)`);
+      `[UPLOAD] APK uploaded [${clientType}]: ${filename} (${(req.file.size / 1024 / 1024).toFixed(1)}MB)`);
     res.json({
       code: 200,
       msg: '上传成功',

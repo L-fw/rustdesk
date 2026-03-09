@@ -3308,8 +3308,8 @@
           <button class="pbtn" id="page-next" onclick="nextPage()">下一页</button>
           <div class="page-size">
             <span>每页</span>
-            <input id="page-size-input" type="number" min="5" max="500" step="5"
-              onblur="setPageSize(this.value)" onkeydown="if(event.key==='Enter'){setPageSize(this.value)}" />
+            <input id="page-size-input" type="number" min="5" max="500" step="5" onblur="setPageSize(this.value)"
+              onkeydown="if(event.key==='Enter'){setPageSize(this.value)}" />
             <span>条</span>
           </div>
         </div>
@@ -3368,7 +3368,8 @@
     </div>
     <div class="ver-drawer-body">
       <div class="ver-client-tabs" id="ver-client-tabs">
-        <button class="ftab" data-client-type="share_only" onclick="setVersionClientType('share_only', this)">用户版</button>
+        <button class="ftab" data-client-type="share_only"
+          onclick="setVersionClientType('share_only', this)">用户版</button>
         <button class="ftab active" data-client-type="full" onclick="setVersionClientType('full', this)">完整版</button>
       </div>
       <div class="ver-section-title" style="margin-top:0;border-top:none;padding-top:0">
@@ -3416,7 +3417,8 @@
         <div class="ver-section-dot"></div>上传 APK
       </div>
       <div class="upload-zone" id="upload-zone" tabindex="0">
-        <input type="file" id="upload-apk-input" accept=".apk" onchange="handleApkUpload(this.files[0]); this.value='';" />
+        <input type="file" id="upload-apk-input" accept=".apk"
+          onchange="handleApkUpload(this.files[0]); this.value='';" />
         <div class="upload-zone-icon">📦</div>
         <div class="upload-zone-text">点击选择或拖拽 APK 文件到此处</div>
         <div class="upload-zone-sub">支持 .apk 格式，最大 200MB</div>
@@ -3448,8 +3450,8 @@
     <div class="ver-drawer-body">
       <div class="user-toolbar">
         <div class="user-search">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-            stroke-width="2" stroke-linecap="round">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round">
             <circle cx="11" cy="11" r="8" />
             <path d="m21 21-4.35-4.35" />
           </svg>
@@ -4488,6 +4490,7 @@
               <span>手机号: ${h(u.phone || '—')}</span>
               <span>注册: ${created}</span>
               <span>最近登录: ${lastLogin}</span>
+              <span title="同意时间: ${h(u.agreed_time || '—')}">协议版本: ${h(u.agreed_terms_version || '未同意')}</span>
             </div>
           </div>
           <div class="user-actions">
@@ -4527,12 +4530,12 @@
         : '<div>暂无关联设备</div>';
       if (detailGrid) {
         const primaryDevice = deviceList[0] || {};
-      const deviceIdText = primaryDevice.id || '—';
-      const deviceIpText = primaryDevice.ip || '—';
-      const deviceVersionText = primaryDevice.appVersion || '—';
-      const userKeyText = userKey(u);
-      const tempUserLoginPw = tempLoginPwByUserKey[userKeyText] || '';
-      const userLoginPwMasked = tempUserLoginPw ? tempUserLoginPw : (u.password_hash ? '●'.repeat(8) : '—');
+        const deviceIdText = primaryDevice.id || '—';
+        const deviceIpText = primaryDevice.ip || '—';
+        const deviceVersionText = primaryDevice.appVersion || '—';
+        const userKeyText = userKey(u);
+        const tempUserLoginPw = tempLoginPwByUserKey[userKeyText] || '';
+        const userLoginPwMasked = tempUserLoginPw ? tempUserLoginPw : (u.password_hash ? '●'.repeat(8) : '—');
         detailGrid.innerHTML = `
           <div class="dsec dsec-purple">
             <div class="dsec-head">

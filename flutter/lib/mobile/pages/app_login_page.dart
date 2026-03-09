@@ -7,6 +7,8 @@ import 'package:flutter_hbb/mobile/pages/app_register_page.dart';
 import '../../common.dart';
 import '../../models/platform_model.dart';
 import 'home_page.dart';
+import 'privacy_policy.dart' as policy_pages;
+import '../terms_of_service.dart' as policy_pages;
 
 /// 应用登录页面
 class AppLoginPage extends StatefulWidget {
@@ -40,6 +42,10 @@ class _AppLoginPageState extends State<AppLoginPage>
 
   final _authService = AppAuthService();
 
+  bool _agreedToTerms = false;
+  final String _agreedTermsVersionKey = 'agreed_terms_version';
+  final String _currentTermsVersion = '1.0.0';
+
   @override
   void initState() {
     super.initState();
@@ -49,6 +55,8 @@ class _AppLoginPageState extends State<AppLoginPage>
         setState(() => _errorMsg = null);
       }
     });
+    // Check local storage for agreed terms version
+    _agreedToTerms = bind.mainGetLocalOption(key: _agreedTermsVersionKey) == _currentTermsVersion;
   }
 
   @override
@@ -116,6 +124,11 @@ class _AppLoginPageState extends State<AppLoginPage>
       return;
     }
 
+    if (!_agreedToTerms) {
+      setState(() => _errorMsg = '请先阅读并同意《用户协议》与《隐私政策》');
+      return;
+    }
+
     setState(() {
       _isLoading = true;
       _errorMsg = null;
@@ -124,6 +137,8 @@ class _AppLoginPageState extends State<AppLoginPage>
     final error = await _authService.login(
       username: username,
       password: password,
+      agreedTermsVersion: _currentTermsVersion,
+      agreedTime: DateTime.now().toIso8601String(),
     );
 
     if (mounted) {
@@ -131,6 +146,7 @@ class _AppLoginPageState extends State<AppLoginPage>
       if (error != null) {
         setState(() => _errorMsg = error);
       } else {
+        bind.mainSetLocalOption(key: _agreedTermsVersionKey, value: _currentTermsVersion);
         _goToHome();
       }
     }
@@ -149,18 +165,29 @@ class _AppLoginPageState extends State<AppLoginPage>
       return;
     }
 
+    if (!_agreedToTerms) {
+      setState(() => _errorMsg = '请先阅读并同意《用户协议》与《隐私政策》');
+      return;
+    }
+
     setState(() {
       _isLoading = true;
       _errorMsg = null;
     });
 
-    final error = await _authService.smsLogin(phone: phone, code: code);
+    final error = await _authService.smsLogin(
+      phone: phone, 
+      code: code,
+      agreedTermsVersion: _currentTermsVersion,
+      agreedTime: DateTime.now().toIso8601String(),
+    );
 
     if (mounted) {
       setState(() => _isLoading = false);
       if (error != null) {
         setState(() => _errorMsg = error);
       } else {
+        bind.mainSetLocalOption(key: _agreedTermsVersionKey, value: _currentTermsVersion);
         _goToHome();
       }
     }
@@ -259,9 +286,14 @@ class _AppLoginPageState extends State<AppLoginPage>
                 ),
                 const SizedBox(height: 24),
 
+                // Terms of Service Checkbox
+                _buildTermsCheckbox(isDark),
+
+                const SizedBox(height: 16),
+
                 // Tab Content
                 SizedBox(
-                  height: 300,
+                  height: 280,
                   child: TabBarView(
                     controller: _tabController,
                     children: [
@@ -363,7 +395,7 @@ class _AppLoginPageState extends State<AppLoginPage>
             },
           ),
         ),
-        const SizedBox(height: 24),
+        const SizedBox(height: 16),
         // Login Button
         _buildLoginButton(onPressed: _loginWithPassword),
         const SizedBox(height: 10),
@@ -378,6 +410,83 @@ class _AppLoginPageState extends State<AppLoginPage>
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
               ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildTermsCheckbox(bool isDark) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SizedBox(
+          width: 24,
+          height: 24,
+          child: Checkbox(
+            value: _agreedToTerms,
+            activeColor: MyTheme.accent,
+            onChanged: (val) {
+              setState(() => _agreedToTerms = val ?? false);
+            },
+          ),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Padding(
+            padding: const EdgeInsets.only(top: 2),
+            child: Wrap(
+              children: [
+                Text(
+                  '我已阅读并同意',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: isDark ? Colors.white54 : Colors.black54,
+                  ),
+                ),
+                GestureDetector(
+                  onTap: () {
+                    // Navigate to Terms of Service
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => const policy_pages.TermsOfServicePage(),
+                      ),
+                    );
+                  },
+                  child: Text(
+                    '《用户协议》',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: MyTheme.accent,
+                    ),
+                  ),
+                ),
+                Text(
+                  '与',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: isDark ? Colors.white54 : Colors.black54,
+                  ),
+                ),
+                GestureDetector(
+                  onTap: () {
+                    // Navigate to Privacy Policy
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => const policy_pages.PrivacyPolicyPage(),
+                      ),
+                    );
+                  },
+                  child: Text(
+                    '《隐私政策》',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: MyTheme.accent,
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
         ),
@@ -434,7 +543,7 @@ class _AppLoginPageState extends State<AppLoginPage>
             ),
           ],
         ),
-        const SizedBox(height: 50),
+        const SizedBox(height: 30),
         // Login Button
         _buildLoginButton(onPressed: _loginWithSms),
       ],
