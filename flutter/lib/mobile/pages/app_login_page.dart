@@ -614,8 +614,14 @@ class _ForgotPasswordDialogState extends State<_ForgotPasswordDialog> {
       setState(() => _errorMsg = '请输入新密码');
       return;
     }
-    if (password.length < 6) {
-      setState(() => _errorMsg = '密码长度不能少于6位');
+    if (password.length < 6 || password.length > 20) {
+      setState(() => _errorMsg = '密码需为6-20位字符');
+      return;
+    }
+    final hasLetter = password.contains(RegExp(r'[A-Za-z]'));
+    final hasDigit = password.contains(RegExp(r'\d'));
+    if (!hasLetter || !hasDigit) {
+      setState(() => _errorMsg = '密码需包含字母和数字');
       return;
     }
     if (password != confirmPassword) {

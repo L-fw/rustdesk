@@ -32,6 +32,7 @@ class _AppRegisterPageState extends State<AppRegisterPage> {
   bool _isLoading = false;
   bool _isSendingSms = false;
   String? _errorMsg;
+  String? _passwordFormatError;
 
   int _countdown = 0;
   Timer? _countdownTimer;
@@ -67,6 +68,26 @@ class _AppRegisterPageState extends State<AppRegisterPage> {
         if (mounted) setState(() => _countdown--);
       }
     });
+  }
+
+  bool _isPasswordValid(String value) {
+    if (value.length < 6 || value.length > 20) return false;
+    final hasLetter = value.contains(RegExp(r'[A-Za-z]'));
+    final hasDigit = value.contains(RegExp(r'\d'));
+    return hasLetter && hasDigit;
+  }
+
+  String? _validatePasswordFormat(String value) {
+    if (value.isEmpty) return null;
+    if (value.length < 6 || value.length > 20) {
+      return '密码需为6-20位字符';
+    }
+    final hasLetter = value.contains(RegExp(r'[A-Za-z]'));
+    final hasDigit = value.contains(RegExp(r'\d'));
+    if (!hasLetter || !hasDigit) {
+      return '密码需包含字母和数字';
+    }
+    return null;
   }
 
   Future<void> _sendSmsCode() async {
@@ -108,8 +129,8 @@ class _AppRegisterPageState extends State<AppRegisterPage> {
       setState(() => _errorMsg = '请输入密码');
       return;
     }
-    if (password.length < 6) {
-      setState(() => _errorMsg = '密码长度不能少于6位');
+    if (!_isPasswordValid(password)) {
+      setState(() => _errorMsg = '密码需为6-20位字符，且包含字母和数字');
       return;
     }
     if (password != confirmPassword) {
@@ -192,6 +213,12 @@ class _AppRegisterPageState extends State<AppRegisterPage> {
                   label: '密码',
                   icon: Icons.lock_outline,
                   obscure: _obscurePassword,
+                  onChanged: (value) {
+                    final error = _validatePasswordFormat(value);
+                    if (error != _passwordFormatError) {
+                      setState(() => _passwordFormatError = error);
+                    }
+                  },
                   suffix: IconButton(
                     icon: Icon(
                       _obscurePassword
@@ -205,6 +232,16 @@ class _AppRegisterPageState extends State<AppRegisterPage> {
                     },
                   ),
                 ),
+                if (_passwordFormatError != null) ...[
+                  const SizedBox(height: 6),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      _passwordFormatError!,
+                      style: const TextStyle(color: Colors.red, fontSize: 12),
+                    ),
+                  ),
+                ],
                 const SizedBox(height: 14),
                 // Confirm Password
                 _buildTextField(
@@ -382,6 +419,7 @@ class _AppRegisterPageState extends State<AppRegisterPage> {
     bool obscure = false,
     Widget? suffix,
     TextInputType? keyboardType,
+    ValueChanged<String>? onChanged,
   }) {
     return AnimatedBuilder(
       animation: focusNode,
@@ -392,6 +430,7 @@ class _AppRegisterPageState extends State<AppRegisterPage> {
           focusNode: focusNode,
           obscureText: obscure,
           keyboardType: keyboardType,
+          onChanged: onChanged,
           style: const TextStyle(fontSize: 15),
           decoration: InputDecoration(
             labelText: hasFocus ? label : null,
