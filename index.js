@@ -833,11 +833,12 @@ app.post('/api/session/start', (req, res) => {
   const now = new Date().toISOString();
 
   if (!device.sessions.find(s => s.sessionId === session_id)) {
+    const peerDevice = peer_id ? devices[peer_id] : null;
     device.sessions.push({
       sessionId: session_id,
       peerId: peer_id || null,
-      username: username || device.username || null,
-      phone: phone || device.phone || null,
+      username: username || (peerDevice ? peerDevice.username : null) || null,
+      phone: phone || (peerDevice ? peerDevice.phone : null) || null,
       startTime: now,
       lastHeartbeat: now,
       ended: false,
