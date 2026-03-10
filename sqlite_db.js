@@ -299,8 +299,8 @@ async function dbDeleteDevice(id) {
 
 async function dbGetDeviceSessions(deviceId, limit = 200) {
   return await all(
-    'SELECT * FROM sessions WHERE device_id = ? ORDER BY start_time DESC LIMIT ?',
-    [deviceId, limit]
+    'SELECT * FROM sessions WHERE device_id = ? OR peer_id = ? ORDER BY start_time DESC LIMIT ?',
+    [deviceId, deviceId, limit]
   );
 }
 

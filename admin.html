@@ -2114,6 +2114,19 @@
       font-weight: 500;
     }
 
+    .dsec-head-actions {
+      margin-left: auto;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .dsec-head-actions .abtn {
+      font-size: 12px;
+      padding: 4px 10px;
+      letter-spacing: .08em;
+    }
+
     .dsec-head-icon {
       width: 22px;
       height: 22px;
@@ -4489,6 +4502,9 @@
     let _userList = [];
     let _userSearch = '';
     let _userSelected = null;
+    let _userSessionCache = new Map();
+    let userHistoryExportSessions = [];
+    let userHistoryExportUser = '';
 
     function openUserDrawer() {
       _userSelected = null;
@@ -4596,6 +4612,9 @@
         if (detailGrid) detailGrid.innerHTML = '';
         if (detailWrap) detailWrap.classList.remove('user-view-detail');
         if (drawerTitleEl) drawerTitleEl.textContent = '注册账号列表';
+        userHistoryExportSessions = [];
+        userHistoryExportUser = '';
+        updateUserHistoryExportBtn();
         return;
       }
       const u = _userSelected;
@@ -4741,9 +4760,176 @@
               </div>
             </div>
           </div>
+          <div class="dsec dsec-yellow">
+            <div class="dsec-head">
+              <div class="dsec-head-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l2 2"/></svg>
+              </div>
+              会话历史
+              <div class="dsec-head-actions">
+                <button class="abtn a-export" id="user-session-export-btn" onclick="exportUserHistoryExcel()" disabled>导出Excel</button>
+              </div>
+            </div>
+            <div class="dsec-body">
+              <div id="user-session-list"><div class="no-sessions">加载中…</div></div>
+            </div>
+          </div>
         `;
       }
       if (detailWrap) detailWrap.classList.add('user-view-detail');
+      loadUserSessionsForSelected(u, deviceList);
+    }
+
+    function updateUserHistoryExportBtn() {
+      const btn = document.getElementById('user-session-export-btn');
+      if (btn) btn.disabled = userHistoryExportSessions.length === 0;
+    }
+
+    function renderUserSessionList(userKeyText) {
+      const wrap = document.getElementById('user-session-list');
+      if (!wrap) return;
+      const cache = _userSessionCache.get(userKeyText);
+      if (!cache || cache.loading) {
+        wrap.innerHTML = '<div class="no-sessions">加载中…</div>';
+        return;
+      }
+      const sessions = cache.sessions || [];
+      if (!sessions.length) {
+        wrap.innerHTML = '<div class="no-sessions">暂无会话记录</div>';
+        return;
+      }
+      wrap.innerHTML = sessions.map(s => {
+        const active = !s.ended && (Date.now() - new Date(s.lastHeartbeat || s.startTime).getTime() < 90000);
+        const badge = active
+          ? `<span class="badge b-remote"><span class="bdot"></span>进行中</span>`
+          : `<span class="badge b-idle"><span class="bdot"></span>已结束</span>`;
+        const username = s.username || '—';
+        const phone = s.phone || '—';
+        const duration = s.endTime
+          ? fmtDuration(new Date(s.endTime) - new Date(s.startTime))
+          : active ? fmtDuration(Date.now() - new Date(s.startTime).getTime()) + ' (进行中)' : '—';
+        return `
+      <div class="session-item">
+        <div class="si-top">
+          ${badge}
+          <span class="si-id"># ${h(s.sessionId || '—')}</span>
+        </div>
+        <div class="si-detail">
+          <span style="color:var(--text)">设备ID</span><span>${h(s.deviceId || '—')}</span>
+          <span style="color:var(--text)">操控方</span><span>${h(s.peerId || '—')}</span>
+          <span style="color:var(--text)">用户名</span><span>${h(username)}</span>
+          <span style="color:var(--text)">手机号</span><span>${h(phone)}</span>
+          <span style="color:var(--text)">开始时间</span><span>${fmt(s.startTime)}</span>
+          <span style="color:var(--text)">结束时间</span><span>${s.endTime ? fmt(s.endTime) : '—'}</span>
+          <span style="color:var(--text)">持续时长</span><span>${duration}</span>
+        </div>
+      </div>`;
+      }).join('');
+    }
+
+    async function loadUserSessionsForSelected(u, deviceList) {
+      if (!u) return;
+      const userKeyText = userKey(u);
+      const deviceIds = deviceList.map(d => d.id).filter(Boolean);
+      const idsKey = deviceIds.slice().sort().join('|');
+      if (!deviceIds.length) {
+        _userSessionCache.set(userKeyText, { loading: false, sessions: [], idsKey });
+        userHistoryExportSessions = [];
+        userHistoryExportUser = u.username || u.phone || '';
+        renderUserSessionList(userKeyText);
+        updateUserHistoryExportBtn();
+        return;
+      }
+      const cache = _userSessionCache.get(userKeyText);
+      if (cache && cache.idsKey === idsKey && !cache.loading) {
+        userHistoryExportSessions = cache.sessions || [];
+        userHistoryExportUser = u.username || u.phone || '';
+        renderUserSessionList(userKeyText);
+        updateUserHistoryExportBtn();
+        return;
+      }
+      _userSessionCache.set(userKeyText, { loading: true, sessions: [], idsKey });
+      renderUserSessionList(userKeyText);
+      updateUserHistoryExportBtn();
+      try {
+        const responses = await Promise.all(deviceIds.map(id => fetch(`/admin/devices/${encodeURIComponent(id)}`, { headers: { 'x-admin-token': token } })));
+        if (responses.some(r => r.status === 401)) { logout(); return; }
+        const dataList = await Promise.all(responses.map(r => r.json().catch(() => null)));
+        const sessions = [];
+        dataList.forEach((d, idx) => {
+          if (!d || d.code !== 200 || !d.data) return;
+          const device = d.data;
+          const devSessions = device.sessions || [];
+          devSessions.forEach(s => {
+            sessions.push({
+              deviceId: device.id || deviceIds[idx],
+              sessionId: s.sessionId,
+              peerId: s.peerId,
+              username: s.username || device.username,
+              phone: s.phone || device.phone,
+              startTime: s.startTime,
+              endTime: s.endTime,
+              lastHeartbeat: s.lastHeartbeat,
+              ended: s.ended,
+            });
+          });
+        });
+        sessions.sort((a, b) => new Date(b.startTime || 0).getTime() - new Date(a.startTime || 0).getTime());
+        _userSessionCache.set(userKeyText, { loading: false, sessions, idsKey });
+        userHistoryExportSessions = sessions;
+        userHistoryExportUser = u.username || u.phone || '';
+        renderUserSessionList(userKeyText);
+        updateUserHistoryExportBtn();
+      } catch {
+        _userSessionCache.set(userKeyText, { loading: false, sessions: [], idsKey });
+        userHistoryExportSessions = [];
+        userHistoryExportUser = u.username || u.phone || '';
+        renderUserSessionList(userKeyText);
+        updateUserHistoryExportBtn();
+      }
+    }
+
+    function exportUserHistoryExcel() {
+      if (!userHistoryExportSessions.length) {
+        toast('暂无会话记录', 'info');
+        return;
+      }
+      const rows = userHistoryExportSessions.map(s => {
+        const active = !s.ended && (Date.now() - new Date(s.lastHeartbeat || s.startTime).getTime() < 90000);
+        const status = active ? '进行中' : '已结束';
+        const username = s.username || '—';
+        const phone = s.phone || '—';
+        const duration = s.endTime
+          ? fmtDuration(new Date(s.endTime) - new Date(s.startTime))
+          : active ? fmtDuration(Date.now() - new Date(s.startTime).getTime()) + ' (进行中)' : '—';
+        return [
+          s.deviceId || '—',
+          s.sessionId || '—',
+          status,
+          s.peerId || '—',
+          username,
+          phone,
+          fmt(s.startTime),
+          s.endTime ? fmt(s.endTime) : '—',
+          duration,
+        ];
+      });
+      const headers = ['设备ID', '会话ID', '状态', '操控方', '用户名', '手机号', '开始时间', '结束时间', '持续时长'];
+      const thead = `<tr>${headers.map(hd => `<th>${h(hd)}</th>`).join('')}</tr>`;
+      const tbody = rows.map(r => `<tr>${r.map(c => `<td>${h(c)}</td>`).join('')}</tr>`).join('');
+      const html = `<!DOCTYPE html><html><head><meta charset="utf-8"></head><body><table border="1"><thead>${thead}</thead><tbody>${tbody}</tbody></table></body></html>`;
+      const blob = new Blob(['\ufeff', html], { type: 'application/vnd.ms-excel' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      const date = new Date();
+      const dateText = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+      const userText = userHistoryExportUser ? userHistoryExportUser.replace(/[^\w-]+/g, '_') : 'user';
+      a.download = `用户会话历史_${userText}_${dateText}.xls`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
     }
 
     async function deleteUser(username) {
