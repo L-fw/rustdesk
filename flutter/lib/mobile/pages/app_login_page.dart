@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_hbb/common/app_auth_service.dart';
 import 'package:flutter_hbb/mobile/pages/app_register_page.dart';
 
@@ -116,6 +117,10 @@ class _AppLoginPageState extends State<AppLoginPage>
     if (_invalidFields[key] == true) {
       setState(() => _invalidFields[key] = false);
     }
+  }
+
+  bool _isUsernameValid(String value) {
+    return RegExp(r'^[A-Za-z0-9\u4e00-\u9fff]+$').hasMatch(value);
   }
 
   void _startCountdown() {
@@ -243,6 +248,10 @@ class _AppLoginPageState extends State<AppLoginPage>
 
     if (username.isEmpty) {
       _setFieldError('username', _usernameFocus, '请输入用户名');
+      return;
+    }
+    if (!_isUsernameValid(username)) {
+      _setFieldError('username', _usernameFocus, '用户名只能包含中文、英文和数字');
       return;
     }
     if (password.isEmpty) {
@@ -513,6 +522,10 @@ class _AppLoginPageState extends State<AppLoginPage>
           label: '用户名',
           icon: Icons.person_outline,
           suffix: _buildAccountSwitcher(),
+          inputFormatters: [
+            FilteringTextInputFormatter.allow(
+                RegExp(r'[A-Za-z0-9\u4e00-\u9fff]')),
+          ],
         ),
         const SizedBox(height: 14),
         // Password
@@ -750,6 +763,7 @@ class _AppLoginPageState extends State<AppLoginPage>
     bool obscure = false,
     Widget? suffix,
     TextInputType? keyboardType,
+    List<TextInputFormatter>? inputFormatters,
     ValueChanged<String>? onChanged,
   }) {
     return AnimatedBuilder(
@@ -771,6 +785,7 @@ class _AppLoginPageState extends State<AppLoginPage>
             focusNode: focusNode,
             obscureText: obscure,
             keyboardType: keyboardType,
+            inputFormatters: inputFormatters,
             onChanged: (value) {
               if ((value.isNotEmpty || value.trim().isNotEmpty) &&
                   _invalidFields[fieldKey] == true) {

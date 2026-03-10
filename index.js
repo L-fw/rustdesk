@@ -140,6 +140,16 @@ function parseVersionSegments(version) {
   return matches.map(s => parseInt(s, 10)).filter(Number.isFinite);
 }
 
+function normalizeUsername(value) {
+  if (value === undefined || value === null) return '';
+  return String(value).trim().normalize('NFKC');
+}
+
+function isValidUsername(value) {
+  if (!value) return false;
+  return /^[A-Za-z0-9\u4e00-\u9fff]+$/.test(value);
+}
+
 function compareVersion(versionA, versionB) {
   const left  = parseVersionSegments(versionA);
   const right = parseVersionSegments(versionB);
@@ -327,7 +337,11 @@ app.post('/api/user/register', async (req, res) => {
       return res.status(400).json({ code: 400, msg: '请先同意最新版本的用户协议与隐私政策' });
     }
 
-    if (!username || !password)  return res.status(400).json({ code: 400, msg: '用户名和密码不能为空' });
+    const normalizedUsername = normalizeUsername(username);
+    if (!normalizedUsername || !password)
+      return res.status(400).json({ code: 400, msg: '用户名和密码不能为空' });
+    if (!isValidUsername(normalizedUsername))
+      return res.status(400).json({ code: 400, msg: '用户名只能包含中文、英文和数字' });
     if (!phone)                  return res.status(400).json({ code: 400, msg: '手机号不能为空' });
     if (!sms_code)               return res.status(400).json({ code: 400, msg: '验证码不能为空' });
     if (!activation_code)        return res.status(400).json({ code: 400, msg: '激活码不能为空' });
@@ -337,7 +351,7 @@ app.post('/api/user/register', async (req, res) => {
     if (!normalizedPhone)   return res.status(400).json({ code: 400, msg: '手机号不能为空' });
     if (!normalizedSmsCode) return res.status(400).json({ code: 400, msg: '验证码不能为空' });
 
-    if (await dbGetUser(username))
+    if (await dbGetUser(normalizedUsername))
       return res.status(400).json({ code: 400, msg: '用户名已存在' });
     if (await dbGetUserByPhone(normalizedPhone))
       return res.status(400).json({ code: 400, msg: '该手机号已被注册' });
@@ -370,7 +384,7 @@ app.post('/api/user/register', async (req, res) => {
 
     const passwordHash = crypto.createHash('sha256').update(password).digest('hex');
     await dbSaveUser({
-      username,
+      username: normalizedUsername,
       password_hash:        passwordHash,
       phone:                normalizedPhone,
       activation_code_hash: codeHash,
@@ -385,14 +399,22 @@ app.post('/api/user/register', async (req, res) => {
     const bindDeviceId = req.headers['x-device-id'];
     if (bindDeviceId) {
       const bindIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
-      await dbUpsertDevice(bindDeviceId, bindIp, null, null, null, username, normalizedPhone, 'full');
+      await dbUpsertDevice(
+          bindDeviceId,
+          bindIp,
+          null,
+          null,
+          null,
+          normalizedUsername,
+          normalizedPhone,
+          'full');
     }
 
     // 更新激活码使用次数
     const usedRecords = Array.isArray(entry.used_records) ? entry.used_records : [];
     const lastUsedAt  = new Date().toISOString();
     usedRecords.push({
-      username,
+      username: normalizedUsername,
       phone: phone || '',
       ip:    req.headers['x-forwarded-for'] || req.socket.remoteAddress,
       at:    lastUsedAt,
@@ -404,7 +426,7 @@ app.post('/api/user/register', async (req, res) => {
       used_records: usedRecords,
     });
 
-    console.log(`[USER] Registered: ${username}, phone: ${phone || 'N/A'}`);
+    console.log(`[USER] Registered: ${normalizedUsername}, phone: ${phone || 'N/A'}`);
     res.json({ code: 200, msg: '注册成功' });
   } catch (e) {
     console.error('[register]', e);
@@ -419,10 +441,13 @@ app.post('/api/user/register', async (req, res) => {
 app.post('/api/user/login', async (req, res) => {
   try {
     const { username, password, agreed_terms_version, agreed_privacy_version, agreed_time } = req.body || {};
-    if (!username || !password)
+    const normalizedUsername = normalizeUsername(username);
+    if (!normalizedUsername || !password)
       return res.status(400).json({ code: 400, msg: '用户名和密码不能为空' });
+    if (!isValidUsername(normalizedUsername))
+      return res.status(400).json({ code: 400, msg: '用户名只能包含中文、英文和数字' });
 
-    const user = await dbGetUser(username);
+    const user = await dbGetUser(normalizedUsername);
     if (!user) return res.status(401).json({ code: 401, msg: '用户名或密码错误' });
 
     const passwordHash = crypto.createHash('sha256').update(password).digest('hex');
@@ -464,7 +489,7 @@ app.post('/api/user/login', async (req, res) => {
       await dbUpsertDevice(bindDeviceId, bindIp, null, null, null, user.username, user.phone, 'full');
     }
 
-    console.log(`[USER] Login: ${username}`);
+    console.log(`[USER] Login: ${normalizedUsername}`);
     res.json({
       code: 200, token, token_version: newTokenVersion,
       user: { username: user.username, phone: user.phone },
@@ -797,11 +822,12 @@ app.get('/admin/users', authMiddleware, async (req, res) => {
 
 app.delete('/admin/users/:username', authMiddleware, async (req, res) => {
   try {
-    const username = String(req.params.username || '');
-    if (!username) return res.status(400).json({ code: 400, msg: '缺少用户名' });
-    const user = await dbGetUser(username);
+    const normalizedUsername = normalizeUsername(req.params.username);
+    if (!normalizedUsername)
+      return res.status(400).json({ code: 400, msg: '缺少用户名' });
+    const user = await dbGetUser(normalizedUsername);
     if (!user) return res.status(404).json({ code: 404, msg: '用户不存在' });
-    await dbDeleteUser(username);
+    await dbDeleteUser(normalizedUsername);
     res.json({ code: 200, msg: '已删除' });
   } catch (e) {
     console.error('[admin/users DELETE]', e);
@@ -880,7 +906,8 @@ app.delete('/admin/devices/:id', authMiddleware, async (req, res) => {
 app.post('/admin/users/reset-password', authMiddleware, async (req, res) => {
   try {
     const { username, phone, password, random } = req.body || {};
-    if (!username && !phone)
+    const normalizedUsername = normalizeUsername(username);
+    if (!normalizedUsername && !phone)
       return res.status(400).json({ code: 400, msg: '缺少用户名或手机号' });
 
     let newPassword = String(password || '');
@@ -889,7 +916,7 @@ app.post('/admin/users/reset-password', authMiddleware, async (req, res) => {
     if (newPassword.length < 6) return res.status(400).json({ code: 400, msg: '密码长度不能少于6位' });
 
     let user = null;
-    if (username) user = await dbGetUser(username);
+    if (normalizedUsername) user = await dbGetUser(normalizedUsername);
     if (!user && phone) user = await dbGetUserByPhone(phone);
     if (!user) return res.status(404).json({ code: 404, msg: '用户不存在' });
 
