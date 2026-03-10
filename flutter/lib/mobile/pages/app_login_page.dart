@@ -428,11 +428,6 @@ class _AppLoginPageState extends State<AppLoginPage>
                 ),
                 const SizedBox(height: 24),
 
-                // Terms of Service Checkbox
-                _buildTermsCheckbox(isDark),
-
-                const SizedBox(height: 16),
-
                 // Tab Content
                 SizedBox(
                   height: 280,
@@ -507,6 +502,7 @@ class _AppLoginPageState extends State<AppLoginPage>
   }
 
   Widget _buildPasswordLoginTab() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Column(
       children: [
         // Username
@@ -574,6 +570,8 @@ class _AppLoginPageState extends State<AppLoginPage>
             ),
           ],
         ),
+        const SizedBox(height: 16),
+        _buildTermsCheckbox(isDark),
         const SizedBox(height: 16),
         // Login Button
         _buildLoginButton(onPressed: _loginWithPassword),
@@ -683,6 +681,7 @@ class _AppLoginPageState extends State<AppLoginPage>
   }
 
   Widget _buildSmsLoginTab() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Column(
       children: [
         // Phone
@@ -734,6 +733,8 @@ class _AppLoginPageState extends State<AppLoginPage>
           ],
         ),
         const SizedBox(height: 30),
+        _buildTermsCheckbox(isDark),
+        const SizedBox(height: 16),
         // Login Button
         _buildLoginButton(onPressed: _loginWithSms),
       ],
