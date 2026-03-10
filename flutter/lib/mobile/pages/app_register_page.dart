@@ -61,6 +61,7 @@ class _AppRegisterPageState extends State<AppRegisterPage>
     _shakeControllers['phone'] = _createShakeController();
     _shakeControllers['sms'] = _createShakeController();
     _shakeControllers['activation'] = _createShakeController();
+    _shakeControllers['terms'] = _createShakeController();
     // Check local storage for agreed terms version
     _agreedToTerms = bind.mainGetLocalOption(key: _agreedTermsVersionKey) == _currentTermsVersion &&
                      bind.mainGetLocalOption(key: _agreedPrivacyVersionKey) == _currentPrivacyVersion;
@@ -203,6 +204,7 @@ class _AppRegisterPageState extends State<AppRegisterPage>
     }
     if (!_agreedToTerms) {
       setState(() => _errorMsg = '请先阅读并同意《用户协议》与《隐私政策》');
+      _shakeControllers['terms']?.forward(from: 0);
       return;
     }
 
@@ -491,79 +493,88 @@ class _AppRegisterPageState extends State<AppRegisterPage>
   }
 
   Widget _buildTermsCheckbox(bool isDark) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        SizedBox(
-          width: 24,
-          height: 24,
-          child: Checkbox(
-            value: _agreedToTerms,
-            activeColor: MyTheme.accent,
-            onChanged: (val) {
-              setState(() => _agreedToTerms = val ?? false);
-            },
-          ),
-        ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: Padding(
-            padding: const EdgeInsets.only(top: 2),
-            child: Wrap(
-              children: [
-                Text(
-                  '我已阅读并同意',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: isDark ? Colors.white54 : Colors.black54,
-                  ),
-                ),
-                GestureDetector(
-                  onTap: () {
-                    // Navigate to Terms of Service
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) => const terms_pages.TermsOfServicePage(),
-                      ),
-                    );
-                  },
-                  child: Text(
-                    '《用户协议》',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: MyTheme.accent,
-                    ),
-                  ),
-                ),
-                Text(
-                  '与',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: isDark ? Colors.white54 : Colors.black54,
-                  ),
-                ),
-                GestureDetector(
-                  onTap: () {
-                    // Navigate to Privacy Policy
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) => const privacy_pages.PrivacyPolicyPage(),
-                      ),
-                    );
-                  },
-                  child: Text(
-                    '《隐私政策》',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: MyTheme.accent,
-                    ),
-                  ),
-                ),
-              ],
+    return AnimatedBuilder(
+      animation: _shakeControllers['terms'] ?? const AlwaysStoppedAnimation(0),
+      builder: (context, child) {
+        final shake = _shakeControllers['terms'];
+        final dx = shake == null
+            ? 0.0
+            : math.sin(shake.value * math.pi * 4) * 6 * (1 - shake.value);
+        return Transform.translate(offset: Offset(dx, 0), child: child);
+      },
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 24,
+            height: 24,
+            child: Checkbox(
+              value: _agreedToTerms,
+              activeColor: MyTheme.accent,
+              onChanged: (val) {
+                setState(() => _agreedToTerms = val ?? false);
+              },
             ),
           ),
-        ),
-      ],
+          const SizedBox(width: 8),
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.only(top: 2),
+              child: Wrap(
+                children: [
+                  Text(
+                    '我已阅读并同意',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: isDark ? Colors.white54 : Colors.black54,
+                    ),
+                  ),
+                  GestureDetector(
+                    onTap: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => const terms_pages.TermsOfServicePage(),
+                        ),
+                      );
+                    },
+                    child: Text(
+                      '《用户协议》',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: MyTheme.accent,
+                      ),
+                    ),
+                  ),
+                  Text(
+                    '与',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: isDark ? Colors.white54 : Colors.black54,
+                    ),
+                  ),
+                  GestureDetector(
+                    onTap: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) =>
+                              const privacy_pages.PrivacyPolicyPage(),
+                        ),
+                      );
+                    },
+                    child: Text(
+                      '《隐私政策》',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: MyTheme.accent,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
