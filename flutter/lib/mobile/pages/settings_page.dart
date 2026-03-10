@@ -996,14 +996,16 @@ class _SettingsState extends State<SettingsPage> with WidgetsBindingObserver {
             )
           ],
         ),
-        Padding(
-          padding: const EdgeInsets.only(top: 6, bottom: 18),
-          child: const Center(
-            child: Text(
-              '基于开源软件构建 · 详见用户协议',
-              style: TextStyle(
-                fontSize: 10,
-                color: Colors.grey,
+        CustomSection(
+          child: Padding(
+            padding: const EdgeInsets.only(top: 6, bottom: 18),
+            child: const Center(
+              child: Text(
+                '基于开源软件构建 · 详见用户协议',
+                style: TextStyle(
+                  fontSize: 10,
+                  color: Colors.grey,
+                ),
               ),
             ),
           ),
