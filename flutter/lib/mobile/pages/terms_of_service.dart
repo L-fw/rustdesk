@@ -51,6 +51,8 @@ class TermsOfServicePage extends StatelessWidget {
                       _SectionSeven(),
                       _Divider(),
                       _SectionEight(),
+                      _Divider(),
+                      _SectionNine(),
                     ],
                   ),
                 ),
@@ -510,6 +512,75 @@ class _SectionEight extends StatelessWidget {
         const _BodyText('我们将在收到您的请求后 15 个工作日内予以回复。',
             padding: EdgeInsets.only(top: 12, bottom: 10)),
       ],
+    );
+  }
+}
+
+class _SectionNine extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const _SectionHeader(num: '九', title: '开源声明'),
+        const _BodyText('本应用客户端基于 RustDesk 开源项目二次开发，遵循 GNU Affero 通用公共许可证第 3 版（AGPL-3.0）发布。'),
+        Container(
+          decoration: BoxDecoration(
+            color: _surface,
+            border: Border.all(color: _border),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Column(
+            children: [
+              _OpenSourceRow(label: '原始项目', value: 'github.com/rustdesk/rustdesk', url: 'https://github.com/rustdesk/rustdesk', isLast: false),
+              _OpenSourceRow(label: '版权归属', value: 'RustDesk, Inc.', isLast: false),
+              _OpenSourceRow(label: '许可证', value: 'AGPL-3.0 License', isLast: false),
+              _OpenSourceRow(label: '本软件修改版本源码', value: 'github.com/L-fw/rustdesk', url: 'https://github.com/L-fw/rustdesk', isLast: true),
+            ],
+          ),
+        ),
+        const _BodyText(
+          '依据 AGPL-3.0 协议，您有权获取、使用及修改上述源代码。如需进一步了解开源许可详情，请访问上方源码仓库。',
+          padding: EdgeInsets.only(top: 12, bottom: 10),
+        ),
+      ],
+    );
+  }
+}
+
+class _OpenSourceRow extends StatelessWidget {
+  final String label;
+  final String value;
+  final String? url;
+  final bool isLast;
+
+  const _OpenSourceRow({required this.label, required this.value, this.url, required this.isLast});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        border: isLast ? null : const Border(bottom: BorderSide(color: _border)),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label, style: const TextStyle(fontSize: 12, color: _textMuted)),
+          const SizedBox(width: 12),
+          Flexible(
+            child: url != null
+                ? GestureDetector(
+                    onTap: () => launchUrl(Uri.parse(url!)),
+                    child: Text(value, textAlign: TextAlign.right,
+                        style: const TextStyle(fontSize: 13, color: _accent, fontWeight: FontWeight.w500)),
+                  )
+                : Text(value, textAlign: TextAlign.right,
+                    style: const TextStyle(fontSize: 13, color: _textPrimary, fontWeight: FontWeight.w500)),
+          ),
+        ],
+      ),
     );
   }
 }
