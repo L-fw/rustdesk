@@ -10,6 +10,7 @@ class AppAuthService {
   static const String _tokenKey = 'app_user_token';
   static const String _userInfoKey = 'app_user_info';
   static const String _tokenVersionKey = 'app_user_token_version';
+  static const String _rememberPasswordKey = 'app_login_remember_password_map';
   static const String _securePrefix = 'enc:v1:';
   static const String _secureSalt = 'gamwing-app-auth-v1';
 
@@ -50,6 +51,61 @@ class AppAuthService {
     await _setSecureLocalOption(_tokenKey, '');
     await _setSecureLocalOption(_userInfoKey, '');
     await _setSecureLocalOption(_tokenVersionKey, '');
+  }
+
+  Future<void> saveRememberedPassword({
+    required String username,
+    required String password,
+    required DateTime expiresAt,
+  }) async {
+    if (username.isEmpty || password.isEmpty) return;
+    final data = await _getRememberedPasswordMap();
+    data[username] = {
+      'password': password,
+      'expires_at': expiresAt.toIso8601String(),
+    };
+    await _setSecureLocalOption(_rememberPasswordKey, jsonEncode(data));
+  }
+
+  Future<String?> getRememberedPassword(String username) async {
+    if (username.isEmpty) return null;
+    final data = await _getRememberedPasswordMap();
+    final entry = data[username];
+    if (entry is Map) {
+      final rawExpire = entry['expires_at']?.toString() ?? '';
+      if (rawExpire.isNotEmpty) {
+        final expire = DateTime.tryParse(rawExpire);
+        if (expire != null && DateTime.now().isAfter(expire)) {
+          data.remove(username);
+          await _setSecureLocalOption(_rememberPasswordKey, jsonEncode(data));
+          return null;
+        }
+      }
+      final pwd = entry['password']?.toString() ?? '';
+      return pwd.isEmpty ? null : pwd;
+    }
+    return null;
+  }
+
+  Future<void> clearRememberedPassword(String username) async {
+    if (username.isEmpty) return;
+    final data = await _getRememberedPasswordMap();
+    if (data.remove(username) != null) {
+      await _setSecureLocalOption(_rememberPasswordKey, jsonEncode(data));
+    }
+  }
+
+  Future<Map<String, dynamic>> _getRememberedPasswordMap() async {
+    await _ensureSecureStorageMigrated();
+    final raw = await _getSecureLocalOption(_rememberPasswordKey);
+    if (raw.isEmpty) return {};
+    try {
+      final decoded = jsonDecode(raw);
+      if (decoded is Map<String, dynamic>) {
+        return decoded;
+      }
+    } catch (_) {}
+    return {};
   }
 
   /// 用户注册

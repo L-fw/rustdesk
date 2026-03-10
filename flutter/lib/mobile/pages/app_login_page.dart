@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -48,8 +49,13 @@ class _AppLoginPageState extends State<AppLoginPage>
   final String _agreedPrivacyVersionKey = 'agreed_privacy_version';
   final String _currentTermsVersion = terms_pages.termsOfServiceVersion;
   final String _currentPrivacyVersion = privacy_pages.privacyPolicyVersion;
+  final String _accountHistoryKey = 'app_login_accounts';
+  final String _lastAccountKey = 'app_login_last_account';
+  final String _rememberPasswordEnabledKey = 'app_login_remember_password_enabled';
   final Map<String, AnimationController> _shakeControllers = {};
   final Map<String, bool> _invalidFields = {};
+  final List<String> _accountHistory = [];
+  bool _rememberPassword = false;
 
   @override
   void initState() {
@@ -68,6 +74,8 @@ class _AppLoginPageState extends State<AppLoginPage>
     // Check local storage for agreed terms version
     _agreedToTerms = bind.mainGetLocalOption(key: _agreedTermsVersionKey) == _currentTermsVersion &&
                      bind.mainGetLocalOption(key: _agreedPrivacyVersionKey) == _currentPrivacyVersion;
+    _loadAccountHistory();
+    _loadRememberedPasswordForUser(_usernameController.text.trim());
   }
 
   @override
@@ -121,6 +129,88 @@ class _AppLoginPageState extends State<AppLoginPage>
         if (mounted) setState(() => _countdown--);
       }
     });
+  }
+
+  void _loadAccountHistory() {
+    final raw = bind.mainGetLocalOption(key: _accountHistoryKey);
+    if (raw.isNotEmpty) {
+      try {
+        final decoded = jsonDecode(raw);
+        if (decoded is List) {
+          _accountHistory
+            ..clear()
+            ..addAll(decoded
+                .whereType<String>()
+                .map((e) => e.trim())
+                .where((e) => e.isNotEmpty));
+        }
+      } catch (_) {}
+    }
+    final lastAccount = bind.mainGetLocalOption(key: _lastAccountKey).trim();
+    final initial = lastAccount.isNotEmpty
+        ? lastAccount
+        : (_accountHistory.isNotEmpty ? _accountHistory.first : '');
+    if (initial.isNotEmpty && _usernameController.text.isEmpty) {
+      _usernameController.text = initial;
+    }
+  }
+
+  Future<void> _loadRememberedPasswordForUser(String username) async {
+    final enabled =
+        bind.mainGetLocalOption(key: _rememberPasswordEnabledKey) == 'Y';
+    if (mounted) {
+      setState(() => _rememberPassword = enabled);
+    }
+    if (!enabled || username.isEmpty) {
+      return;
+    }
+    final remembered = await _authService.getRememberedPassword(username);
+    if (!mounted) return;
+    _passwordController.text = remembered ?? '';
+    if ((_passwordController.text.isNotEmpty) &&
+        _invalidFields['password'] == true) {
+      _clearFieldError('password');
+    }
+  }
+
+  void _rememberAccount(String username) {
+    final normalized = username.trim();
+    if (normalized.isEmpty) return;
+    _accountHistory.removeWhere((e) => e == normalized);
+    _accountHistory.insert(0, normalized);
+    if (_accountHistory.length > 5) {
+      _accountHistory
+        ..removeRange(5, _accountHistory.length);
+    }
+    bind.mainSetLocalOption(
+        key: _accountHistoryKey, value: jsonEncode(_accountHistory));
+    bind.mainSetLocalOption(key: _lastAccountKey, value: normalized);
+  }
+
+  void _selectAccount(String username) {
+    _usernameController.text = username;
+    _clearFieldError('username');
+    bind.mainSetLocalOption(key: _lastAccountKey, value: username);
+    _loadRememberedPasswordForUser(username);
+    if (!_usernameFocus.hasFocus) {
+      _usernameFocus.requestFocus();
+    }
+    setState(() {});
+  }
+
+  Widget? _buildAccountSwitcher() {
+    if (_accountHistory.isEmpty) return null;
+    return PopupMenuButton<String>(
+      padding: EdgeInsets.zero,
+      icon: const Icon(Icons.arrow_drop_down, color: Colors.grey),
+      onSelected: _selectAccount,
+      itemBuilder: (context) => _accountHistory
+          .map((account) => PopupMenuItem<String>(
+                value: account,
+                child: Text(account),
+              ))
+          .toList(),
+    );
   }
 
   Future<void> _sendSmsCode() async {
@@ -184,6 +274,16 @@ class _AppLoginPageState extends State<AppLoginPage>
       if (error != null) {
         setState(() => _errorMsg = error);
       } else {
+        if (_rememberPassword) {
+          await _authService.saveRememberedPassword(
+            username: username,
+            password: password,
+            expiresAt: DateTime.now().add(const Duration(days: 7)),
+          );
+        } else {
+          await _authService.clearRememberedPassword(username);
+        }
+        _rememberAccount(username);
         bind.mainSetLocalOption(key: _agreedTermsVersionKey, value: _currentTermsVersion);
         bind.mainSetLocalOption(key: _agreedPrivacyVersionKey, value: _currentPrivacyVersion);
         _goToHome();
@@ -416,6 +516,7 @@ class _AppLoginPageState extends State<AppLoginPage>
           focusNode: _usernameFocus,
           label: '用户名',
           icon: Icons.person_outline,
+          suffix: _buildAccountSwitcher(),
         ),
         const SizedBox(height: 14),
         // Password
@@ -438,6 +539,40 @@ class _AppLoginPageState extends State<AppLoginPage>
               setState(() => _obscurePassword = !_obscurePassword);
             },
           ),
+        ),
+        const SizedBox(height: 10),
+        Row(
+          children: [
+            SizedBox(
+              width: 20,
+              height: 20,
+              child: Checkbox(
+                value: _rememberPassword,
+                activeColor: MyTheme.accent,
+                onChanged: (val) {
+                  final next = val ?? false;
+                  setState(() => _rememberPassword = next);
+                  bind.mainSetLocalOption(
+                      key: _rememberPasswordEnabledKey,
+                      value: next ? 'Y' : 'N');
+                  if (!next) {
+                    _authService
+                        .clearRememberedPassword(_usernameController.text.trim());
+                  }
+                },
+              ),
+            ),
+            const SizedBox(width: 8),
+            Text(
+              '记住密码（7天）',
+              style: TextStyle(
+                fontSize: 12,
+                color: Theme.of(context).brightness == Brightness.dark
+                    ? Colors.white54
+                    : Colors.black54,
+              ),
+            ),
+          ],
         ),
         const SizedBox(height: 16),
         // Login Button
