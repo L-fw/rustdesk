@@ -4625,7 +4625,7 @@
         (u.phone && d.phone === u.phone));
       const deviceMap = new Map();
       deviceMatches.forEach(d => deviceMap.set(d.id, d));
-      const deviceList = [...deviceMap.values()];
+      const deviceList = [...deviceMap.values()].filter(d => d.clientType !== 'full' || d.username || d.phone);
       const deviceItems = deviceList.length
         ? deviceList.map(d => {
           const status = d.banned ? '已禁用' : '正常';
