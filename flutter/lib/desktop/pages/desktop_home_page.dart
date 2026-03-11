@@ -6,6 +6,7 @@ import 'package:auto_size_text/auto_size_text.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_hbb/common.dart';
+import 'package:flutter_hbb/common/app_auth_service.dart';
 import 'package:flutter_hbb/common/widgets/animated_rotation_widget.dart';
 import 'package:flutter_hbb/common/widgets/custom_password.dart';
 import 'package:flutter_hbb/consts.dart';
@@ -25,6 +26,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:window_manager/window_manager.dart';
 import 'package:window_size/window_size.dart' as window_size;
 import '../widgets/button.dart';
+import 'desktop_login_page.dart' as desktop_login;
 
 class DesktopHomePage extends StatefulWidget {
   const DesktopHomePage({Key? key}) : super(key: key);
@@ -50,6 +52,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
   var watchIsCanRecordAudio = false;
   Timer? _updateTimer;
   bool isCardClosed = false;
+  bool _loginStatusDialogShowing = false;
 
   final RxBool _editHover = false.obs;
   final RxBool _block = false.obs;
@@ -889,6 +892,9 @@ class _DesktopHomePageState extends State<DesktopHomePage>
         gFFI.dialogManager.dismissByTag('remote-disabled');
       }
     });
+
+    // 检查登录状态
+    _checkLoginStatus();
   }
 
   void _showBannedDialog() {
@@ -949,7 +955,49 @@ class _DesktopHomePageState extends State<DesktopHomePage>
     super.didChangeAppLifecycleState(state);
     if (state == AppLifecycleState.resumed) {
       shouldBeBlocked(_block, canBeBlocked);
+      _checkLoginStatus();
     }
+  }
+
+  Future<void> _checkLoginStatus() async {
+    if (kAppModeShareOnly) return;
+    final ok = await AppAuthService().isLoggedIn();
+    if (!ok && mounted) {
+      _showLoginExpiredDialog();
+    }
+  }
+
+  void _showLoginExpiredDialog() {
+    if (!mounted || _loginStatusDialogShowing) return;
+    _loginStatusDialogShowing = true;
+    gFFI.dialogManager.show((setState, close, context) {
+      return CustomAlertDialog(
+        title: const Text('账号异常'),
+        content: const Text('账号已在其他设备登录'),
+        actions: [
+          dialogButton(
+            '直接退出',
+            onPressed: () {
+              close();
+              _loginStatusDialogShowing = false;
+              exit(0);
+            },
+          ),
+          dialogButton(
+            '重新登录',
+            onPressed: () {
+              close();
+              _loginStatusDialogShowing = false;
+              Navigator.of(context).pushAndRemoveUntil(
+                MaterialPageRoute(
+                    builder: (_) => const desktop_login.AppLoginPage()),
+                (route) => false,
+              );
+            },
+          ),
+        ],
+      );
+    }, tag: 'login-expired');
   }
 
   Widget buildPluginEntry() {

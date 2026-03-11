@@ -26,6 +26,7 @@ import 'package:window_manager/window_manager.dart';
 import 'common.dart';
 import 'consts.dart';
 import 'common/app_auth_service.dart';
+import 'desktop/pages/desktop_login_page.dart' as desktop_login;
 import 'mobile/pages/app_login_page.dart';
 import 'mobile/pages/home_page.dart';
 import 'mobile/pages/server_page.dart';
@@ -138,6 +139,8 @@ Future<void> initEnv(String appType) async {
 void runMainApp(bool startService) async {
   // register uni links
   await initEnv(kAppTypeMain);
+  // 检查用户登录状态（与 mobile 一致）
+  _isAppLoggedIn = kAppModeShareOnly || await AppAuthService().isLoggedIn();
   checkUpdate();
   // trigger connection status updater
   await bind.mainCheckConnectStatus();
@@ -511,7 +514,9 @@ class _AppState extends State<App> with WidgetsBindingObserver {
           darkTheme: MyTheme.darkTheme,
           themeMode: MyTheme.currentThemeMode(),
           home: isDesktop
-              ? const DesktopTabPage()
+              ? (kAppModeShareOnly || _isAppLoggedIn
+                  ? const DesktopTabPage()
+                  : const desktop_login.AppLoginPage())
               : isWeb
                   ? WebHomePage()
                   : kAppModeShareOnly || _isAppLoggedIn

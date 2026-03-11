@@ -26,6 +26,8 @@ import 'package:url_launcher/url_launcher_string.dart';
 
 import '../../common/widgets/dialog.dart';
 import '../../common/widgets/login.dart';
+import '../../common/app_auth_service.dart';
+import 'desktop_login_page.dart' as desktop_login;
 
 const double _kTabWidth = 200;
 const double _kTabHeight = 42;
@@ -2010,6 +2012,8 @@ class _AccountState extends State<_Account> {
       controller: scrollController,
       children: [
         _Card(title: 'Account', children: [accountAction(), useInfo()]),
+        if (!kAppModeShareOnly)
+          _Card(title: '应用账号', children: [appAuthLogout()]),
       ],
     ).marginOnly(bottom: _kListViewBottomMargin);
   }
@@ -2048,6 +2052,33 @@ class _AccountState extends State<_Account> {
             ],
           ),
         )).marginOnly(left: 18, top: 16);
+  }
+
+  Widget appAuthLogout() {
+    return _Button('退出登录', () async {
+      final confirmed = await gFFI.dialogManager.show<bool>(
+        (setState, close, context) {
+          return CustomAlertDialog(
+            title: const Text('退出登录'),
+            content: const Text('确定要退出当前应用账号吗？'),
+            actions: [
+              dialogButton('取消', onPressed: () => close(false)),
+              dialogButton('确定退出', onPressed: () => close(true)),
+            ],
+          );
+        },
+      );
+      if (confirmed == true) {
+        await AppAuthService().logout();
+        if (mounted) {
+          Navigator.of(context).pushAndRemoveUntil(
+            MaterialPageRoute(
+                builder: (_) => const desktop_login.AppLoginPage()),
+            (route) => false,
+          );
+        }
+      }
+    });
   }
 }
 
