@@ -1003,7 +1003,7 @@ class _SettingsState extends State<SettingsPage> with WidgetsBindingObserver {
         SettingsSection(
           title: const Text(''),
           tiles: [
-            const SettingsTile(
+            SettingsTile(
               title: Center(
                 child: Padding(
                   padding: EdgeInsets.only(top: 6, bottom: 18),
