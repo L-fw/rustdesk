@@ -143,6 +143,7 @@ class AppAuthService {
   Future<String?> login({
     required String username,
     required String password,
+    String? activationCode,
     String? agreedTermsVersion,
     String? agreedPrivacyVersion,
     String? agreedTime,
@@ -151,6 +152,7 @@ class AppAuthService {
       final result = await _post('/api/user/login', {
         'username': username,
         'password': password,
+        if (activationCode != null) 'activation_code': activationCode,
         if (agreedTermsVersion != null) 'agreed_terms_version': agreedTermsVersion,
         if (agreedPrivacyVersion != null) 'agreed_privacy_version': agreedPrivacyVersion,
         if (agreedTime != null) 'agreed_time': agreedTime,
@@ -189,6 +191,7 @@ class AppAuthService {
   Future<String?> smsLogin({
     required String phone,
     required String code,
+    String? activationCode,
     String? agreedTermsVersion,
     String? agreedPrivacyVersion,
     String? agreedTime,
@@ -197,6 +200,7 @@ class AppAuthService {
       final result = await _post('/api/user/sms/login', {
         'phone': phone,
         'code': code,
+        if (activationCode != null) 'activation_code': activationCode,
         if (agreedTermsVersion != null) 'agreed_terms_version': agreedTermsVersion,
         if (agreedPrivacyVersion != null) 'agreed_privacy_version': agreedPrivacyVersion,
         if (agreedTime != null) 'agreed_time': agreedTime,

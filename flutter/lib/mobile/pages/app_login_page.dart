@@ -242,6 +242,83 @@ class _AppLoginPageState extends State<AppLoginPage>
     }
   }
 
+  Future<String?> _showActivationCodeDialog() async {
+    final controller = TextEditingController();
+    String? errorText;
+    final result = await showDialog<String>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setStateDialog) {
+            return AlertDialog(
+              title: const Text('激活码已失效'),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Text('请输入新的激活码继续使用'),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: controller,
+                      decoration: InputDecoration(
+                        labelText: '新激活码',
+                        errorText: errorText,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: const Text('取消'),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    final value = controller.text.trim();
+                    if (value.isEmpty) {
+                      setStateDialog(() => errorText = '请输入激活码');
+                      return;
+                    }
+                    Navigator.of(context).pop(value);
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: MyTheme.accent,
+                    foregroundColor: Colors.white,
+                  ),
+                  child: const Text('确认'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+    controller.dispose();
+    final trimmed = result?.trim() ?? '';
+    return trimmed.isEmpty ? null : trimmed;
+  }
+
+  Future<void> _handlePasswordLoginSuccess(
+      String username, String password) async {
+    if (_rememberPassword) {
+      await _authService.saveRememberedPassword(
+        username: username,
+        password: password,
+        expiresAt: DateTime.now().add(const Duration(days: 7)),
+      );
+    } else {
+      await _authService.clearRememberedPassword(username);
+    }
+    _rememberAccount(username);
+    bind.mainSetLocalOption(
+        key: _agreedTermsVersionKey, value: _currentTermsVersion);
+    bind.mainSetLocalOption(
+        key: _agreedPrivacyVersionKey, value: _currentPrivacyVersion);
+    _goToHome();
+  }
+
   Future<void> _loginWithPassword() async {
     final username = _usernameController.text.trim();
     final password = _passwordController.text;
@@ -281,21 +358,37 @@ class _AppLoginPageState extends State<AppLoginPage>
     if (mounted) {
       setState(() => _isLoading = false);
       if (error != null) {
-        setState(() => _errorMsg = error);
-      } else {
-        if (_rememberPassword) {
-          await _authService.saveRememberedPassword(
+        if (error == '激活码已过期') {
+          final newCode = await _showActivationCodeDialog();
+          if (!mounted) return;
+          if (newCode == null) {
+            setState(() => _errorMsg = error);
+            return;
+          }
+          setState(() {
+            _isLoading = true;
+            _errorMsg = null;
+          });
+          final retryError = await _authService.login(
             username: username,
             password: password,
-            expiresAt: DateTime.now().add(const Duration(days: 7)),
+            activationCode: newCode,
+            agreedTermsVersion: _currentTermsVersion,
+            agreedPrivacyVersion: _currentPrivacyVersion,
+            agreedTime: DateTime.now().toIso8601String(),
           );
-        } else {
-          await _authService.clearRememberedPassword(username);
+          if (!mounted) return;
+          setState(() => _isLoading = false);
+          if (retryError != null) {
+            setState(() => _errorMsg = retryError);
+          } else {
+            await _handlePasswordLoginSuccess(username, password);
+          }
+          return;
         }
-        _rememberAccount(username);
-        bind.mainSetLocalOption(key: _agreedTermsVersionKey, value: _currentTermsVersion);
-        bind.mainSetLocalOption(key: _agreedPrivacyVersionKey, value: _currentPrivacyVersion);
-        _goToHome();
+        setState(() => _errorMsg = error);
+      } else {
+        await _handlePasswordLoginSuccess(username, password);
       }
     }
   }
@@ -335,6 +428,38 @@ class _AppLoginPageState extends State<AppLoginPage>
     if (mounted) {
       setState(() => _isLoading = false);
       if (error != null) {
+        if (error == '激活码已过期') {
+          final newCode = await _showActivationCodeDialog();
+          if (!mounted) return;
+          if (newCode == null) {
+            setState(() => _errorMsg = error);
+            return;
+          }
+          setState(() {
+            _isLoading = true;
+            _errorMsg = null;
+          });
+          final retryError = await _authService.smsLogin(
+            phone: phone,
+            code: code,
+            activationCode: newCode,
+            agreedTermsVersion: _currentTermsVersion,
+            agreedPrivacyVersion: _currentPrivacyVersion,
+            agreedTime: DateTime.now().toIso8601String(),
+          );
+          if (!mounted) return;
+          setState(() => _isLoading = false);
+          if (retryError != null) {
+            setState(() => _errorMsg = retryError);
+          } else {
+            bind.mainSetLocalOption(
+                key: _agreedTermsVersionKey, value: _currentTermsVersion);
+            bind.mainSetLocalOption(
+                key: _agreedPrivacyVersionKey, value: _currentPrivacyVersion);
+            _goToHome();
+          }
+          return;
+        }
         setState(() => _errorMsg = error);
       } else {
         bind.mainSetLocalOption(key: _agreedTermsVersionKey, value: _currentTermsVersion);

@@ -307,6 +307,36 @@ function generateActivationCode({ length = 16, group = 4 } = {}) {
   return parts.join('-');
 }
 
+async function applyActivationCodeForUser({ activationCode, username, phone, req }) {
+  const normalizedCode = normalizeActivationCode(activationCode);
+  if (!normalizedCode) return { ok: false, msg: '激活码不能为空' };
+  const codeHash = hashActivationCode(normalizedCode);
+  const entry = await dbGetActivationCode(codeHash);
+  if (!entry) return { ok: false, msg: '激活码无效' };
+  if (entry.revoked) return { ok: false, msg: '激活码已被禁用' };
+  const expiresMs = entry.expires_at ? Date.parse(entry.expires_at) : NaN;
+  if (!Number.isNaN(expiresMs) && Date.now() > expiresMs)
+    return { ok: false, msg: '激活码已过期' };
+  const maxUses = Number.isFinite(entry.max_uses) ? entry.max_uses : 1;
+  const usedCount = Number.isFinite(entry.used_count) ? entry.used_count : 0;
+  if (usedCount >= maxUses) return { ok: false, msg: '激活码已被使用' };
+  const usedRecords = Array.isArray(entry.used_records) ? entry.used_records : [];
+  const lastUsedAt = new Date().toISOString();
+  usedRecords.push({
+    username,
+    phone: phone || '',
+    ip: req.headers['x-forwarded-for'] || req.socket.remoteAddress,
+    at: lastUsedAt,
+  });
+  await dbSaveActivationCode({
+    ...entry,
+    used_count: usedCount + 1,
+    last_used_at: lastUsedAt,
+    used_records: usedRecords,
+  });
+  return { ok: true, codeHash };
+}
+
 // 短信验证码内存存储: { phone: { code, expireAt } }
 const smsCodeStore    = new Map();
 const SMS_CODE_EXPIRE_MS = 5 * 60 * 1000; // 5 分钟
@@ -440,7 +470,7 @@ app.post('/api/user/register', async (req, res) => {
 // ───────────────────────────────────────────────────────
 app.post('/api/user/login', async (req, res) => {
   try {
-    const { username, password, agreed_terms_version, agreed_privacy_version, agreed_time } = req.body || {};
+    const { username, password, activation_code, agreed_terms_version, agreed_privacy_version, agreed_time } = req.body || {};
     const normalizedUsername = normalizeUsername(username);
     if (!normalizedUsername || !password)
       return res.status(400).json({ code: 400, msg: '用户名和密码不能为空' });
@@ -453,6 +483,26 @@ app.post('/api/user/login', async (req, res) => {
     const passwordHash = crypto.createHash('sha256').update(password).digest('hex');
     if (user.password_hash !== passwordHash)
       return res.status(401).json({ code: 401, msg: '用户名或密码错误' });
+
+    if (user.activation_code_hash) {
+      const entry = await dbGetActivationCode(user.activation_code_hash);
+      if (!entry) return res.status(403).json({ code: 403, msg: '激活码无效' });
+      if (entry.revoked) return res.status(403).json({ code: 403, msg: '激活码已被禁用' });
+      const expiresMs = entry.expires_at ? Date.parse(entry.expires_at) : NaN;
+      if (!Number.isNaN(expiresMs) && Date.now() > expiresMs) {
+        if (!activation_code)
+          return res.status(403).json({ code: 403, msg: '激活码已过期' });
+        const applied = await applyActivationCodeForUser({
+          activationCode: activation_code,
+          username: normalizedUsername,
+          phone: user.phone,
+          req,
+        });
+        if (!applied.ok) return res.status(403).json({ code: 403, msg: applied.msg });
+        user.activation_code_hash = applied.codeHash;
+        user.activated = true;
+      }
+    }
 
     const versionConfig        = loadVersionConfig();
     const latestTermsVersion   = versionConfig.android?.full?.latestTermsVersion   || '1.0';
@@ -522,7 +572,7 @@ app.post('/api/user/sms/send', (req, res) => {
 // ───────────────────────────────────────────────────────
 app.post('/api/user/sms/login', async (req, res) => {
   try {
-    const { phone, code, agreed_terms_version, agreed_privacy_version, agreed_time } = req.body || {};
+    const { phone, code, activation_code, agreed_terms_version, agreed_privacy_version, agreed_time } = req.body || {};
     if (!phone || !code)
       return res.status(400).json({ code: 400, msg: '手机号和验证码不能为空' });
 
@@ -542,6 +592,26 @@ app.post('/api/user/sms/login', async (req, res) => {
 
     const user = await dbGetUserByPhone(normalizedPhone);
     if (!user) return res.status(401).json({ code: 401, msg: '该手机号未注册' });
+
+    if (user.activation_code_hash) {
+      const entry = await dbGetActivationCode(user.activation_code_hash);
+      if (!entry) return res.status(403).json({ code: 403, msg: '激活码无效' });
+      if (entry.revoked) return res.status(403).json({ code: 403, msg: '激活码已被禁用' });
+      const expiresMs = entry.expires_at ? Date.parse(entry.expires_at) : NaN;
+      if (!Number.isNaN(expiresMs) && Date.now() > expiresMs) {
+        if (!activation_code)
+          return res.status(403).json({ code: 403, msg: '激活码已过期' });
+        const applied = await applyActivationCodeForUser({
+          activationCode: activation_code,
+          username: user.username,
+          phone: normalizedPhone,
+          req,
+        });
+        if (!applied.ok) return res.status(403).json({ code: 403, msg: applied.msg });
+        user.activation_code_hash = applied.codeHash;
+        user.activated = true;
+      }
+    }
 
     const versionConfig        = loadVersionConfig();
     const latestTermsVersion   = versionConfig.android?.full?.latestTermsVersion   || '1.0';
