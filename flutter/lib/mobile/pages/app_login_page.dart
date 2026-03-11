@@ -551,10 +551,11 @@ class _AppLoginPageState extends State<AppLoginPage>
         ),
         const SizedBox(height: 10),
         Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             SizedBox(
-              width: 20,
-              height: 20,
+              width: 24,
+              height: 24,
               child: Checkbox(
                 value: _rememberPassword,
                 activeColor: MyTheme.accent,
