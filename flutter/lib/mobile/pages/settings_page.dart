@@ -24,6 +24,7 @@ import 'app_login_page.dart';
 import 'home_page.dart';
 import 'scan_page.dart';
 import 'privacy_policy_page.dart';
+import 'terms_of_service.dart';
 
 class SettingsPage extends StatefulWidget implements PageShape {
   @override
@@ -723,7 +724,8 @@ class _SettingsState extends State<SettingsPage> with WidgetsBindingObserver {
           if (!kAppModeShareOnly &&
               !disabledSettings &&
               !_hideNetwork &&
-              !_hideServer)
+              !_hideServer &&
+              false)
             SettingsTile(
                 title: Text(translate('ID/Relay Server')),
                 leading: Icon(Icons.cloud),
@@ -733,7 +735,7 @@ class _SettingsState extends State<SettingsPage> with WidgetsBindingObserver {
                     setState(callback);
                   });
                 }),
-          if (!kAppModeShareOnly && !_hideNetwork && !_hideProxy)
+          if (!kAppModeShareOnly && !_hideNetwork && !_hideProxy && false)
             SettingsTile(
                 title: Text(translate('Socks5/Http(s) Proxy')),
                 leading: Icon(Icons.network_ping),
@@ -987,6 +989,18 @@ class _SettingsState extends State<SettingsPage> with WidgetsBindingObserver {
                   ),
                   leading: Icon(Icons.fingerprint)),
             SettingsTile(
+              title: Text(translate("Terms of Service")),
+              onPressed: (context) {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const TermsOfServicePage(),
+                  ),
+                );
+              },
+              leading: Icon(Icons.description),
+            ),
+            SettingsTile(
               title: Text(translate("Privacy Statement")),
               onPressed: (context) {
                 Navigator.push(
@@ -995,18 +1009,17 @@ class _SettingsState extends State<SettingsPage> with WidgetsBindingObserver {
                     builder: (context) => const PrivacyPolicyPage(),
                   ),
                 );
-              },
+          },
               leading: Icon(Icons.privacy_tip),
             )
           ],
         ),
         SettingsSection(
-          title: const Text(''),
           tiles: [
             SettingsTile(
               title: Center(
                 child: Padding(
-                  padding: EdgeInsets.only(top: 6, bottom: 18),
+                  padding: EdgeInsets.only(top: 2, bottom: 8),
                   child: Text(
                     '基于开源软件构建 · 详见用户协议',
                     style: TextStyle(

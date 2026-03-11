@@ -4094,6 +4094,7 @@
           historyExportDeviceId || '—',
           s.sessionId || '—',
           status,
+          historyExportDeviceId || '—',
           s.peerId || '—',
           username,
           phone,
@@ -4102,7 +4103,7 @@
           duration,
         ];
       });
-      const headers = ['设备ID', '会话ID', '状态', '操控方', '用户名', '手机号', '开始时间', '结束时间', '持续时长'];
+      const headers = ['设备ID', '会话ID', '状态', '受控方', '操控方', '用户名', '手机号', '开始时间', '结束时间', '持续时长'];
       const thead = `<tr>${headers.map(hd => `<th>${h(hd)}</th>`).join('')}</tr>`;
       const tbody = rows.map(r => `<tr>${r.map(c => `<td>${h(c)}</td>`).join('')}</tr>`).join('');
       const html = `<!DOCTYPE html><html><head><meta charset="utf-8"></head><body><table border="1"><thead>${thead}</thead><tbody>${tbody}</tbody></table></body></html>`;
@@ -4126,7 +4127,7 @@
       if (!device) return;
 
       document.getElementById('modal-device-id').textContent = id;
-      const sessions = (device.sessions || []).slice().reverse();
+      const sessions = (device.sessions || []).slice().sort((a, b) => new Date(b.startTime || 0).getTime() - new Date(a.startTime || 0).getTime());
       historyExportSessions = sessions;
       historyExportDeviceId = id;
       updateHistoryExportBtn();
@@ -4153,6 +4154,7 @@
         </div>
         <div class="si-detail">
           <span style="color:var(--text)">操控方</span><span>${h(s.peerId || '—')}</span>
+          <span style="color:var(--text)">受控方</span><span>${h(id || '—')}</span>
           <span style="color:var(--text)">用户名</span><span>${h(username)}</span>
           <span style="color:var(--text)">手机号</span><span>${h(phone)}</span>
           <span style="color:var(--text)">开始时间</span><span>${fmt(s.startTime)}</span>
@@ -4793,7 +4795,7 @@
         wrap.innerHTML = '<div class="no-sessions">加载中…</div>';
         return;
       }
-      const sessions = cache.sessions || [];
+      const sessions = (cache.sessions || []).slice().sort((a, b) => new Date(b.startTime || 0).getTime() - new Date(a.startTime || 0).getTime());
       if (!sessions.length) {
         wrap.innerHTML = '<div class="no-sessions">暂无会话记录</div>';
         return;
@@ -4816,6 +4818,7 @@
         </div>
         <div class="si-detail">
           <span style="color:var(--text)">设备ID</span><span>${h(s.deviceId || '—')}</span>
+          <span style="color:var(--text)">受控方</span><span>${h(s.deviceId || '—')}</span>
           <span style="color:var(--text)">操控方</span><span>${h(s.peerId || '—')}</span>
           <span style="color:var(--text)">用户名</span><span>${h(username)}</span>
           <span style="color:var(--text)">手机号</span><span>${h(phone)}</span>
@@ -4906,6 +4909,7 @@
           s.deviceId || '—',
           s.sessionId || '—',
           status,
+          s.deviceId || '—',
           s.peerId || '—',
           username,
           phone,
@@ -4914,7 +4918,7 @@
           duration,
         ];
       });
-      const headers = ['设备ID', '会话ID', '状态', '操控方', '用户名', '手机号', '开始时间', '结束时间', '持续时长'];
+      const headers = ['设备ID', '会话ID', '状态', '受控方', '操控方', '用户名', '手机号', '开始时间', '结束时间', '持续时长'];
       const thead = `<tr>${headers.map(hd => `<th>${h(hd)}</th>`).join('')}</tr>`;
       const tbody = rows.map(r => `<tr>${r.map(c => `<td>${h(c)}</td>`).join('')}</tr>`).join('');
       const html = `<!DOCTYPE html><html><head><meta charset="utf-8"></head><body><table border="1"><thead>${thead}</thead><tbody>${tbody}</tbody></table></body></html>`;
