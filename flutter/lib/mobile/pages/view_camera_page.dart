@@ -493,7 +493,17 @@ class _ViewCameraPageState extends State<ViewCameraPage>
   }
 
   showChatOptions(String id) async {
-    onPressVoiceCall() => bind.sessionRequestVoiceCall(sessionId: sessionId);
+    Future<void> onPressVoiceCall() async {
+      if (isAndroid &&
+          !await AndroidPermissionManager.check(kRecordAudio)) {
+        final res = await AndroidPermissionManager.request(kRecordAudio);
+        if (!res) {
+          showToast(translate('Failed'));
+          return;
+        }
+      }
+      bind.sessionRequestVoiceCall(sessionId: sessionId);
+    }
     onPressEndVoiceCall() => bind.sessionCloseVoiceCall(sessionId: sessionId);
 
     makeTextMenu(String label, Widget icon, VoidCallback onPressed,
@@ -535,7 +545,7 @@ class _ViewCameraPageState extends State<ViewCameraPage>
                 'assets/call_wait.svg',
                 colorFilter: ColorFilter.mode(MyTheme.accent, BlendMode.srcIn),
               ),
-              onPressVoiceCall),
+              () async => await onPressVoiceCall()),
     ];
 
     final menuItems = menus
