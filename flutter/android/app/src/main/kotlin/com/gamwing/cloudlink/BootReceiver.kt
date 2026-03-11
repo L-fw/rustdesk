@@ -1,4 +1,4 @@
-package com.gamwing.support
+package com.gamwing.cloudlink
 
 import android.Manifest.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS
 import android.Manifest.permission.SYSTEM_ALERT_WINDOW

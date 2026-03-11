@@ -1,4 +1,4 @@
-package com.gamwing.support
+package com.gamwing.cloudlink
 
 /**
  * Handle remote input and dispatch android gesture

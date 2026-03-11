@@ -1,4 +1,4 @@
-package com.gamwing.support
+package com.gamwing.cloudlink
 
 import ffi.FFI
 

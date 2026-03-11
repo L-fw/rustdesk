@@ -1,4 +1,4 @@
-package com.gamwing.support
+package com.gamwing.cloudlink
 
 import android.Manifest.permission.*
 import android.annotation.SuppressLint

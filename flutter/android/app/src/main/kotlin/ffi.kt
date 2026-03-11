@@ -5,7 +5,7 @@ package ffi
 import android.content.Context
 import java.nio.ByteBuffer
 
-import com.gamwing.support.RdClipboardManager
+import com.gamwing.cloudlink.RdClipboardManager
 
 object FFI {
     init {
