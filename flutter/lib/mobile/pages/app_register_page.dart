@@ -63,9 +63,6 @@ class _AppRegisterPageState extends State<AppRegisterPage>
     _shakeControllers['sms'] = _createShakeController();
     _shakeControllers['activation'] = _createShakeController();
     _shakeControllers['terms'] = _createShakeController();
-    // Check local storage for agreed terms version
-    _agreedToTerms = bind.mainGetLocalOption(key: _agreedTermsVersionKey) == _currentTermsVersion &&
-                     bind.mainGetLocalOption(key: _agreedPrivacyVersionKey) == _currentPrivacyVersion;
   }
 
   @override
