@@ -740,7 +740,7 @@ class _SettingsState extends State<SettingsPage> with WidgetsBindingObserver {
                 onPressed: (context) {
                   changeSocks5Proxy();
                 }),
-          if (!disabledSettings && !_hideNetwork && !_hideWebSocket)
+          if (!disabledSettings && !_hideNetwork && !_hideWebSocket && false)
             SettingsTile.switchTile(
               title: Text(translate('Use WebSocket')),
               initialValue: _allowWebSocket,
@@ -1002,8 +1002,8 @@ class _SettingsState extends State<SettingsPage> with WidgetsBindingObserver {
         ),
         SettingsSection(
           title: const Text(''),
-          tiles: const [
-            SettingsTile(
+          tiles: [
+            const SettingsTile(
               title: Center(
                 child: Padding(
                   padding: EdgeInsets.only(top: 6, bottom: 18),
