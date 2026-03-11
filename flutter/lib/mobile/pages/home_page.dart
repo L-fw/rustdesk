@@ -278,7 +278,34 @@ class HomePageState extends State<HomePage> with WidgetsBindingObserver {
         ],
       );
     }
-    return Text(bind.mainGetAppNameSync());
+    return Obx(() {
+      final localIp = bind.mainGetOptionSync(key: 'local-ip-addr');
+      final hasIpv6 = localIp.contains(':');
+      final ipLabel = hasIpv6 ? 'IPv6' : 'IPv4/IPv6';
+      final udpEnabled = bind.mainGetOptionSync(key: kOptionDisableUdp) != 'Y';
+      final udpLabel = udpEnabled ? 'UDP' : 'UDP/TCP';
+      final name = kAppModeShareOnly
+          ? bind.mainGetAppNameSync()
+          : (gFFI.userModel.displayNameOrUserName.isNotEmpty
+              ? gFFI.userModel.displayNameOrUserName
+              : bind.mainGetAppNameSync());
+      return Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Flexible(
+            child: Text(
+              name,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          const SizedBox(width: 8),
+          Text(ipLabel),
+          const SizedBox(width: 8),
+          Text(udpLabel),
+        ],
+      );
+    });
   }
 }
 
