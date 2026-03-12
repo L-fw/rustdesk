@@ -7,7 +7,7 @@ import 'package:get/get.dart';
 const int kMaxVirtualDisplayCount = 4;
 const int kAllVirtualDisplay = -1;
 const String kAppMode = String.fromEnvironment('APP_MODE', defaultValue: 'full');
-const bool kAppModeShareOnly = kAppMode == 'share_only';
+bool get kAppModeShareOnly => kAppMode == 'share_only' && !isDesktop;
 
 const double kDesktopRemoteTabBarHeight = 28.0;
 const int kInvalidWindowId = -1;
