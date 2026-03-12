@@ -85,6 +85,7 @@ android {
     compileSdkVersion 34
     sourceSets {
         main.java.srcDirs += 'src/main/kotlin'
+        main.res.srcDirs += 'src/main/res/myres'
 
         main.proto.srcDirs += '../../../libs/hbb_common/protos'
         main.proto.includes += "message.proto"
