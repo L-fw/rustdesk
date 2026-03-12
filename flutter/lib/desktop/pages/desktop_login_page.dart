@@ -475,7 +475,7 @@ class _AppLoginPageState extends State<AppLoginPage>
 
   void _goToRegister() {
     Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => const AppRegisterPage()),
+      MaterialPageRoute(builder: (_) => const DesktopRegisterPage()),
     );
   }
 

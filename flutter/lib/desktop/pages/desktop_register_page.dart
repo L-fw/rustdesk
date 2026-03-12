@@ -11,14 +11,14 @@ import 'privacy_policy.dart' as privacy_pages;
 import 'terms_of_service.dart' as terms_pages;
 
 /// 桌面端注册页面
-class AppRegisterPage extends StatefulWidget {
-  const AppRegisterPage({Key? key}) : super(key: key);
+class DesktopRegisterPage extends StatefulWidget {
+  const DesktopRegisterPage({Key? key}) : super(key: key);
 
   @override
-  State<AppRegisterPage> createState() => _AppRegisterPageState();
+  State<DesktopRegisterPage> createState() => _DesktopRegisterPageState();
 }
 
-class _AppRegisterPageState extends State<AppRegisterPage>
+class _DesktopRegisterPageState extends State<DesktopRegisterPage>
     with SingleTickerProviderStateMixin {
   final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
