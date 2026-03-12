@@ -138,6 +138,24 @@ pub fn core_main() -> Option<Vec<String>> {
     }
     #[cfg(windows)]
     {
+        let allow_install_args = args.iter().any(|arg| {
+            matches!(
+                arg.as_str(),
+                "--install"
+                    | "--silent-install"
+                    | "--before-uninstall"
+                    | "--after-install"
+                    | "--uninstall"
+                    | "--update"
+            )
+        });
+        if !crate::platform::is_installed() && !allow_install_args {
+            let _ = crate::run_me(vec!["--install"]);
+            return None;
+        }
+    }
+    #[cfg(windows)]
+    {
         _is_quick_support |= !crate::platform::is_installed()
             && args.is_empty()
             && (is_quick_support_exe(&arg_exe)

@@ -120,18 +120,11 @@ pub fn update_me(_path: String) {
 
 #[inline]
 pub fn run_without_install() {
-    crate::run_me(vec!["--noinstall"]).ok();
-    std::process::exit(0);
+    goto_install();
 }
 
 #[inline]
 pub fn show_run_without_install() -> bool {
-    let mut it = std::env::args();
-    if let Some(tmp) = it.next() {
-        if crate::is_setup(&tmp) {
-            return it.next() == None;
-        }
-    }
     false
 }
 

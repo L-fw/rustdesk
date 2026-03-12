@@ -28,6 +28,8 @@ import '../../common/widgets/dialog.dart';
 import '../../common/widgets/login.dart';
 import '../../common/app_auth_service.dart';
 import 'desktop_login_page.dart' as desktop_login;
+import 'privacy_policy.dart' as privacy_pages;
+import 'terms_of_service.dart' as terms_pages;
 
 const double _kTabWidth = 200;
 const double _kTabHeight = 42;
@@ -73,6 +75,7 @@ class DesktopSettingPage extends StatefulWidget {
         bind.mainGetBuildinOption(key: kOptionHideSecuritySetting) != 'Y')
       SettingsTabKey.safety,
     if (!bind.isDisableSettings() &&
+        !isDesktop &&
         bind.mainGetBuildinOption(key: kOptionHideNetworkSetting) != 'Y')
       SettingsTabKey.network,
     if (!bind.isIncomingOnly()) SettingsTabKey.display,
@@ -80,6 +83,7 @@ class DesktopSettingPage extends StatefulWidget {
       SettingsTabKey.plugin,
     if (!bind.isDisableAccount()) SettingsTabKey.account,
     if (isWindows &&
+        !isDesktop &&
         bind.mainGetBuildinOption(key: kOptionHideRemotePrinterSetting) != 'Y')
       SettingsTabKey.printer,
     SettingsTabKey.about,
@@ -837,7 +841,6 @@ class _SafetyState extends State<_Safety> with AutomaticKeepAliveClientMixin {
               child: Column(children: [
                 permissions(context),
                 password(context),
-                _Card(title: '2FA', children: [tfa()]),
                 if (!isChangeIdDisabled())
                   _Card(title: 'ID', children: [changeId()]),
                 more(context),
@@ -2011,7 +2014,6 @@ class _AccountState extends State<_Account> {
     return ListView(
       controller: scrollController,
       children: [
-        _Card(title: 'Account', children: [accountAction(), useInfo()]),
         if (!kAppModeShareOnly)
           _Card(title: '应用账号', children: [appAuthLogout()]),
       ],
@@ -2355,7 +2357,7 @@ class _AboutState extends State<_About> {
       final scrollController = ScrollController();
       return SingleChildScrollView(
         controller: scrollController,
-        child: _Card(title: translate('About RustDesk'), children: [
+        child: _Card(title: '', children: [
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -2374,10 +2376,22 @@ class _AboutState extends State<_About> {
                         .marginSymmetric(vertical: 4.0)),
               InkWell(
                   onTap: () {
-                    launchUrlString('https://jygamwing.com/privacy_policy.html');
+                    Navigator.of(context).push(MaterialPageRoute(
+                        builder: (_) =>
+                            const privacy_pages.PrivacyPolicyPage()));
                   },
                   child: Text(
                     translate('Privacy Statement'),
+                    style: linkStyle,
+                  ).marginSymmetric(vertical: 4.0)),
+              InkWell(
+                  onTap: () {
+                    Navigator.of(context).push(MaterialPageRoute(
+                        builder: (_) =>
+                            const terms_pages.TermsOfServicePage()));
+                  },
+                  child: Text(
+                    '用户服务协议',
                     style: linkStyle,
                   ).marginSymmetric(vertical: 4.0)),
               InkWell(
@@ -2400,7 +2414,7 @@ class _AboutState extends State<_About> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Copyright © ${DateTime.now().toString().substring(0, 4)} Purslane Ltd.\n$license',
+                            '© 2026 佳影寰球科技有限公司 版权所有\n基于开源项目构建，详见用户协议',
                             style: const TextStyle(color: Colors.white),
                           ),
                           Text(
