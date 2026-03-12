@@ -140,7 +140,8 @@ void runMainApp(bool startService) async {
   // register uni links
   await initEnv(kAppTypeMain);
   // 检查用户登录状态（与 mobile 一致）
-  _isAppLoggedIn = kAppModeShareOnly || await AppAuthService().isLoggedIn();
+  _isAppLoggedIn =
+      isDesktop ? false : kAppModeShareOnly || await AppAuthService().isLoggedIn();
   checkUpdate();
   // trigger connection status updater
   await bind.mainCheckConnectStatus();
