@@ -892,6 +892,11 @@ class _DesktopHomePageState extends State<DesktopHomePage>
         gFFI.dialogManager.dismissByTag('remote-disabled');
       }
     });
+    ever(stateGlobal.appLoginInvalidated, (invalidated) {
+      if (invalidated) {
+        _showLoginExpiredDialog();
+      }
+    });
 
     // 检查登录状态
     _checkLoginStatus();
@@ -970,16 +975,21 @@ class _DesktopHomePageState extends State<DesktopHomePage>
   void _showLoginExpiredDialog() {
     if (!mounted || _loginStatusDialogShowing) return;
     _loginStatusDialogShowing = true;
+    final msg = stateGlobal.appLoginInvalidatedMessage.value.isNotEmpty
+        ? stateGlobal.appLoginInvalidatedMessage.value
+        : '账号已在其他设备登录';
     gFFI.dialogManager.show((setState, close, context) {
       return CustomAlertDialog(
         title: const Text('账号异常'),
-        content: const Text('账号已在其他设备登录'),
+        content: Text(msg),
         actions: [
           dialogButton(
             '直接退出',
             onPressed: () {
               close();
               _loginStatusDialogShowing = false;
+              stateGlobal.appLoginInvalidated.value = false;
+              stateGlobal.appLoginInvalidatedMessage.value = '';
               exit(0);
             },
           ),
@@ -988,6 +998,8 @@ class _DesktopHomePageState extends State<DesktopHomePage>
             onPressed: () {
               close();
               _loginStatusDialogShowing = false;
+              stateGlobal.appLoginInvalidated.value = false;
+              stateGlobal.appLoginInvalidatedMessage.value = '';
               Navigator.of(context).pushAndRemoveUntil(
                 MaterialPageRoute(
                     builder: (_) => const desktop_login.AppLoginPage()),

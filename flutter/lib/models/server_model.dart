@@ -8,6 +8,7 @@ import 'package:encrypt/encrypt.dart' as encrypt_lib;
 import 'package:flutter/material.dart';
 import 'package:flutter_hbb/consts.dart';
 import 'package:flutter_hbb/main.dart';
+import 'package:flutter_hbb/common/app_auth_service.dart';
 import 'package:flutter_hbb/mobile/pages/settings_page.dart';
 import 'package:flutter_hbb/models/chat_model.dart';
 import 'package:flutter_hbb/models/platform_model.dart';
@@ -721,10 +722,22 @@ class ServerModel with ChangeNotifier {
           stateGlobal.remoteDisabled.value = false;
           stateGlobal.remoteDisabledMessage.value = '';
         }
+      } else if (action == 'login_kick' ||
+          action == 'account_kick' ||
+          action == 'token_invalid' ||
+          action == 'logout') {
+        unawaited(_handleLoginInvalidated(msgText));
       }
     } catch (e) {
       debugPrint('[AdminWS] Failed to parse message: $e');
     }
+  }
+
+  Future<void> _handleLoginInvalidated(String msgText) async {
+    await AppAuthService().logout();
+    stateGlobal.appLoginInvalidatedMessage.value =
+        msgText.isNotEmpty ? msgText : '账号已在其他设备登录';
+    stateGlobal.appLoginInvalidated.value = true;
   }
 
   Future<bool> setPermanentPassword(String newPW) async {

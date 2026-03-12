@@ -30,6 +30,8 @@ class StateGlobal {
   final bannedMessage = ''.obs;
   final remoteDisabled = false.obs;
   final remoteDisabledMessage = ''.obs;
+  final appLoginInvalidated = false.obs;
+  final appLoginInvalidatedMessage = ''.obs;
   final serverDownloadUrl = ''.obs;
   final serverUpdateLog = ''.obs;
   final serverForceUpdate = false.obs;

@@ -14,7 +14,7 @@ const crypto = require('crypto');
 const {
   initSQLiteDatabase,
   dbGetUser, dbGetUserByPhone, dbGetUserByToken, dbSaveUser, dbDeleteUser, dbListUsers,
-  dbGetDevice, dbGetAllDevices, dbUpsertDevice, dbSetDeviceBanned, dbDeleteDevice,
+  dbGetDevice, dbGetAllDevices, dbUpsertDevice, dbGetDevicesByUser, dbSetDeviceBanned, dbDeleteDevice,
   dbAddSession, dbUpdateSessionHeartbeat, dbEndSession, dbGetDeviceSessions,
   dbGetActivationCode, dbGetAllActivationCodes, dbSaveActivationCode, dbDeleteActivationCode,
 } = require('./sqlite_db');
@@ -538,6 +538,12 @@ app.post('/api/user/login', async (req, res) => {
       const bindIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
       await dbUpsertDevice(bindDeviceId, bindIp, null, null, null, user.username, user.phone, 'full');
     }
+    await wsKickUserDevices({
+      username: user.username,
+      phone: user.phone,
+      excludeDeviceId: bindDeviceId,
+      reason: '账号已在其他设备登录',
+    });
 
     console.log(`[USER] Login: ${normalizedUsername}`);
     res.json({
@@ -647,6 +653,12 @@ app.post('/api/user/sms/login', async (req, res) => {
       const bindIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
       await dbUpsertDevice(bindDeviceId, bindIp, null, null, null, user.username, user.phone, 'full');
     }
+    await wsKickUserDevices({
+      username: user.username,
+      phone: user.phone,
+      excludeDeviceId: bindDeviceId,
+      reason: '账号已在其他设备登录',
+    });
 
     console.log(`[USER] SMS Login: ${normalizedPhone} => ${user.username}`);
     res.json({
@@ -729,6 +741,11 @@ app.post('/api/user/password/reset', async (req, res) => {
       token:               '',
       token_version:       newTokenVersion,
       password_updated_at: new Date().toISOString(),
+    });
+    await wsKickUserDevices({
+      username: user.username,
+      phone: user.phone,
+      reason: '密码已重置，请重新登录',
     });
 
     console.log(`[USER] Reset password: ${normalizedPhone} => ${user.username}`);
@@ -999,6 +1016,11 @@ app.post('/admin/users/reset-password', authMiddleware, async (req, res) => {
       token_version:       newTokenVersion,
       password_updated_at: new Date().toISOString(),
     });
+    await wsKickUserDevices({
+      username: user.username,
+      phone: user.phone,
+      reason: '管理员已重置密码，请重新登录',
+    });
     res.json({ code: 200, msg: '密码已重置', data: { password: newPassword } });
   } catch (e) {
     console.error('[admin/reset-password]', e);
@@ -1179,6 +1201,21 @@ app.get('/admin',  (_req, res) => res.sendFile(path.join(__dirname, 'admin.html'
 // ───────────────────────────────────────────────────────
 // WebSocket 工具函数
 // ───────────────────────────────────────────────────────
+async function wsKickUserDevices({ username, phone, excludeDeviceId, reason }) {
+  const devices = await dbGetDevicesByUser(username, phone);
+  if (!devices.length) return;
+  const payload = {
+    action: 'login_kick',
+    msg: reason || '账号已在其他设备登录',
+  };
+  for (const device of devices) {
+    const deviceId = device?.id;
+    if (!deviceId) continue;
+    if (excludeDeviceId && deviceId === excludeDeviceId) continue;
+    wsPushToDevice(deviceId, payload);
+  }
+}
+
 function wsPushToDevice(deviceId, data) {
   const sockets = wsClients.get(deviceId);
   if (!sockets) return;

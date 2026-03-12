@@ -286,6 +286,31 @@ async function dbUpsertDevice(id, ip, appVersion, password, permissions, usernam
   return await dbGetDevice(id);
 }
 
+async function dbGetDevicesByUser(username, phone) {
+  const normalizedUsername = username ? String(username).trim() : '';
+  const normalizedPhone = phone ? String(phone).trim() : '';
+  if (!normalizedUsername && !normalizedPhone) return [];
+  if (normalizedUsername && normalizedPhone) {
+    const rows = await all(
+      'SELECT * FROM devices WHERE username = ? OR phone = ? ORDER BY last_seen DESC',
+      [normalizedUsername, normalizedPhone]
+    );
+    return rows.map(rowToDevice);
+  }
+  if (normalizedUsername) {
+    const rows = await all(
+      'SELECT * FROM devices WHERE username = ? ORDER BY last_seen DESC',
+      [normalizedUsername]
+    );
+    return rows.map(rowToDevice);
+  }
+  const rows = await all(
+    'SELECT * FROM devices WHERE phone = ? ORDER BY last_seen DESC',
+    [normalizedPhone]
+  );
+  return rows.map(rowToDevice);
+}
+
 async function dbSetDeviceBanned(id, banned) {
   await run('UPDATE devices SET banned = ? WHERE id = ?', [banned ? 1 : 0, id]);
 }
@@ -407,6 +432,7 @@ module.exports = {
   dbGetDevice,
   dbGetAllDevices,
   dbUpsertDevice,
+  dbGetDevicesByUser,
   dbSetDeviceBanned,
   dbDeleteDevice,
   // sessions

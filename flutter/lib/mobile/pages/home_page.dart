@@ -63,6 +63,11 @@ class HomePageState extends State<HomePage> with WidgetsBindingObserver {
         _dismissRemoteDisabledDialog();
       }
     });
+    ever(stateGlobal.appLoginInvalidated, (invalidated) {
+      if (invalidated) {
+        _showLoginExpiredDialog();
+      }
+    });
   }
 
   @override
@@ -152,6 +157,9 @@ class HomePageState extends State<HomePage> with WidgetsBindingObserver {
   Future<void> _showLoginExpiredDialog() async {
     if (!mounted || _loginStatusDialogShowing) return;
     _loginStatusDialogShowing = true;
+    final msg = stateGlobal.appLoginInvalidatedMessage.value.isNotEmpty
+        ? stateGlobal.appLoginInvalidatedMessage.value
+        : '账号已在其他设备登录';
     await showDialog<void>(
       context: context,
       barrierDismissible: false,
@@ -159,11 +167,13 @@ class HomePageState extends State<HomePage> with WidgetsBindingObserver {
         onWillPop: () async => false,
         child: AlertDialog(
           title: const Text('账号异常'),
-          content: const Text('账号已在其他设备登录'),
+          content: Text(msg),
           actions: [
             TextButton(
               onPressed: () {
                 Navigator.of(context).pop();
+                stateGlobal.appLoginInvalidated.value = false;
+                stateGlobal.appLoginInvalidatedMessage.value = '';
                 SystemNavigator.pop();
               },
               child: const Text('直接退出'),
@@ -171,6 +181,8 @@ class HomePageState extends State<HomePage> with WidgetsBindingObserver {
             TextButton(
               onPressed: () {
                 Navigator.of(context).pop();
+                stateGlobal.appLoginInvalidated.value = false;
+                stateGlobal.appLoginInvalidatedMessage.value = '';
                 Navigator.of(context).pushAndRemoveUntil(
                   MaterialPageRoute(builder: (_) => const AppLoginPage()),
                   (route) => false,

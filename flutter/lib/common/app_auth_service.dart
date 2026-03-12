@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:encrypt/encrypt.dart' as encrypt_lib;
 import 'package:flutter_hbb/models/platform_model.dart';
+import 'package:flutter_hbb/models/state_model.dart';
 import 'package:get/get.dart';
 
 /// 应用认证服务 - 处理用户注册、登录、短信验证码等
@@ -48,6 +49,8 @@ class AppAuthService {
     await _setSecureLocalOption(_tokenKey, token);
     await _setSecureLocalOption(_userInfoKey, jsonEncode(user));
     currentUserName.value = _extractUserName(user);
+    stateGlobal.appLoginInvalidated.value = false;
+    stateGlobal.appLoginInvalidatedMessage.value = '';
   }
 
   /// 退出登录
@@ -56,6 +59,9 @@ class AppAuthService {
     await _setSecureLocalOption(_userInfoKey, '');
     await _setSecureLocalOption(_tokenVersionKey, '');
     currentUserName.value = '';
+    if (stateGlobal.appLoginInvalidated.isFalse) {
+      stateGlobal.appLoginInvalidatedMessage.value = '';
+    }
   }
 
   Future<void> _loadCachedUserInfo() async {
