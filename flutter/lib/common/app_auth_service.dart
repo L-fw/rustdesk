@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:encrypt/encrypt.dart' as encrypt_lib;
 import 'package:flutter_hbb/models/platform_model.dart';
+import 'package:get/get.dart';
 
 /// 应用认证服务 - 处理用户注册、登录、短信验证码等
 class AppAuthService {
@@ -21,10 +22,12 @@ class AppAuthService {
   encrypt_lib.Key? _cachedKey;
   encrypt_lib.IV? _cachedIv;
   bool _storageMigrated = false;
+  final RxString currentUserName = ''.obs;
 
   /// 检查是否已登录
   Future<bool> isLoggedIn() async {
     await _ensureSecureStorageMigrated();
+    await _loadCachedUserInfo();
     final token = await _getSecureLocalOption(_tokenKey);
     if (token.isEmpty) return false;
     final ok = await _verifyToken(token);
@@ -44,6 +47,7 @@ class AppAuthService {
   Future<void> _saveLoginInfo(String token, Map<String, dynamic> user) async {
     await _setSecureLocalOption(_tokenKey, token);
     await _setSecureLocalOption(_userInfoKey, jsonEncode(user));
+    currentUserName.value = _extractUserName(user);
   }
 
   /// 退出登录
@@ -51,6 +55,38 @@ class AppAuthService {
     await _setSecureLocalOption(_tokenKey, '');
     await _setSecureLocalOption(_userInfoKey, '');
     await _setSecureLocalOption(_tokenVersionKey, '');
+    currentUserName.value = '';
+  }
+
+  Future<void> _loadCachedUserInfo() async {
+    final raw = await _getSecureLocalOption(_userInfoKey);
+    if (raw.isEmpty) {
+      if (currentUserName.value.isNotEmpty) {
+        currentUserName.value = '';
+      }
+      return;
+    }
+    try {
+      final decoded = jsonDecode(raw);
+      if (decoded is Map<String, dynamic>) {
+        currentUserName.value = _extractUserName(decoded);
+      }
+    } catch (_) {
+      currentUserName.value = '';
+    }
+  }
+
+  String _extractUserName(Map<String, dynamic> user) {
+    for (final value in [
+      user['display_name'],
+      user['name'],
+      user['username'],
+      user['phone'],
+    ]) {
+      final text = value?.toString().trim() ?? '';
+      if (text.isNotEmpty) return text;
+    }
+    return '';
   }
 
   Future<void> saveRememberedPassword({

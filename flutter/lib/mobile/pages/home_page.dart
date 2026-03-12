@@ -279,18 +279,31 @@ class HomePageState extends State<HomePage> with WidgetsBindingObserver {
       );
     }
     if (kAppModeShareOnly) {
-      return Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Flexible(
-            child: Text(
-              bind.mainGetAppNameSync(),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
+      return Obx(() {
+        final localIp = bind.mainGetOptionSync(key: 'local-ip-addr');
+        final hasIpv6 = localIp.contains(':');
+        final ipLabel = hasIpv6 ? 'IPv6' : 'IPv4';
+        final udpEnabled = bind.mainGetOptionSync(key: kOptionDisableUdp) != 'Y';
+        final udpLabel = udpEnabled ? 'UDP' : 'TCP';
+        // ignore: unused_local_variable
+        final _ = stateGlobal.svcStatus.value;
+        return Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Flexible(
+              child: Text(
+                bind.mainGetAppNameSync(),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
-          ),
-        ],
-      );
+            const SizedBox(width: 8),
+            Text(ipLabel),
+            const SizedBox(width: 8),
+            Text(udpLabel),
+          ],
+        );
+      });
     }
     return Obx(() {
       final localIp = bind.mainGetOptionSync(key: 'local-ip-addr');
@@ -298,7 +311,7 @@ class HomePageState extends State<HomePage> with WidgetsBindingObserver {
       final ipLabel = hasIpv6 ? 'IPv6' : 'IPv4';
       final udpEnabled = bind.mainGetOptionSync(key: kOptionDisableUdp) != 'Y';
       final udpLabel = udpEnabled ? 'UDP' : 'TCP';
-      final name = gFFI.userModel.userName.value;
+      final name = AppAuthService().currentUserName.value;
       return Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
