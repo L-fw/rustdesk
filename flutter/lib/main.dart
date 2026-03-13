@@ -27,6 +27,7 @@ import 'common.dart';
 import 'consts.dart';
 import 'common/app_auth_service.dart';
 import 'desktop/pages/desktop_login_page.dart' as desktop_login;
+import 'desktop/pages/login_tab_page.dart';
 import 'mobile/pages/app_login_page.dart';
 import 'mobile/pages/home_page.dart';
 import 'mobile/pages/server_page.dart';
@@ -517,7 +518,7 @@ class _AppState extends State<App> with WidgetsBindingObserver {
           home: isDesktop
               ? (kAppModeShareOnly || _isAppLoggedIn
                   ? const DesktopTabPage()
-                  : const desktop_login.AppLoginPage())
+                  : const LoginTabPage(child: desktop_login.AppLoginPage()))
               : isWeb
                   ? WebHomePage()
                   : kAppModeShareOnly || _isAppLoggedIn

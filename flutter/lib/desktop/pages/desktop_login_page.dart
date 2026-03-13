@@ -10,6 +10,7 @@ import 'package:flutter_hbb/desktop/pages/desktop_register_page.dart';
 import '../../common.dart';
 import '../../models/platform_model.dart';
 import 'desktop_tab_page.dart';
+import 'login_tab_page.dart';
 import 'privacy_policy.dart' as privacy_pages;
 import 'terms_of_service.dart' as terms_pages;
 
@@ -475,7 +476,8 @@ class _AppLoginPageState extends State<AppLoginPage>
 
   void _goToRegister() {
     Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => const DesktopRegisterPage()),
+      MaterialPageRoute(
+          builder: (_) => const LoginTabPage(child: DesktopRegisterPage())),
     );
   }
 
