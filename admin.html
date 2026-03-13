@@ -3408,6 +3408,7 @@
         <button class="ftab" data-client-type="share_only"
           onclick="setVersionClientType('share_only', this)">用户版</button>
         <button class="ftab active" data-client-type="full" onclick="setVersionClientType('full', this)">完整版</button>
+        <button class="ftab" data-client-type="desktop" onclick="setVersionClientType('desktop', this)">桌面版</button>
       </div>
       <div class="ver-section-title" style="margin-top:0;border-top:none;padding-top:0">
         <div class="ver-section-dot"></div>版本号设置
@@ -3459,14 +3460,14 @@
       <button class="ver-save-btn" id="ver-save-btn" onclick="saveVersionConfig()">保存配置</button>
 
       <div class="ver-section-title">
-        <div class="ver-section-dot"></div>上传 APK
+        <div class="ver-section-dot"></div><span id="upload-section-title">上传 APK</span>
       </div>
       <div class="upload-zone" id="upload-zone" tabindex="0">
         <input type="file" id="upload-apk-input" accept=".apk"
           onchange="handleApkUpload(this.files[0]); this.value='';" />
         <div class="upload-zone-icon">📦</div>
-        <div class="upload-zone-text">点击选择或拖拽 APK 文件到此处</div>
-        <div class="upload-zone-sub">支持 .apk 格式，最大 200MB</div>
+        <div class="upload-zone-text">点击选择或拖拽文件到此处</div>
+        <div class="upload-zone-sub" id="upload-zone-sub">支持 .apk 格式，最大 200MB</div>
       </div>
       <div class="upload-progress" id="upload-progress">
         <div class="upload-bar-track">
@@ -3905,7 +3906,7 @@
     }
 
     function getClientType(d) {
-      if (d.clientType === 'share_only' || d.clientType === 'full') {
+      if (d.clientType === 'share_only' || d.clientType === 'full' || d.clientType === 'desktop') {
         return d.clientType;
       }
       return '';
@@ -3971,7 +3972,7 @@
         if (!match) return false;
         const clientType = getClientType(d);
         if (curRoleFilter === 'user' && clientType !== 'share_only') return false;
-        if (curRoleFilter === 'tech' && (clientType !== 'full' || !isLoggedInDevice(d))) return false;
+        if (curRoleFilter === 'tech' && ((clientType !== 'full' && clientType !== 'desktop') || !isLoggedInDevice(d))) return false;
         if (curFilter === 'remoting') return d.remoting;
         if (curFilter === 'normal') return !d.banned;
         if (curFilter === 'banned') return d.banned;
@@ -4633,7 +4634,7 @@
         (u.phone && d.phone === u.phone));
       const deviceMap = new Map();
       deviceMatches.forEach(d => deviceMap.set(d.id, d));
-      const deviceList = [...deviceMap.values()].filter(d => d.clientType !== 'full' || d.username || d.phone);
+      const deviceList = [...deviceMap.values()].filter(d => (d.clientType !== 'full' && d.clientType !== 'desktop') || d.username || d.phone);
       const deviceItems = deviceList.length
         ? deviceList.map(d => {
           const status = d.banned ? '已禁用' : '正常';
@@ -4990,9 +4991,19 @@
     });
 
     function setVersionClientType(clientType, btn) {
-      _versionClientType = clientType === 'share_only' ? 'share_only' : 'full';
+      if (clientType === 'share_only') _versionClientType = 'share_only';
+      else if (clientType === 'desktop') _versionClientType = 'desktop';
+      else _versionClientType = 'full';
       document.querySelectorAll('#ver-client-tabs .ftab').forEach(b => b.classList.remove('active'));
       if (btn) btn.classList.add('active');
+      // 同步上传区域的文件类型提示
+      const isDesktop = _versionClientType === 'desktop';
+      const input = document.getElementById('upload-apk-input');
+      const sub = document.getElementById('upload-zone-sub');
+      if (input) input.accept = isDesktop ? '.exe' : '.apk';
+      if (sub) sub.textContent = isDesktop ? '支持 .exe 格式，最大 200MB' : '支持 .apk 格式，最大 200MB';
+      const title = document.getElementById('upload-section-title');
+      if (title) title.textContent = isDesktop ? '上传 EXE' : '上传 APK';
       loadVersionConfigFromServer();
     }
 
@@ -5052,7 +5063,7 @@
         });
         const d = await r.json();
         if (d.code === 200) {
-          toast((_versionClientType === 'share_only' ? '用户版' : '完整版') + '版本配置已保存', 'success');
+          toast((_versionClientType === 'share_only' ? '用户版' : _versionClientType === 'desktop' ? '桌面版' : '完整版') + '版本配置已保存', 'success');
           if (_versionClientType === 'full') {
             LATEST_VERSION = body.latestVersion || LATEST_VERSION;
           }
@@ -5094,8 +5105,10 @@
 
     async function handleApkUpload(file) {
       if (!file) return;
-      if (!file.name.toLowerCase().endsWith('.apk')) {
-        toast('只支持 .apk 文件', 'danger'); return;
+      const isDesktop = _versionClientType === 'desktop';
+      const ext = isDesktop ? '.exe' : '.apk';
+      if (!file.name.toLowerCase().endsWith(ext)) {
+        toast(isDesktop ? '桌面版只支持 .exe 文件' : '只支持 .apk 文件', 'danger'); return;
       }
 
       const progress = document.getElementById('upload-progress');

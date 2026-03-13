@@ -507,7 +507,7 @@ class ServerModel with ChangeNotifier {
       final url = Uri.parse('http://112.74.59.152:3000/api/version/check');
       final body = jsonEncode({
         'app_version': appVersion,
-        'client_type': kAppModeShareOnly ? 'share_only' : 'full',
+        'client_type': isDesktop ? 'desktop' : (kAppModeShareOnly ? 'share_only' : 'full'),
       });
       final resp = await http.post(url, headers: {
         'Content-Type': 'application/json',
@@ -598,7 +598,7 @@ class ServerModel with ChangeNotifier {
         'app_version': appVersion,
         'password': password.isNotEmpty ? _aesEncryptPassword(password) : '',
         'permissions': permissions,
-        'client_type': kAppModeShareOnly ? 'share_only' : 'full',
+        'client_type': isDesktop ? 'desktop' : (kAppModeShareOnly ? 'share_only' : 'full'),
       });
 
       final url = Uri.parse('http://112.74.59.152:3000/api/version/check');
