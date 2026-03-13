@@ -293,8 +293,9 @@ class HomePageState extends State<HomePage> with WidgetsBindingObserver {
     if (kAppModeShareOnly) {
       return Obx(() {
         final localIp = bind.mainGetOptionSync(key: 'local-ip-addr');
-        final hasIpv6 = localIp.contains(':');
-        final ipLabel = hasIpv6 ? 'IPv6' : 'IPv4';
+        final publicIpv6 = bind.mainGetLocalOption(key: 'public-ipv6-addr');
+        final hasPublicIpv6 = publicIpv6.isNotEmpty;
+        final ipLabel = hasPublicIpv6 ? 'IPv6' : 'IPv4';
         final udpEnabled = bind.mainGetOptionSync(key: kOptionDisableUdp) != 'Y';
         final udpLabel = udpEnabled ? 'UDP' : 'TCP';
         // ignore: unused_local_variable
@@ -319,8 +320,9 @@ class HomePageState extends State<HomePage> with WidgetsBindingObserver {
     }
     return Obx(() {
       final localIp = bind.mainGetOptionSync(key: 'local-ip-addr');
-      final hasIpv6 = localIp.contains(':');
-      final ipLabel = hasIpv6 ? 'IPv6' : 'IPv4';
+      final publicIpv6 = bind.mainGetLocalOption(key: 'public-ipv6-addr');
+      final hasPublicIpv6 = publicIpv6.isNotEmpty;
+      final ipLabel = hasPublicIpv6 ? 'IPv6' : 'IPv4';
       final udpEnabled = bind.mainGetOptionSync(key: kOptionDisableUdp) != 'Y';
       final udpLabel = udpEnabled ? 'UDP' : 'TCP';
       final name = AppAuthService().currentUserName.value;

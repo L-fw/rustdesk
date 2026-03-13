@@ -3911,6 +3911,12 @@
       return '';
     }
 
+    function isLoggedInDevice(d) {
+      const username = (d.username || '').toString().trim();
+      const phone = (d.phone || '').toString().trim();
+      return !!(username || phone);
+    }
+
     function isOutdated(v) {
       if (!v) return false;
       return v !== LATEST_VERSION;
@@ -3965,7 +3971,7 @@
         if (!match) return false;
         const clientType = getClientType(d);
         if (curRoleFilter === 'user' && clientType !== 'share_only') return false;
-        if (curRoleFilter === 'tech' && clientType !== 'full') return false;
+        if (curRoleFilter === 'tech' && (clientType !== 'full' || !isLoggedInDevice(d))) return false;
         if (curFilter === 'remoting') return d.remoting;
         if (curFilter === 'normal') return !d.banned;
         if (curFilter === 'banned') return d.banned;
@@ -4154,7 +4160,7 @@
         </div>
         <div class="si-detail">
           <span style="color:var(--text)">操控方</span><span>${h(s.peerId || '—')}</span>
-          <span style="color:var(--text)">受控方</span><span>${h(id || '—')}</span>
+          <span style="color:var(--text)">受控方</span><span>${h(s.deviceId || '—')}</span>
           <span style="color:var(--text)">用户名</span><span>${h(username)}</span>
           <span style="color:var(--text)">手机号</span><span>${h(phone)}</span>
           <span style="color:var(--text)">开始时间</span><span>${fmt(s.startTime)}</span>
@@ -4865,7 +4871,7 @@
           const devSessions = device.sessions || [];
           devSessions.forEach(s => {
             sessions.push({
-              deviceId: device.id || deviceIds[idx],
+              deviceId: s.deviceId || device.id || deviceIds[idx],
               sessionId: s.sessionId,
               peerId: s.peerId,
               username: s.username || device.username,

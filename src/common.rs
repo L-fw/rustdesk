@@ -2208,12 +2208,17 @@ pub async fn test_ipv6() -> Option<tokio::task::JoinHandle<()>> {
                 {
                     addr.set_port(0);
                     PUBLIC_IPV6_ADDR.lock().unwrap().0 = Some(addr);
+                    LocalConfig::set_option(
+                        "public-ipv6-addr".to_owned(),
+                        addr.ip().to_string(),
+                    );
                     log::debug!("Found public IPv6 address locally: {}", addr);
                 }
             }
         }
         Err(e) => {
             log::warn!("Failed to bind IPv6 socket: {}", e);
+            LocalConfig::set_option("public-ipv6-addr".to_owned(), "".to_owned());
         }
     }
     // Interestingly, on my macOS, sometimes my ipv6 works, sometimes not (test with ping6 or https://test-ipv6.com/).
@@ -2258,6 +2263,10 @@ pub async fn test_ipv6() -> Option<tokio::task::JoinHandle<()>> {
                 let mut addr = res.0 .0;
                 addr.set_port(0); // Set port to 0 to avoid conflicts
                 PUBLIC_IPV6_ADDR.lock().unwrap().0 = Some(addr);
+                LocalConfig::set_option(
+                    "public-ipv6-addr".to_owned(),
+                    addr.ip().to_string(),
+                );
                 log::debug!(
                     "Found public IPv6 address via STUN server {}: {}",
                     res.0 .1,
@@ -2266,6 +2275,7 @@ pub async fn test_ipv6() -> Option<tokio::task::JoinHandle<()>> {
             }
             Err(e) => {
                 log::error!("Failed to get public IPv6 address: {}", e);
+                LocalConfig::set_option("public-ipv6-addr".to_owned(), "".to_owned());
             }
         };
     }))
