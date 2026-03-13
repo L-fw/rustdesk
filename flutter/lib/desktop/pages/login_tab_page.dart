@@ -9,8 +9,9 @@ import 'package:window_manager/window_manager.dart';
 
 class LoginTabPage extends StatefulWidget {
   final Widget child;
+  final bool showBackButton;
 
-  const LoginTabPage({Key? key, required this.child}) : super(key: key);
+  const LoginTabPage({Key? key, required this.child, this.showBackButton = false}) : super(key: key);
 
   @override
   State<LoginTabPage> createState() => _LoginTabPageState();
@@ -50,6 +51,15 @@ class _LoginTabPageState extends State<LoginTabPage> {
       height: kDesktopRemoteTabBarHeight,
       child: Row(
         children: [
+          if (widget.showBackButton)
+            Padding(
+              padding: const EdgeInsets.only(left: 8.0, right: 8.0),
+              child: IconButton(
+                icon: const Icon(Icons.arrow_back, size: 20),
+                onPressed: () => Navigator.of(context).pop(),
+                splashRadius: 20,
+              ),
+            ),
           Expanded(
             child: GestureDetector(
               onPanStart: (_) => startDragging(true),

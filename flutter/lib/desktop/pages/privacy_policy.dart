@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import 'login_tab_page.dart';
+
 // ─── Theme Colors ───────────────────────────────────────────────────────────
 const _bg = Color(0xFF0F0F12);
 const _surface = Color(0xFF1A1A20);
@@ -22,12 +24,14 @@ class PrivacyPolicyPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: _bg,
-      body: Column(
-        children: [
-          _Header(),
-          Expanded(
+    return LoginTabPage(
+      showBackButton: true,
+      child: Scaffold(
+        backgroundColor: _bg,
+        body: Column(
+          children: [
+            _Header(),
+            Expanded(
             child: SingleChildScrollView(
               padding: const EdgeInsets.fromLTRB(20, 24, 20, 60),
               child: Column(

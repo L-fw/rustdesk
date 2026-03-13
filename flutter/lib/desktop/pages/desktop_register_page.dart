@@ -600,7 +600,7 @@ class _DesktopRegisterPageState extends State<DesktopRegisterPage>
                     onTap: () => Navigator.of(context).push(
                       MaterialPageRoute(
                         builder: (_) =>
-                            const terms_pages.TermsOfServicePage(),
+                            const LoginTabPage(showBackButton: true, child: terms_pages.TermsOfServicePage()),
                       ),
                     ),
                   ),
@@ -616,7 +616,7 @@ class _DesktopRegisterPageState extends State<DesktopRegisterPage>
                     onTap: () => Navigator.of(context).push(
                       MaterialPageRoute(
                         builder: (_) =>
-                            const privacy_pages.PrivacyPolicyPage(),
+                            const LoginTabPage(showBackButton: true, child: privacy_pages.PrivacyPolicyPage()),
                       ),
                     ),
                   ),
