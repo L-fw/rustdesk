@@ -106,10 +106,26 @@ pub fn goto_install() {
 pub fn install_me(_options: String, _path: String, _silent: bool, _debug: bool) {
     #[cfg(windows)]
     std::thread::spawn(move || {
-        allow_err!(crate::platform::windows::install_me(
-            &_options, _path, _silent, _debug
-        ));
-        std::process::exit(0);
+        let res = crate::platform::windows::install_me(&_options, _path, _silent, _debug);
+        #[cfg(feature = "flutter")]
+        {
+            use serde_json::json;
+            let success = res.is_ok();
+            let msg = if let Err(e) = res {
+                e.to_string()
+            } else {
+                "".to_owned()
+            };
+            let event = json!({
+                "name": "install-res",
+                "success": success,
+                "msg": msg
+            });
+            allow_err!(crate::flutter::push_global_event(crate::flutter::APP_TYPE_MAIN, event.to_string()));
+        }
+        if res.is_ok() {
+            std::process::exit(0);
+        }
     });
 }
 

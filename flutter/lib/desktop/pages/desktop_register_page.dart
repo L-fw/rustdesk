@@ -7,6 +7,7 @@ import 'package:flutter_hbb/common/app_auth_service.dart';
 
 import '../../common.dart';
 import '../../models/platform_model.dart';
+import 'login_tab_page.dart';
 import 'privacy_policy.dart' as privacy_pages;
 import 'terms_of_service.dart' as terms_pages;
 

@@ -87,6 +87,17 @@ class _InstallPageBodyState extends State<_InstallPageBody>
   void initState() {
     windowManager.addListener(this);
     super.initState();
+    platformFFI.registerEventHandler(
+        'install-res', 'install-res', (evt) async {
+      if (evt['success'] as bool) {
+        windowManager.close();
+      } else {
+        final msg = evt['msg'] as String;
+        showToast(msg.isEmpty ? translate('Installation failed!') : msg);
+        btnEnabled.value = true;
+        showProgress.value = false;
+      }
+    });
   }
 
   @override
