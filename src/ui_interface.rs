@@ -111,7 +111,7 @@ pub fn install_me(_options: String, _path: String, _silent: bool, _debug: bool) 
         {
             use serde_json::json;
             let success = res.is_ok();
-            let msg = if let Err(e) = res {
+            let msg = if let Err(ref e) = res {
                 e.to_string()
             } else {
                 "".to_owned()
