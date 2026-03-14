@@ -194,8 +194,9 @@ class PrivacyPolicyPage extends StatelessWidget {
           ),
         ],
       ),
-    );
-  }
+    ),
+  );
+}
 }
 
 // ─── Header ─────────────────────────────────────────────────────────────────

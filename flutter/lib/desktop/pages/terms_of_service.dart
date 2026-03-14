@@ -59,13 +59,16 @@ class TermsOfServicePage extends StatelessWidget {
                       _SectionNine(),
                     ],
                   ),
+                ),
+              ),
             ),
           ),
           _Footer(),
         ],
       ),
-    );
-  }
+    ),
+  );
+}
 }
 
 // ── Header ───────────────────────────────────────────────
