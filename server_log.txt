@@ -1,35 +1,410 @@
-[root@iZwz94s4mbdp82hb0m52h9Z deskControl]# docker logs -f --tail 200 version-check
-npm warn deprecated gauge@4.0.4: This package is no longer supported.
-npm warn deprecated are-we-there-yet@3.0.1: This package is no longer supported.
-npm warn deprecated @npmcli/move-file@1.1.2: This functionality has been moved to @npmcli/fs
-npm warn deprecated inflight@1.0.6: This module is not supported, and leaks memory. Do not use it. Check out lru-cache if you want a good and tested way to coalesce async requests by a key value, which is much more comprehensive and powerful.
-npm warn deprecated rimraf@3.0.2: Rimraf versions prior to v4 are no longer supported
-npm warn deprecated npmlog@6.0.2: This package is no longer supported.
-npm warn deprecated glob@7.2.3: Old versions of glob are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exorbitant rates) by contacting i@izs.me
-npm warn deprecated prebuild-install@7.1.3: No longer maintained. Please contact the author of the relevant native addon; alternatives are available.
-npm warn deprecated tar@6.2.1: Old versions of tar are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exorbitant rates) by contacting i@izs.me
-npm warn deprecated multer@1.4.5-lts.2: Multer 1.x is impacted by a number of vulnerabilities, which have been patched in 2.x. You should upgrade to the latest 2.x version.
-
-added 212 packages, and audited 213 packages in 2m
-
-26 packages are looking for funding
-  run `npm fund` for details
-
-7 vulnerabilities (2 low, 5 high)
-
-To address all issues (including breaking changes), run:
-  npm audit fix --force
-
-Run `npm audit` for details.
-npm notice
-npm notice New major version of npm available! 10.8.2 -> 11.11.0
-npm notice Changelog: https://github.com/npm/cli/releases/tag/v11.11.0
-npm notice To update run: npm install -g npm@11.11.0
-npm notice
-[AUTH] Admin password hash: 1a0f564ddc603945...
-✅ 服务运行在 :3000
-   管理界面   : http://localhost:3000/admin
-   版本检查   : POST /api/version/check
-   会话上报   : POST /api/session/start | heartbeat | end
-   WebSocket  : ws://localhost:3000/ws?id=DEVICE_ID
-[DB] SQLite ready: /app/server.db
+ypeError: Cannot read properties of undefined (reading 'share_only')
+[DB] Error loading version config: Error: SQLITE_ERROR: no such column: data
+  code: 'SQLITE_ERROR',
+[Error: SQLITE_ERROR: table devices has no column named client_type] {
+  code: 'SQLITE_ERROR'
+[Error: SQLITE_ERROR: table devices has no column named client_type] {
+  code: 'SQLITE_ERROR'
+[Error: SQLITE_ERROR: table devices has no column named client_type] {
+  code: 'SQLITE_ERROR'
+[Error: SQLITE_ERROR: table devices has no column named client_type] {
+  code: 'SQLITE_ERROR'
+TypeError: Cannot read properties of undefined (reading 'share_only')
+[DB] Error loading version config: Error: SQLITE_ERROR: no such column: data
+  code: 'SQLITE_ERROR',
+[Error: SQLITE_ERROR: table activation_codes has no column named revoked] {
+  code: 'SQLITE_ERROR'
+TypeError: Cannot read properties of undefined (reading 'share_only')
+[DB] Error loading version config: Error: SQLITE_ERROR: no such column: data
+  code: 'SQLITE_ERROR',
+[Error: SQLITE_ERROR: table activation_codes has no column named revoked] {
+  code: 'SQLITE_ERROR'
+TypeError: Cannot read properties of undefined (reading 'share_only')
+[DB] Error loading version config: Error: SQLITE_ERROR: no such column: data
+  code: 'SQLITE_ERROR',
+TypeError: Cannot read properties of undefined (reading 'share_only')
+[DB] Error loading version config: Error: SQLITE_ERROR: no such column: data
+  code: 'SQLITE_ERROR',
+[Error: SQLITE_ERROR: table activation_codes has no column named revoked] {
+  code: 'SQLITE_ERROR'
+TypeError: Cannot read properties of undefined (reading 'share_only')
+[DB] Error loading version config: Error: SQLITE_ERROR: no such column: data
+  code: 'SQLITE_ERROR',
+[Error: SQLITE_ERROR: table activation_codes has no column named revoked] {
+  code: 'SQLITE_ERROR'
+TypeError: Cannot read properties of undefined (reading 'share_only')
+[DB] Error loading version config: Error: SQLITE_ERROR: no such column: data
+  code: 'SQLITE_ERROR',
+[Error: SQLITE_ERROR: table activation_codes has no column named revoked] {
+  code: 'SQLITE_ERROR'
+[DB] Error loading version config: Error: SQLITE_ERROR: no such column: data
+  code: 'SQLITE_ERROR',
+[DB] Error loading version config: Error: SQLITE_ERROR: no such column: data
+  code: 'SQLITE_ERROR',
+Error: SQLITE_ERROR: table activation_codes has no column named revoked
+  code: 'SQLITE_ERROR',
+[DB] Error loading version config: Error: SQLITE_ERROR: no such column: data
+  code: 'SQLITE_ERROR',
+[DB] Error loading version config: Error: SQLITE_ERROR: no such column: data
+  code: 'SQLITE_ERROR',
+[DB] Error loading version config: Error: SQLITE_ERROR: no such column: data
+  code: 'SQLITE_ERROR',
+[DB] Error loading version config: Error: SQLITE_ERROR: no such column: data
+  code: 'SQLITE_ERROR',
+[DB] Error saving version config: Error: SQLITE_ERROR: no such column: id
+  code: 'SQLITE_ERROR',
+[DB] Error loading version config: Error: SQLITE_ERROR: no such column: data
+  code: 'SQLITE_ERROR',
+[DB] Error loading version config: Error: SQLITE_ERROR: no such column: data
+  code: 'SQLITE_ERROR',
+[DB] Error loading version config: Error: SQLITE_ERROR: no such column: data
+  code: 'SQLITE_ERROR',
+[DB] Error saving version config: Error: SQLITE_ERROR: no such column: id
+  code: 'SQLITE_ERROR',
+[DB] Error loading version config: Error: SQLITE_ERROR: no such column: data
+  code: 'SQLITE_ERROR',
+Error: SQLITE_ERROR: table activation_codes has no column named revoked
+  code: 'SQLITE_ERROR',
+[DB] Error loading version config: Error: SQLITE_ERROR: no such column: data
+  code: 'SQLITE_ERROR',
+Error: SQLITE_ERROR: table activation_codes has no column named revoked
+  code: 'SQLITE_ERROR',
+[DB] Error loading version config: Error: SQLITE_ERROR: no such column: data
+  code: 'SQLITE_ERROR',
+[DB] Error loading version config: Error: SQLITE_ERROR: no such column: data
+  code: 'SQLITE_ERROR',
+[DB] Error loading version config: Error: SQLITE_ERROR: no such column: data
+  code: 'SQLITE_ERROR',
+[DB] Error saving version config: Error: SQLITE_ERROR: no such column: id
+  code: 'SQLITE_ERROR',
+[DB] Error loading version config: Error: SQLITE_ERROR: no such column: data
+  code: 'SQLITE_ERROR',
+Error: SQLITE_ERROR: table devices has no column named client_type
+  code: 'SQLITE_ERROR',
+Error: SQLITE_ERROR: table devices has no column named client_type
+  code: 'SQLITE_ERROR',
+[DB] Error loading version config: Error: SQLITE_ERROR: no such column: data
+  code: 'SQLITE_ERROR',
+Error: SQLITE_ERROR: table activation_codes has no column named revoked
+  code: 'SQLITE_ERROR',
+[DB] Error loading version config: Error: SQLITE_ERROR: no such column: data
+  code: 'SQLITE_ERROR',
+Error: SQLITE_ERROR: table activation_codes has no column named revoked
+  code: 'SQLITE_ERROR',
+Error: SQLITE_ERROR: table activation_codes has no column named revoked
+  code: 'SQLITE_ERROR',
+Error: SQLITE_ERROR: table activation_codes has no column named revoked
+  code: 'SQLITE_ERROR',
+[DB] Error loading version config: Error: SQLITE_ERROR: no such column: data
+  code: 'SQLITE_ERROR',
+TypeError: getAllDevices is not a function
+[DB] Error loading version config: TypeError: getVersionConfigData is not a function
+TypeError: getAllDevices is not a function
+TypeError: getAllDevices is not a function
+TypeError: getAllDevices is not a function
+TypeError: getAllDevices is not a function
+TypeError: getAllDevices is not a function
+TypeError: getDevice is not a function
+TypeError: getAllDevices is not a function
+TypeError: getAllDevices is not a function
+TypeError: getAllDevices is not a function
+TypeError: getAllDevices is not a function
+TypeError: getAllDevices is not a function
+TypeError: getAllDevices is not a function
+TypeError: getAllDevices is not a function
+TypeError: getAllDevices is not a function
+TypeError: getAllDevices is not a function
+TypeError: getAllDevices is not a function
+TypeError: getAllDevices is not a function
+TypeError: getAllDevices is not a function
+TypeError: getAllDevices is not a function
+TypeError: getAllDevices is not a function
+[register] [Error: SQLITE_ERROR: table users has no column named agreed_terms_version] {
+  code: 'SQLITE_ERROR'
+[register] [Error: SQLITE_ERROR: table users has no column named agreed_terms_version] {
+  code: 'SQLITE_ERROR'
+SyntaxError: Unexpected token ''', "'{username"... is not valid JSON
+    at createStrictSyntaxError (/app/node_modules/body-parser/lib/types/json.js:169:10)
+[register] [Error: SQLITE_ERROR: table users has no column named agreed_terms_version] {
+  code: 'SQLITE_ERROR'
+[version/check] Error: SQLITE_CONSTRAINT: UNIQUE constraint failed: devices.id
+[version/check] Error: SQLITE_CONSTRAINT: UNIQUE constraint failed: devices.id
+[version/check] Error: SQLITE_CONSTRAINT: UNIQUE constraint failed: devices.id
+[version/check] Error: SQLITE_CONSTRAINT: UNIQUE constraint failed: devices.id
+PreconditionFailedError: Precondition Failed
+    at createHttpError (/app/node_modules/send/index.js:978:12)
+    at SendStream.error (/app/node_modules/send/index.js:270:31)
+PreconditionFailedError: Precondition Failed
+    at createHttpError (/app/node_modules/send/index.js:978:12)
+    at SendStream.error (/app/node_modules/send/index.js:270:31)
+PreconditionFailedError: Precondition Failed
+    at createHttpError (/app/node_modules/send/index.js:978:12)
+    at SendStream.error (/app/node_modules/send/index.js:270:31)
+PreconditionFailedError: Precondition Failed
+    at createHttpError (/app/node_modules/send/index.js:978:12)
+    at SendStream.error (/app/node_modules/send/index.js:270:31)
+PreconditionFailedError: Precondition Failed
+    at createHttpError (/app/node_modules/send/index.js:978:12)
+    at SendStream.error (/app/node_modules/send/index.js:270:31)
+PreconditionFailedError: Precondition Failed
+    at createHttpError (/app/node_modules/send/index.js:978:12)
+    at SendStream.error (/app/node_modules/send/index.js:270:31)
+PreconditionFailedError: Precondition Failed
+    at createHttpError (/app/node_modules/send/index.js:978:12)
+    at SendStream.error (/app/node_modules/send/index.js:270:31)
+PreconditionFailedError: Precondition Failed
+    at createHttpError (/app/node_modules/send/index.js:978:12)
+    at SendStream.error (/app/node_modules/send/index.js:270:31)
+PreconditionFailedError: Precondition Failed
+    at createHttpError (/app/node_modules/send/index.js:978:12)
+    at SendStream.error (/app/node_modules/send/index.js:270:31)
+PreconditionFailedError: Precondition Failed
+    at createHttpError (/app/node_modules/send/index.js:978:12)
+    at SendStream.error (/app/node_modules/send/index.js:270:31)
+PreconditionFailedError: Precondition Failed
+    at createHttpError (/app/node_modules/send/index.js:978:12)
+    at SendStream.error (/app/node_modules/send/index.js:270:31)
+PreconditionFailedError: Precondition Failed
+    at createHttpError (/app/node_modules/send/index.js:978:12)
+    at SendStream.error (/app/node_modules/send/index.js:270:31)
+PreconditionFailedError: Precondition Failed
+    at createHttpError (/app/node_modules/send/index.js:978:12)
+    at SendStream.error (/app/node_modules/send/index.js:270:31)
+PreconditionFailedError: Precondition Failed
+    at createHttpError (/app/node_modules/send/index.js:978:12)
+    at SendStream.error (/app/node_modules/send/index.js:270:31)
+PreconditionFailedError: Precondition Failed
+    at createHttpError (/app/node_modules/send/index.js:978:12)
+    at SendStream.error (/app/node_modules/send/index.js:270:31)
+PreconditionFailedError: Precondition Failed
+    at createHttpError (/app/node_modules/send/index.js:978:12)
+    at SendStream.error (/app/node_modules/send/index.js:270:31)
+PreconditionFailedError: Precondition Failed
+    at createHttpError (/app/node_modules/send/index.js:978:12)
+    at SendStream.error (/app/node_modules/send/index.js:270:31)
+PreconditionFailedError: Precondition Failed
+    at createHttpError (/app/node_modules/send/index.js:978:12)
+    at SendStream.error (/app/node_modules/send/index.js:270:31)
+[version/check] Error: SQLITE_CONSTRAINT: UNIQUE constraint failed: devices.id
+[version/check] Error: SQLITE_CONSTRAINT: UNIQUE constraint failed: devices.id
+[version/check] Error: SQLITE_CONSTRAINT: UNIQUE constraint failed: devices.id
+[version/check] Error: SQLITE_CONSTRAINT: UNIQUE constraint failed: devices.id
+[version/check] Error: SQLITE_CONSTRAINT: UNIQUE constraint failed: devices.id
+[version/check] Error: SQLITE_CONSTRAINT: UNIQUE constraint failed: devices.id
+[version/check] Error: SQLITE_CONSTRAINT: UNIQUE constraint failed: devices.id
+[UPLOAD] Error: 桌面版只允许上传 .exe 文件
+[root@iZwz94s4mbdp82hb0m52h9Z deskControl]# docker stop version-check
+version-check
+[root@iZwz94s4mbdp82hb0m52h9Z deskControl]# rm -f /path/to/version-check/server.db
+[root@iZwz94s4mbdp82hb0m52h9Z deskControl]# docker start version-check
+version-check
+[root@iZwz94s4mbdp82hb0m52h9Z deskControl]# ^C
+[root@iZwz94s4mbdp82hb0m52h9Z deskControl]# ^C
+[root@iZwz94s4mbdp82hb0m52h9Z deskControl]# ^C
+[root@iZwz94s4mbdp82hb0m52h9Z deskControl]# ^C
+[root@iZwz94s4mbdp82hb0m52h9Z deskControl]# ^C
+[root@iZwz94s4mbdp82hb0m52h9Z deskControl]# ^C
+[root@iZwz94s4mbdp82hb0m52h9Z deskControl]# ^C
+[root@iZwz94s4mbdp82hb0m52h9Z deskControl]# rm -f /www/wwwroot/deskControl/version-check/server.db
+[root@iZwz94s4mbdp82hb0m52h9Z deskControl]# docker-compose -f compose.yaml restart
+[+] Restarting 4/4
+ ✔ Container hbbs           Started                                                                                                                                     0.2s 
+ ✔ Container hbbr           Started                                                                                                                                     0.2s 
+ ✔ Container version-check  Started                                                                                                                                    10.1s 
+ ✔ Container nginx          Started                                                                                                                                     0.2s 
+[root@iZwz94s4mbdp82hb0m52h9Z deskControl]# docker logs version-check 2>&1 | grep -i "invalid\|error\|注册"
+TypeError: Cannot read properties of undefined (reading 'share_only')
+[DB] Error loading version config: Error: SQLITE_ERROR: no such column: data
+  code: 'SQLITE_ERROR',
+[Error: SQLITE_ERROR: table devices has no column named client_type] {
+  code: 'SQLITE_ERROR'
+[Error: SQLITE_ERROR: table devices has no column named client_type] {
+  code: 'SQLITE_ERROR'
+[Error: SQLITE_ERROR: table devices has no column named client_type] {
+  code: 'SQLITE_ERROR'
+[Error: SQLITE_ERROR: table devices has no column named client_type] {
+  code: 'SQLITE_ERROR'
+TypeError: Cannot read properties of undefined (reading 'share_only')
+[DB] Error loading version config: Error: SQLITE_ERROR: no such column: data
+  code: 'SQLITE_ERROR',
+[Error: SQLITE_ERROR: table activation_codes has no column named revoked] {
+  code: 'SQLITE_ERROR'
+TypeError: Cannot read properties of undefined (reading 'share_only')
+[DB] Error loading version config: Error: SQLITE_ERROR: no such column: data
+  code: 'SQLITE_ERROR',
+[Error: SQLITE_ERROR: table activation_codes has no column named revoked] {
+  code: 'SQLITE_ERROR'
+TypeError: Cannot read properties of undefined (reading 'share_only')
+[DB] Error loading version config: Error: SQLITE_ERROR: no such column: data
+  code: 'SQLITE_ERROR',
+TypeError: Cannot read properties of undefined (reading 'share_only')
+[DB] Error loading version config: Error: SQLITE_ERROR: no such column: data
+  code: 'SQLITE_ERROR',
+[Error: SQLITE_ERROR: table activation_codes has no column named revoked] {
+  code: 'SQLITE_ERROR'
+TypeError: Cannot read properties of undefined (reading 'share_only')
+[DB] Error loading version config: Error: SQLITE_ERROR: no such column: data
+  code: 'SQLITE_ERROR',
+[Error: SQLITE_ERROR: table activation_codes has no column named revoked] {
+  code: 'SQLITE_ERROR'
+TypeError: Cannot read properties of undefined (reading 'share_only')
+[DB] Error loading version config: Error: SQLITE_ERROR: no such column: data
+  code: 'SQLITE_ERROR',
+[Error: SQLITE_ERROR: table activation_codes has no column named revoked] {
+  code: 'SQLITE_ERROR'
+[DB] Error loading version config: Error: SQLITE_ERROR: no such column: data
+  code: 'SQLITE_ERROR',
+[DB] Error loading version config: Error: SQLITE_ERROR: no such column: data
+  code: 'SQLITE_ERROR',
+Error: SQLITE_ERROR: table activation_codes has no column named revoked
+  code: 'SQLITE_ERROR',
+[DB] Error loading version config: Error: SQLITE_ERROR: no such column: data
+  code: 'SQLITE_ERROR',
+[DB] Error loading version config: Error: SQLITE_ERROR: no such column: data
+  code: 'SQLITE_ERROR',
+[DB] Error loading version config: Error: SQLITE_ERROR: no such column: data
+  code: 'SQLITE_ERROR',
+[DB] Error loading version config: Error: SQLITE_ERROR: no such column: data
+  code: 'SQLITE_ERROR',
+[DB] Error saving version config: Error: SQLITE_ERROR: no such column: id
+  code: 'SQLITE_ERROR',
+[DB] Error loading version config: Error: SQLITE_ERROR: no such column: data
+  code: 'SQLITE_ERROR',
+[DB] Error loading version config: Error: SQLITE_ERROR: no such column: data
+  code: 'SQLITE_ERROR',
+[DB] Error loading version config: Error: SQLITE_ERROR: no such column: data
+  code: 'SQLITE_ERROR',
+[DB] Error saving version config: Error: SQLITE_ERROR: no such column: id
+  code: 'SQLITE_ERROR',
+[DB] Error loading version config: Error: SQLITE_ERROR: no such column: data
+  code: 'SQLITE_ERROR',
+Error: SQLITE_ERROR: table activation_codes has no column named revoked
+  code: 'SQLITE_ERROR',
+[DB] Error loading version config: Error: SQLITE_ERROR: no such column: data
+  code: 'SQLITE_ERROR',
+Error: SQLITE_ERROR: table activation_codes has no column named revoked
+  code: 'SQLITE_ERROR',
+[DB] Error loading version config: Error: SQLITE_ERROR: no such column: data
+  code: 'SQLITE_ERROR',
+[DB] Error loading version config: Error: SQLITE_ERROR: no such column: data
+  code: 'SQLITE_ERROR',
+[DB] Error loading version config: Error: SQLITE_ERROR: no such column: data
+  code: 'SQLITE_ERROR',
+[DB] Error saving version config: Error: SQLITE_ERROR: no such column: id
+  code: 'SQLITE_ERROR',
+[DB] Error loading version config: Error: SQLITE_ERROR: no such column: data
+  code: 'SQLITE_ERROR',
+Error: SQLITE_ERROR: table devices has no column named client_type
+  code: 'SQLITE_ERROR',
+Error: SQLITE_ERROR: table devices has no column named client_type
+  code: 'SQLITE_ERROR',
+[DB] Error loading version config: Error: SQLITE_ERROR: no such column: data
+  code: 'SQLITE_ERROR',
+Error: SQLITE_ERROR: table activation_codes has no column named revoked
+  code: 'SQLITE_ERROR',
+[DB] Error loading version config: Error: SQLITE_ERROR: no such column: data
+  code: 'SQLITE_ERROR',
+Error: SQLITE_ERROR: table activation_codes has no column named revoked
+  code: 'SQLITE_ERROR',
+Error: SQLITE_ERROR: table activation_codes has no column named revoked
+  code: 'SQLITE_ERROR',
+Error: SQLITE_ERROR: table activation_codes has no column named revoked
+  code: 'SQLITE_ERROR',
+[DB] Error loading version config: Error: SQLITE_ERROR: no such column: data
+  code: 'SQLITE_ERROR',
+TypeError: getAllDevices is not a function
+[DB] Error loading version config: TypeError: getVersionConfigData is not a function
+TypeError: getAllDevices is not a function
+TypeError: getAllDevices is not a function
+TypeError: getAllDevices is not a function
+TypeError: getAllDevices is not a function
+TypeError: getAllDevices is not a function
+TypeError: getDevice is not a function
+TypeError: getAllDevices is not a function
+TypeError: getAllDevices is not a function
+TypeError: getAllDevices is not a function
+TypeError: getAllDevices is not a function
+TypeError: getAllDevices is not a function
+TypeError: getAllDevices is not a function
+TypeError: getAllDevices is not a function
+TypeError: getAllDevices is not a function
+TypeError: getAllDevices is not a function
+TypeError: getAllDevices is not a function
+TypeError: getAllDevices is not a function
+TypeError: getAllDevices is not a function
+TypeError: getAllDevices is not a function
+TypeError: getAllDevices is not a function
+[register] [Error: SQLITE_ERROR: table users has no column named agreed_terms_version] {
+  code: 'SQLITE_ERROR'
+[register] [Error: SQLITE_ERROR: table users has no column named agreed_terms_version] {
+  code: 'SQLITE_ERROR'
+SyntaxError: Unexpected token ''', "'{username"... is not valid JSON
+    at createStrictSyntaxError (/app/node_modules/body-parser/lib/types/json.js:169:10)
+[register] [Error: SQLITE_ERROR: table users has no column named agreed_terms_version] {
+  code: 'SQLITE_ERROR'
+[version/check] Error: SQLITE_CONSTRAINT: UNIQUE constraint failed: devices.id
+[version/check] Error: SQLITE_CONSTRAINT: UNIQUE constraint failed: devices.id
+[version/check] Error: SQLITE_CONSTRAINT: UNIQUE constraint failed: devices.id
+[version/check] Error: SQLITE_CONSTRAINT: UNIQUE constraint failed: devices.id
+PreconditionFailedError: Precondition Failed
+    at createHttpError (/app/node_modules/send/index.js:978:12)
+    at SendStream.error (/app/node_modules/send/index.js:270:31)
+PreconditionFailedError: Precondition Failed
+    at createHttpError (/app/node_modules/send/index.js:978:12)
+    at SendStream.error (/app/node_modules/send/index.js:270:31)
+PreconditionFailedError: Precondition Failed
+    at createHttpError (/app/node_modules/send/index.js:978:12)
+    at SendStream.error (/app/node_modules/send/index.js:270:31)
+PreconditionFailedError: Precondition Failed
+    at createHttpError (/app/node_modules/send/index.js:978:12)
+    at SendStream.error (/app/node_modules/send/index.js:270:31)
+PreconditionFailedError: Precondition Failed
+    at createHttpError (/app/node_modules/send/index.js:978:12)
+    at SendStream.error (/app/node_modules/send/index.js:270:31)
+PreconditionFailedError: Precondition Failed
+    at createHttpError (/app/node_modules/send/index.js:978:12)
+    at SendStream.error (/app/node_modules/send/index.js:270:31)
+PreconditionFailedError: Precondition Failed
+    at createHttpError (/app/node_modules/send/index.js:978:12)
+    at SendStream.error (/app/node_modules/send/index.js:270:31)
+PreconditionFailedError: Precondition Failed
+    at createHttpError (/app/node_modules/send/index.js:978:12)
+    at SendStream.error (/app/node_modules/send/index.js:270:31)
+PreconditionFailedError: Precondition Failed
+    at createHttpError (/app/node_modules/send/index.js:978:12)
+    at SendStream.error (/app/node_modules/send/index.js:270:31)
+PreconditionFailedError: Precondition Failed
+    at createHttpError (/app/node_modules/send/index.js:978:12)
+    at SendStream.error (/app/node_modules/send/index.js:270:31)
+PreconditionFailedError: Precondition Failed
+    at createHttpError (/app/node_modules/send/index.js:978:12)
+    at SendStream.error (/app/node_modules/send/index.js:270:31)
+PreconditionFailedError: Precondition Failed
+    at createHttpError (/app/node_modules/send/index.js:978:12)
+    at SendStream.error (/app/node_modules/send/index.js:270:31)
+PreconditionFailedError: Precondition Failed
+    at createHttpError (/app/node_modules/send/index.js:978:12)
+    at SendStream.error (/app/node_modules/send/index.js:270:31)
+PreconditionFailedError: Precondition Failed
+    at createHttpError (/app/node_modules/send/index.js:978:12)
+    at SendStream.error (/app/node_modules/send/index.js:270:31)
+PreconditionFailedError: Precondition Failed
+    at createHttpError (/app/node_modules/send/index.js:978:12)
+    at SendStream.error (/app/node_modules/send/index.js:270:31)
+PreconditionFailedError: Precondition Failed
+    at createHttpError (/app/node_modules/send/index.js:978:12)
+    at SendStream.error (/app/node_modules/send/index.js:270:31)
+PreconditionFailedError: Precondition Failed
+    at createHttpError (/app/node_modules/send/index.js:978:12)
+    at SendStream.error (/app/node_modules/send/index.js:270:31)
+PreconditionFailedError: Precondition Failed
+    at createHttpError (/app/node_modules/send/index.js:978:12)
+    at SendStream.error (/app/node_modules/send/index.js:270:31)
+[version/check] Error: SQLITE_CONSTRAINT: UNIQUE constraint failed: devices.id
+[version/check] Error: SQLITE_CONSTRAINT: UNIQUE constraint failed: devices.id
+[version/check] Error: SQLITE_CONSTRAINT: UNIQUE constraint failed: devices.id
+[version/check] Error: SQLITE_CONSTRAINT: UNIQUE constraint failed: devices.id
+[version/check] Error: SQLITE_CONSTRAINT: UNIQUE constraint failed: devices.id
+[version/check] Error: SQLITE_CONSTRAINT: UNIQUE constraint failed: devices.id
+[version/check] Error: SQLITE_CONSTRAINT: UNIQUE constraint failed: devices.id
+[UPLOAD] Error: 桌面版只允许上传 .exe 文件
