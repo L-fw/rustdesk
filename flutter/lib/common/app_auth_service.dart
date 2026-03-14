@@ -308,14 +308,14 @@ class AppAuthService {
         (X509Certificate _, String host, int __) => host == serverUri.host;
     try {
       final request = await client.postUrl(serverUri.resolve(path));
-      request.headers.set('Content-Type', 'application/json');
+      request.headers.set('Content-Type', 'application/json; charset=utf-8');
       try {
         final deviceId = await bind.mainGetMyId();
         if (deviceId.isNotEmpty) {
           request.headers.set('X-Device-Id', deviceId);
         }
       } catch (_) {}
-      request.write(jsonEncode(body));
+      request.add(utf8.encode(jsonEncode(body)));
       final response = await request.close();
       final responseBody = await response.transform(utf8.decoder).join();
       return jsonDecode(responseBody) as Map<String, dynamic>;
