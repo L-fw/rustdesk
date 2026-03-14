@@ -668,8 +668,7 @@ class _AppLoginPageState extends State<AppLoginPage>
           icon: Icons.person_outline,
           suffix: _buildAccountSwitcher(),
           inputFormatters: [
-            FilteringTextInputFormatter.allow(
-                RegExp(r'[A-Za-z0-9\u4e00-\u9fff]')),
+            _UsernameInputFormatter(),
           ],
           // 桌面：Tab 键切换焦点
           onSubmitted: (_) => _passwordFocus.requestFocus(),
@@ -1290,6 +1289,36 @@ class _ForgotPasswordDialogState extends State<_ForgotPasswordDialog> {
               : const Text('确认重置'),
         ),
       ],
+    );
+  }
+}
+
+/// 用户名输入过滤器：只允许中文、英文、数字。
+///
+/// 与 [FilteringTextInputFormatter] 不同，此处在 IME 组字过程中
+/// （[TextEditingValue.composing] 不为空）不做任何拦截，避免中文输入法
+/// 反复重入导致内容指数级叠加（如输入"abc"变成"abababcabccabc"）。
+/// 组字完成上屏后再统一过滤非法字符。
+class _UsernameInputFormatter extends TextInputFormatter {
+  static final _allowedPattern = RegExp(r'[^A-Za-z0-9\u4e00-\u9fff]');
+
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    // IME 组字进行中：不干预，直接放行
+    if (newValue.composing != TextRange.empty) return newValue;
+
+    final filtered = newValue.text.replaceAll(_allowedPattern, '');
+    if (filtered == newValue.text) return newValue;
+
+    // 过滤后光标夹在被删字符之间时，将光标收到末尾，避免位置越界
+    final offset = filtered.length;
+    return newValue.copyWith(
+      text: filtered,
+      selection: TextSelection.collapsed(offset: offset),
+      composing: TextRange.empty,
     );
   }
 }

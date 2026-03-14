@@ -309,8 +309,7 @@ class _DesktopRegisterPageState extends State<DesktopRegisterPage>
                     label: '用户名',
                     icon: Icons.person_outline,
                     inputFormatters: [
-                      FilteringTextInputFormatter.allow(
-                          RegExp(r'[A-Za-z0-9\u4e00-\u9fff]')),
+                      _UsernameInputFormatter(),
                     ],
                   ),
                   const SizedBox(height: 14),
@@ -739,6 +738,28 @@ class _DesktopRegisterPageState extends State<DesktopRegisterPage>
           ),
         );
       },
+    );
+  }
+}
+/// 用户名输入过滤器：只允许中文、英文、数字。
+/// IME 组字期间不干预，避免中文输入法叠字问题。
+class _UsernameInputFormatter extends TextInputFormatter {
+  static final _allowedPattern = RegExp(r'[^A-Za-z0-9\u4e00-\u9fff]');
+
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    if (newValue.composing != TextRange.empty) return newValue;
+
+    final filtered = newValue.text.replaceAll(_allowedPattern, '');
+    if (filtered == newValue.text) return newValue;
+
+    return newValue.copyWith(
+      text: filtered,
+      selection: TextSelection.collapsed(offset: filtered.length),
+      composing: TextRange.empty,
     );
   }
 }
