@@ -111,7 +111,7 @@ pub fn install_me(_options: String, _path: String, _silent: bool, _debug: bool) 
         {
             use serde_json::json;
             let success = res.is_ok();
-            let msg = if let Err(e) = res {
+            let msg = if let Err(ref e) = res {
                 e.to_string()
             } else {
                 "".to_owned()
@@ -121,7 +121,9 @@ pub fn install_me(_options: String, _path: String, _silent: bool, _debug: bool) 
                 "success": success,
                 "msg": msg
             });
-            allow_err!(crate::flutter::push_global_event(crate::flutter::APP_TYPE_MAIN, event.to_string()));
+            if crate::flutter::push_global_event(crate::flutter::APP_TYPE_MAIN, event.to_string()).is_none() {
+                log::warn!("No main window app found!");
+            }
         }
         if res.is_ok() {
             std::process::exit(0);
