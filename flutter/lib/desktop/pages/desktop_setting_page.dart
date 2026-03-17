@@ -2357,7 +2357,7 @@ class _AboutState extends State<_About> {
       final scrollController = ScrollController();
       return SingleChildScrollView(
         controller: scrollController,
-        child: _Card(title: '', children: [
+        child: _Card(title: '关于我们', children: [
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
