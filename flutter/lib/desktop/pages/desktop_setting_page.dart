@@ -2361,9 +2361,37 @@ class _AboutState extends State<_About> {
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const SizedBox(
-                height: 8.0,
-              ),
+              Row(
+                children: [
+                  Image.asset(
+                    'assets/about_logo.png',
+                    width: 48,
+                    height: 48,
+                  ),
+                  const SizedBox(width: 12),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        bind.mainGetAppNameCached(),
+                        style: const TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      Text(
+                        translate('Remote Control'),
+                        style: const TextStyle(
+                          fontSize: 13,
+                          color: Colors.grey,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ).marginOnly(bottom: 12),
+              const Divider(height: 1),
+              const SizedBox(height: 8),
               SelectionArea(
                   child: Text('${translate('Version')}: $version')
                       .marginSymmetric(vertical: 4.0)),
