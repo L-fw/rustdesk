@@ -438,7 +438,6 @@ class _DesktopHomePageState extends State<DesktopHomePage>
       final isToUpdate = (isWindows || isMacOS) && bind.mainIsInstalled();
       String btnText = isToUpdate ? 'Update' : 'Download';
       final serverDownloadUrl = stateGlobal.serverDownloadUrl.value;
-      final serverUpdateLog = stateGlobal.serverUpdateLog.value;
       final serverForceUpdate = stateGlobal.serverForceUpdate.value;
       final serverLatestVersion = stateGlobal.serverLatestVersion.value;
       final versionText = serverLatestVersion.isNotEmpty
@@ -460,19 +459,12 @@ class _DesktopHomePageState extends State<DesktopHomePage>
       }
       String contentText =
           "${translate("new-version-of-{${bind.mainGetAppNameSync()}}-tip")} ($versionText).";
-      if (serverUpdateLog.isNotEmpty) {
-        contentText += "\n\n$serverUpdateLog";
-      }
       return buildInstallCard(
           "Status",
           contentText,
           btnText,
           onPressed,
-          closeButton: !serverForceUpdate,
-          help: isToUpdate ? 'Changelog' : null,
-          link: isToUpdate
-              ? updateUrl
-              : null);
+          closeButton: !serverForceUpdate);
     }
     if (systemError.isNotEmpty) {
       return buildInstallCard("", systemError, "", () {});
