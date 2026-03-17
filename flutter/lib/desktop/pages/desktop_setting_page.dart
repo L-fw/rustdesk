@@ -2373,7 +2373,7 @@ class _AboutState extends State<_About> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        bind.mainGetAppNameCached(),
+                        bind.mainGetAppNameSync(),
                         style: const TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.w500,
