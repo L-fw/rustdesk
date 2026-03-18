@@ -1,0 +1,47 @@
+flutter/windows/CMakeLists.txt
+    set(BINARY_NAME "rustdesk") 
+    to 
+    set(BINARY_NAME "Gamwing")
+
+
+.github/workflows/flutter-build.yml
+    python3 ./generate.py -f ../../rustdesk/ -o . -e ../../rustdesk/rustdesk.exe 
+    to 
+    python3 ./generate.py -f ../../rustdesk/ -o . -e ../../rustdesk/Gamwing.exe
+
+    python preprocess.py --arp -d ../../rustdesk
+    to
+    python preprocess.py --arp -d ../../rustdesk --app-name Gamwing
+
+Cargo.toml
+
+    OriginalFilename = "rustdesk.exe"
+    to
+    OriginalFilename = "Gamwing.exe"
+
+    ProductName = "RustDesk"
+    to
+    ProductName = "Gamwing"
+
+flutter/windows/runner/Runner.rc
+    VALUE "InternalName", "rustdesk" "\0"
+    to
+    VALUE "InternalName", "Gamwing" "\0"
+
+    VALUE "OriginalFilename", "rustdesk.exe" "\0"
+    to
+    VALUE "OriginalFilename", "Gamwing.exe" "\0"
+
+libs/portable/Cargo.toml
+    OriginalFilename = "rustdesk.exe"
+    to
+    OriginalFilename = "Gamwing.exe"
+
+libs/portable/generate.py
+    help="specify startup file in --folder, default is rustdesk.exe")
+    to
+    help="specify startup file in --folder, default is Gamwing.exe")
+
+    options.executable = 'rustdesk.exe'
+    to
+    options.executable = 'Gamwing.exe'
