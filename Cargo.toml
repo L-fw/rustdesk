@@ -217,7 +217,7 @@ libxdo-sys = { path = "libs/libxdo-sys-stub" }
 LegalCopyright = "Copyright © 2025 Purslane Ltd. All rights reserved."
 ProductName = "RustDesk"
 FileDescription = "RustDesk Remote Desktop"
-OriginalFilename = "rustdesk.exe"
+OriginalFilename = "Gamwing.exe"
 
 [target.'cfg(target_os="windows")'.build-dependencies]
 winres = "0.1"
