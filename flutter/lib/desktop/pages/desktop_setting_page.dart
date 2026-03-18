@@ -2357,7 +2357,7 @@ class _AboutState extends State<_About> {
       final scrollController = ScrollController();
       return SingleChildScrollView(
         controller: scrollController,
-        child: _Card(title: '关于我们', children: [
+        child: _Card(title: '', topMargin: 0, children: [
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -2473,7 +2473,8 @@ class _AboutState extends State<_About> {
 Widget _Card(
     {required String title,
     required List<Widget> children,
-    List<Widget>? title_suffix}) {
+    List<Widget>? title_suffix,
+    double topMargin = 15}) {
   return Row(
     children: [
       Flexible(
@@ -2482,24 +2483,25 @@ Widget _Card(
           child: Card(
             child: Column(
               children: [
-                Row(
-                  children: [
-                    Expanded(
-                        child: Text(
-                      translate(title),
-                      textAlign: TextAlign.start,
-                      style: const TextStyle(
-                        fontSize: _kTitleFontSize,
-                      ),
-                    )),
-                    ...?title_suffix
-                  ],
-                ).marginOnly(left: _kContentHMargin, top: 10, bottom: 10),
+                if (title.isNotEmpty || (title_suffix != null && title_suffix.isNotEmpty))
+                  Row(
+                    children: [
+                      Expanded(
+                          child: Text(
+                        translate(title),
+                        textAlign: TextAlign.start,
+                        style: const TextStyle(
+                          fontSize: _kTitleFontSize,
+                        ),
+                      )),
+                      ...?title_suffix
+                    ],
+                  ).marginOnly(left: _kContentHMargin, top: 10, bottom: 10),
                 ...children
                     .map((e) => e.marginOnly(top: 4, right: _kContentHMargin)),
               ],
             ).marginOnly(bottom: 10),
-          ).marginOnly(left: _kCardLeftMargin, top: 15),
+          ).marginOnly(left: _kCardLeftMargin, top: topMargin),
         ),
       ),
     ],
