@@ -22,6 +22,8 @@ services:
     image: node:20
     working_dir: /app
     user: "0:0"
+    environment:
+      ADMIN_PASSWORD: "jiaying"
     volumes:
       - ./version-check:/app   # index.js 和 package.json 放在这个目录
       - ./version-check/apk:/app/apk   # APK 文件持久化存储

@@ -31,7 +31,7 @@ const wsClients = new Map();
 // ───────────────────────────────────────────────────────
 // 配置
 // ───────────────────────────────────────────────────────
-const ADMIN_RAW_PASSWORD = '    '; // ← 改成你的密码
+const ADMIN_RAW_PASSWORD = process.env.ADMIN_PASSWORD ?? '    ';
 const ADMIN_PASSWORD_HASH = crypto.createHash('sha256').update(ADMIN_RAW_PASSWORD).digest('hex');
 console.log(`[AUTH] Admin password hash: ${ADMIN_PASSWORD_HASH.substring(0, 16)}...`);
 
