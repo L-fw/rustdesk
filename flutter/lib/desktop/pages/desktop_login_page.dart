@@ -377,13 +377,21 @@ class _AppLoginPageState extends State<AppLoginPage>
           if (!mounted) return;
           setState(() => _isLoading = false);
           if (retryError != null) {
-            setState(() => _errorMsg = retryError);
+            if (retryError.contains('密码')) {
+              _setFieldError('password', _passwordFocus, retryError);
+            } else {
+              setState(() => _errorMsg = retryError);
+            }
           } else {
             await _handlePasswordLoginSuccess(username, password);
           }
           return;
         }
-        setState(() => _errorMsg = error);
+        if (error.contains('密码')) {
+          _setFieldError('password', _passwordFocus, error);
+        } else {
+          setState(() => _errorMsg = error);
+        }
       } else {
         await _handlePasswordLoginSuccess(username, password);
       }
