@@ -1629,7 +1629,8 @@ fn get_uninstall(kill_self: bool, uninstall_printer: bool) -> String {
     let mut uninstall_printer_cmd = "".to_string();
     if let Ok(exe) = std::env::current_exe() {
         if let Some(exe_path) = exe.to_str() {
-            uninstall_cert_cmd = format!("\"{}\" --uninstall-cert", exe_path);
+            // Certificate uninstall not needed (no IDD driver used), keep empty to avoid popup
+            // uninstall_cert_cmd = format!("\"{}\" --uninstall-cert", exe_path);
             uninstall_printer_cmd = "".to_string();
         }
     }
@@ -3101,13 +3102,8 @@ impl Drop for WallPaperRemover {
 }
 
 fn get_uninstall_amyuni_idd() -> String {
-    match std::env::current_exe() {
-        Ok(path) => format!("\"{}\" --uninstall-amyuni-idd", path.to_str().unwrap_or("")),
-        Err(e) => {
-            log::warn!("Failed to get current exe path, cannot get command of uninstalling idd, Zzerror: {:?}", e);
-            "".to_string()
-        }
-    }
+    // Amyuni IDD virtual display driver is not used, return empty to avoid popup
+    "".to_string()
 }
 
 #[inline]
