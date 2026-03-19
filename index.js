@@ -10,6 +10,7 @@ const multer = require('multer');
 const http = require('http');
 const { WebSocketServer, WebSocket } = require('ws');
 const crypto = require('crypto');
+const bcrypt = require('bcrypt');
 
 const {
   initSQLiteDatabase,
@@ -436,7 +437,7 @@ app.post('/api/user/register', async (req, res) => {
     const usedCount = Number.isFinite(entry.used_count) ? entry.used_count : 0;
     if (usedCount >= maxUses) return res.status(400).json({ code: 400, msg: '激活码已被使用' });
 
-    const passwordHash = crypto.createHash('sha256').update(password).digest('hex');
+    const passwordHash = await bcrypt.hash(password, 12);
     await dbSaveUser({
       username: normalizedUsername,
       password_hash: passwordHash,
@@ -504,8 +505,8 @@ app.post('/api/user/login', async (req, res) => {
     const user = await dbGetUser(normalizedUsername);
     if (!user) return res.status(401).json({ code: 401, msg: '用户名或密码错误' });
 
-    const passwordHash = crypto.createHash('sha256').update(password).digest('hex');
-    if (user.password_hash !== passwordHash)
+    const passwordMatch = await bcrypt.compare(password, user.password_hash);
+    if (!passwordMatch)
       return res.status(401).json({ code: 401, msg: '用户名或密码错误' });
 
     if (user.activation_code_hash) {
@@ -761,7 +762,7 @@ app.post('/api/user/password/reset', async (req, res) => {
     const newTokenVersion = tokenVersion >= TOKEN_VERSION_MAX ? 1 : tokenVersion + 1;
     await dbSaveUser({
       ...user,
-      password_hash: crypto.createHash('sha256').update(newPassword).digest('hex'),
+      password_hash: await bcrypt.hash(newPassword, 12),
       token: '',
       token_version: newTokenVersion,
       password_updated_at: new Date().toISOString(),
@@ -1035,7 +1036,7 @@ app.post('/admin/users/reset-password', authMiddleware, async (req, res) => {
     const newTokenVersion = tokenVersion >= TOKEN_VERSION_MAX ? 1 : tokenVersion + 1;
     await dbSaveUser({
       ...user,
-      password_hash: crypto.createHash('sha256').update(newPassword).digest('hex'),
+      password_hash: await bcrypt.hash(newPassword, 12),
       token: '',
       token_version: newTokenVersion,
       password_updated_at: new Date().toISOString(),
