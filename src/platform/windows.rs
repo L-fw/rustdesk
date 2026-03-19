@@ -1477,6 +1477,7 @@ copy /Y \"{tmp_path}\\Uninstall {app_name}.lnk\" \"{start_menu}\\\"
         );
         reg_value_start_menu_shortcuts = "1".to_owned();
     }
+    // let install_printer = options.contains("printer") && is_win_10_or_greater();
     let install_printer = false; // options.contains("printer") && is_win_10_or_greater();
     if install_printer {
         reg_value_printer = "1".to_owned();
@@ -1516,15 +1517,7 @@ copy /Y \"{tmp_path}\\{app_name} Tray.lnk\" \"%PROGRAMDATA%\\Microsoft\\Windows\
 ")
     };
 
-    let install_remote_printer = if install_printer {
-        // No need to use `|| true` here.
-        // The script will not exit even if `--install-remote-printer` panics.
-        format!("\"{}\" --install-remote-printer", &src_exe)
-    } else if is_win_10_or_greater() {
-        format!("\"{}\" --uninstall-remote-printer", &src_exe)
-    } else {
-        "".to_owned()
-    };
+    let install_remote_printer = "".to_string();
 
     // Remember to check if `update_me` need to be changed if changing the `cmds`.
     // No need to merge the existing dup code, because the code in these two functions are too critical.
@@ -1637,9 +1630,7 @@ fn get_uninstall(kill_self: bool, uninstall_printer: bool) -> String {
     if let Ok(exe) = std::env::current_exe() {
         if let Some(exe_path) = exe.to_str() {
             uninstall_cert_cmd = format!("\"{}\" --uninstall-cert", exe_path);
-            if uninstall_printer {
-                uninstall_printer_cmd = format!("\"{}\" --uninstall-remote-printer", &exe_path);
-            }
+            uninstall_printer_cmd = "".to_string();
         }
     }
     let (subkey, path, start_menu, _) = get_install_info();
@@ -2792,14 +2783,7 @@ reg add {subkey} /f /v EstimatedSize /t REG_DWORD /d {size}
     // No need to check the install option here, `is_rd_printer_installed` rarely fails.
     let is_printer_installed = remote_printer::is_rd_printer_installed(&app_name).unwrap_or(false);
     // Do nothing if the printer is not installed or failed to query if the printer is installed.
-    let (uninstall_printer_cmd, install_printer_cmd) = if is_printer_installed {
-        (
-            format!("\"{}\" --uninstall-remote-printer", &src_exe),
-            format!("\"{}\" --install-remote-printer", &src_exe),
-        )
-    } else {
-        ("".to_owned(), "".to_owned())
-    };
+    let (uninstall_printer_cmd, install_printer_cmd) = ("".to_owned(), "".to_owned());
 
     // We do not try to remove all files in the old version.
     // Because I don't know whether additional files will be installed here after installation, such as drivers.
