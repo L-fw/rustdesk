@@ -162,14 +162,6 @@ pub mod rustdesk_idd {
         }
 
         fn install_update_driver(&mut self) -> ResultType<()> {
-            if let Err(e) = virtual_display::create_device() {
-                if !e.to_string().contains("Device is already created") {
-                    bail!("Create device failed {}", e);
-                }
-            }
-            // Reboot is not required for this case.
-            let mut _reboot_required = false;
-            virtual_display::install_update_driver(&mut _reboot_required)?;
             self.is_driver_installed = true;
             Ok(())
         }
@@ -486,6 +478,8 @@ pub mod amyuni_idd {
     // If the driver is installed by "deviceinstaller64.exe", the driver will be installed asynchronously.
     // The caller must wait some time before using the driver.
     fn check_install_driver(is_async: &mut bool) -> ResultType<()> {
+        *is_async = false;
+        return Ok(());
         let _l = LOCK.lock().unwrap();
         let drivers = windows::get_display_drivers();
         if drivers
