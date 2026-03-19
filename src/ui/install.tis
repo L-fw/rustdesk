@@ -23,9 +23,7 @@ class Install: Reactor.Component {
                 <progress style={"color:" + color} style="display: none" /> 
                 <button .button id="cancel" .outline style="margin-right: 2em;">{translate('Cancel')}</button>
                 <button .button id="submit">{translate('Accept and Install')}</button>
-                {handler.show_run_without_install() && <button .button #run-without-install .outline style="margin-left: 2em;">
-                    {translate('Run without install')}
-                </button>}
+
             </div>
         </div>;
     }
@@ -34,9 +32,7 @@ class Install: Reactor.Component {
         view.close();
     }
 
-    event click $(#run-without-install) {
-        handler.run_without_install();
-    }
+
 
     event click $(#path) {
         install_path = view.selectFolder() || "";
