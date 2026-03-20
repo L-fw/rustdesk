@@ -686,6 +686,7 @@ class _AppLoginPageState extends State<AppLoginPage>
           inputFormatters: [
             _UsernameInputFormatter(),
           ],
+          textInputAction: TextInputAction.next,
           // 桌面：Tab 键切换焦点
           onSubmitted: (_) => _passwordFocus.requestFocus(),
         ),
@@ -708,6 +709,7 @@ class _AppLoginPageState extends State<AppLoginPage>
             onPressed: () =>
                 setState(() => _obscurePassword = !_obscurePassword),
           ),
+          textInputAction: TextInputAction.done,
           // 桌面：Enter 键直接登录
           onSubmitted: (_) => _loginWithPassword(),
         ),
@@ -786,6 +788,7 @@ class _AppLoginPageState extends State<AppLoginPage>
             FilteringTextInputFormatter.digitsOnly,
             LengthLimitingTextInputFormatter(11),
           ],
+          textInputAction: TextInputAction.next,
           onSubmitted: (_) => _smsCodeFocus.requestFocus(),
         ),
         const SizedBox(height: 14),
@@ -800,6 +803,7 @@ class _AppLoginPageState extends State<AppLoginPage>
                 label: '验证码',
                 icon: Icons.sms_outlined,
                 keyboardType: TextInputType.number,
+                textInputAction: TextInputAction.done,
                 onSubmitted: (_) => _loginWithSms(),
               ),
             ),
@@ -921,6 +925,7 @@ class _AppLoginPageState extends State<AppLoginPage>
     List<TextInputFormatter>? inputFormatters,
     ValueChanged<String>? onChanged,
     ValueChanged<String>? onSubmitted, // ← 桌面新增：支持 Enter 提交
+    TextInputAction? textInputAction,
   }) {
     return AnimatedBuilder(
       animation: Listenable.merge([
@@ -942,10 +947,8 @@ class _AppLoginPageState extends State<AppLoginPage>
             obscureText: obscure,
             keyboardType: keyboardType,
             inputFormatters: inputFormatters,
-            // 桌面：Tab 键跳转下一个输入框
-            textInputAction: onSubmitted != null
-                ? TextInputAction.next
-                : TextInputAction.done,
+            // 桌面：优先使用传入的 textInputAction，默认使用 done
+            textInputAction: textInputAction ?? TextInputAction.done,
             onSubmitted: onSubmitted,
             onChanged: (value) {
               if ((value.isNotEmpty || value.trim().isNotEmpty) &&

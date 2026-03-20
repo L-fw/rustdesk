@@ -466,6 +466,8 @@ class _DesktopRegisterPageState extends State<DesktopRegisterPage>
                     focusNode: _activationCodeFocus,
                     label: '激活码',
                     icon: Icons.vpn_key_outlined,
+                    textInputAction: TextInputAction.done,
+                    onSubmitted: (_) => _register(),
                   ),
                   const SizedBox(height: 14),
 
@@ -668,6 +670,8 @@ class _DesktopRegisterPageState extends State<DesktopRegisterPage>
     TextInputType? keyboardType,
     List<TextInputFormatter>? inputFormatters,
     ValueChanged<String>? onChanged,
+    ValueChanged<String>? onSubmitted, // ← 新增：支持可覆盖的提交操作
+    TextInputAction? textInputAction,  // ← 新增：支持回车键行为自定义
   }) {
     return AnimatedBuilder(
       animation: Listenable.merge([
@@ -690,9 +694,9 @@ class _DesktopRegisterPageState extends State<DesktopRegisterPage>
             // 桌面端：仅在明确需要时传入 keyboardType
             keyboardType: keyboardType,
             inputFormatters: inputFormatters,
-            // 桌面端：Enter 键移至下一个焦点
-            onSubmitted: (_) =>
-                FocusScope.of(context).nextFocus(),
+            // 桌面：配置指定的 action 和 onSubmitted
+            textInputAction: textInputAction ?? TextInputAction.next,
+            onSubmitted: onSubmitted ?? (_) => FocusScope.of(context).nextFocus(),
             onChanged: (value) {
               if ((value.isNotEmpty || value.trim().isNotEmpty) &&
                   _invalidFields[fieldKey] == true) {
