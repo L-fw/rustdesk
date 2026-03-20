@@ -151,6 +151,10 @@ class _AppRegisterPageState extends State<AppRegisterPage>
       _setFieldError('phone', _phoneFocus, '请输入手机号');
       return;
     }
+    if (phone.length != 11) {
+      _setFieldError('phone', _phoneFocus, '手机号必须为11位数字');
+      return;
+    }
     setState(() {
       _isSendingSms = true;
       _errorMsg = null;
@@ -198,6 +202,10 @@ class _AppRegisterPageState extends State<AppRegisterPage>
     }
     if (phone.isEmpty) {
       _setFieldError('phone', _phoneFocus, '请输入手机号');
+      return;
+    }
+    if (phone.length != 11) {
+      _setFieldError('phone', _phoneFocus, '手机号必须为11位数字');
       return;
     }
     if (smsCode.isEmpty) {
@@ -357,6 +365,10 @@ class _AppRegisterPageState extends State<AppRegisterPage>
                   label: '手机号',
                   icon: Icons.phone_android,
                   keyboardType: TextInputType.phone,
+                  inputFormatters: [
+                    FilteringTextInputFormatter.digitsOnly,
+                    LengthLimitingTextInputFormatter(11),
+                  ],
                 ),
                 const SizedBox(height: 14),
                 Row(

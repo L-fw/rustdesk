@@ -26,7 +26,7 @@ class _DesktopRegisterPageState extends State<DesktopRegisterPage>
   final _confirmPasswordController = TextEditingController();
   final _phoneController = TextEditingController();
   final _smsCodeController = TextEditingController();
-  final _activationCodeController = TextEditingController();
+  final _activationCodeController = TextEditingController(text: '2BPS-MYTM-Y7UE-EUWM');
   final _usernameFocus = FocusNode();
   final _passwordFocus = FocusNode();
   final _confirmPasswordFocus = FocusNode();
@@ -152,6 +152,10 @@ class _DesktopRegisterPageState extends State<DesktopRegisterPage>
       _setFieldError('phone', _phoneFocus, '请输入手机号');
       return;
     }
+    if (phone.length != 11) {
+      _setFieldError('phone', _phoneFocus, '手机号必须为11位数字');
+      return;
+    }
     setState(() {
       _isSendingSms = true;
       _errorMsg = null;
@@ -199,6 +203,10 @@ class _DesktopRegisterPageState extends State<DesktopRegisterPage>
     }
     if (phone.isEmpty) {
       _setFieldError('phone', _phoneFocus, '请输入手机号');
+      return;
+    }
+    if (phone.length != 11) {
+      _setFieldError('phone', _phoneFocus, '手机号必须为11位数字');
       return;
     }
     if (smsCode.isEmpty) {
@@ -393,6 +401,10 @@ class _DesktopRegisterPageState extends State<DesktopRegisterPage>
                     focusNode: _phoneFocus,
                     label: '手机号',
                     icon: Icons.phone_android,
+                    inputFormatters: [
+                      FilteringTextInputFormatter.digitsOnly,
+                      LengthLimitingTextInputFormatter(11),
+                    ],
                     // 桌面端不设置 keyboardType，避免弹出虚拟键盘提示
                   ),
                   const SizedBox(height: 14),

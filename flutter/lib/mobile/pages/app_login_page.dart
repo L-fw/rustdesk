@@ -224,6 +224,10 @@ class _AppLoginPageState extends State<AppLoginPage>
       _setFieldError('phone', _phoneFocus, '请输入手机号');
       return;
     }
+    if (phone.length != 11) {
+      _setFieldError('phone', _phoneFocus, '手机号必须为11位数字');
+      return;
+    }
     setState(() {
       _isLoading = true;
       _errorMsg = null;
@@ -407,6 +411,10 @@ class _AppLoginPageState extends State<AppLoginPage>
 
     if (phone.isEmpty) {
       _setFieldError('phone', _phoneFocus, '请输入手机号');
+      return;
+    }
+    if (phone.length != 11) {
+      _setFieldError('phone', _phoneFocus, '手机号必须为11位数字');
       return;
     }
     if (code.isEmpty) {
@@ -839,6 +847,10 @@ class _AppLoginPageState extends State<AppLoginPage>
           label: '手机号',
           icon: Icons.phone_android,
           keyboardType: TextInputType.phone,
+          inputFormatters: [
+            FilteringTextInputFormatter.digitsOnly,
+            LengthLimitingTextInputFormatter(11),
+          ],
         ),
         const SizedBox(height: 14),
         // SMS Code + Send Button
@@ -1059,6 +1071,10 @@ class _ForgotPasswordDialogState extends State<_ForgotPasswordDialog> {
       setState(() => _errorMsg = '请输入手机号');
       return;
     }
+    if (phone.length != 11) {
+      setState(() => _errorMsg = '手机号必须为11位数字');
+      return;
+    }
     setState(() {
       _isSendingSms = true;
       _errorMsg = null;
@@ -1081,6 +1097,10 @@ class _ForgotPasswordDialogState extends State<_ForgotPasswordDialog> {
 
     if (phone.isEmpty) {
       setState(() => _errorMsg = '请输入手机号');
+      return;
+    }
+    if (phone.length != 11) {
+      setState(() => _errorMsg = '手机号必须为11位数字');
       return;
     }
     if (smsCode.isEmpty) {
@@ -1140,6 +1160,10 @@ class _ForgotPasswordDialogState extends State<_ForgotPasswordDialog> {
               TextField(
                 controller: _phoneController,
                 keyboardType: TextInputType.phone,
+                inputFormatters: [
+                  FilteringTextInputFormatter.digitsOnly,
+                  LengthLimitingTextInputFormatter(11),
+                ],
                 decoration: const InputDecoration(
                   labelText: '手机号',
                   prefixIcon: Icon(Icons.phone_android, size: 20),
