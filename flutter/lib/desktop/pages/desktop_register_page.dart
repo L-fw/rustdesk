@@ -263,8 +263,20 @@ class _DesktopRegisterPageState extends State<DesktopRegisterPage>
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
+    void handleEnter() {
+      if (_isLoading) return;
+      _register();
+    }
+
     // ── 桌面端：居中卡片布局，不使用 AppBar / SafeArea ──
-    return Scaffold(
+    return CallbackShortcuts(
+      bindings: {
+        const SingleActivator(LogicalKeyboardKey.enter): handleEnter,
+        const SingleActivator(LogicalKeyboardKey.numpadEnter): handleEnter,
+      },
+      child: Focus(
+        autofocus: true,
+        child: Scaffold(
       backgroundColor: isDark ? const Color(0xFF1E1E2E) : const Color(0xFFF5F5F5),
       body: Center(
         child: ConstrainedBox(
@@ -567,7 +579,7 @@ class _DesktopRegisterPageState extends State<DesktopRegisterPage>
           ),
         ),
       ),
-    );
+    )));
   }
 
   Widget _buildTermsCheckbox(bool isDark) {

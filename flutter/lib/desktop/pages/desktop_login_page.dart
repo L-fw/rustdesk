@@ -516,8 +516,24 @@ class _AppLoginPageState extends State<AppLoginPage>
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
+    void handleEnter() {
+      if (_isLoading) return;
+      if (_tabController.index == 0) {
+        _loginWithPassword();
+      } else {
+        _loginWithSms();
+      }
+    }
+
     // Desktop：全屏背景 + 居中固定宽度登录卡片
-    return Scaffold(
+    return CallbackShortcuts(
+      bindings: {
+        const SingleActivator(LogicalKeyboardKey.enter): handleEnter,
+        const SingleActivator(LogicalKeyboardKey.numpadEnter): handleEnter,
+      },
+      child: Focus(
+        autofocus: true,
+        child: Scaffold(
       backgroundColor:
           isDark ? const Color(0xFF1A1D23) : const Color(0xFFF0F2F5),
       body: Center(
@@ -667,7 +683,7 @@ class _AppLoginPageState extends State<AppLoginPage>
           ),
         ),
       ),
-    );
+    )));
   }
 
   // ─────────────────────── 密码登录 Tab ───────────────────────
