@@ -6,6 +6,7 @@ import 'package:flutter_hbb/models/platform_model.dart';
 import 'package:flutter_hbb/models/state_model.dart';
 import 'package:get/get.dart';
 import 'package:window_manager/window_manager.dart';
+import 'package:flutter_hbb/utils/multi_window_manager.dart';
 
 class LoginTabPage extends StatefulWidget {
   final Widget child;
@@ -17,13 +18,14 @@ class LoginTabPage extends StatefulWidget {
   State<LoginTabPage> createState() => _LoginTabPageState();
 }
 
-class _LoginTabPageState extends State<LoginTabPage> {
+class _LoginTabPageState extends State<LoginTabPage> with WindowListener {
   final tabController = DesktopTabController(tabType: DesktopTabType.main);
   final invisibleTabKeys = <String>[].obs;
 
   @override
   void initState() {
     super.initState();
+    windowManager.addListener(this);
     if (isDesktop) {
       WidgetsBinding.instance.addPostFrameCallback((_) async {
         const minSize = Size(460, 720); // Minimum size to fit login & register pages
@@ -41,8 +43,21 @@ class _LoginTabPageState extends State<LoginTabPage> {
 
   @override
   void dispose() {
+    windowManager.removeListener(this);
     tabController.clear();
     super.dispose();
+  }
+
+  @override
+  void onWindowClose() async {
+    if (rustDeskWinManager.getActiveWindows().contains(kMainWindowId)) {
+      await rustDeskWinManager.unregisterActiveWindow(kMainWindowId);
+    }
+    bool isMinimized = await windowManager.isMinimized();
+    if (isMinimized) {
+      await windowManager.restore();
+    }
+    await windowManager.hide();
   }
 
   @override
@@ -93,9 +108,7 @@ class _LoginTabPageState extends State<LoginTabPage> {
       backgroundColor: Theme.of(context).colorScheme.background,
       body: Column(
         children: [
-           Obx(() => (stateGlobal.showTabBar.isTrue && !kUseCompatibleUiMode)
-              ? titleBar
-              : const SizedBox.shrink()),
+          if (!kUseCompatibleUiMode) titleBar,
           Expanded(child: widget.child),
         ],
       ),
