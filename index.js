@@ -11,6 +11,7 @@ const http = require('http');
 const { WebSocketServer, WebSocket } = require('ws');
 const crypto = require('crypto');
 const bcrypt = require('bcrypt');
+const rateLimit = require('express-rate-limit');
 
 const {
   initSQLiteDatabase,
@@ -24,6 +25,55 @@ const app = express();
 app.use(express.json());
 
 // ───────────────────────────────────────────────────────
+// IP 限流：同一 IP 15 分钟内最多 20 次
+// ───────────────────────────────────────────────────────
+const loginRateLimit = rateLimit({ windowMs: 15 * 60 * 1000, max: 20, standardHeaders: true, legacyHeaders: false });
+app.use('/api/user/login', loginRateLimit);
+app.use('/api/user/sms/login', loginRateLimit);
+app.use('/api/user/sms/send', rateLimit({ windowMs: 60 * 1000, max: 3, standardHeaders: true, legacyHeaders: false }));
+app.use('/api/user/register', rateLimit({ windowMs: 60 * 60 * 1000, max: 5, standardHeaders: true, legacyHeaders: false }));
+
+// ───────────────────────────────────────────────────────
+// 账号锁定：连续错误 5 次锁定 5 分钟
+// key = username 或 phone，value = { count, lockedUntil }
+// ───────────────────────────────────────────────────────
+const loginFailStore = new Map();
+const LOGIN_FAIL_MAX = 5;
+const LOGIN_LOCK_MS = 5 * 60 * 1000;
+
+function checkLoginLock(key) {
+  const rec = loginFailStore.get(key);
+  if (!rec) return null;
+  if (rec.lockedUntil && Date.now() < rec.lockedUntil) {
+    const remainSec = Math.ceil((rec.lockedUntil - Date.now()) / 1000);
+    return `登录失败次数过多，请 ${remainSec} 秒后再试`;
+  }
+  return null;
+}
+
+function recordLoginFail(key) {
+  const rec = loginFailStore.get(key) || { count: 0, lockedUntil: null };
+  rec.count += 1;
+  if (rec.count >= LOGIN_FAIL_MAX) {
+    rec.lockedUntil = Date.now() + LOGIN_LOCK_MS;
+    rec.count = 0;
+  }
+  loginFailStore.set(key, rec);
+}
+
+function clearLoginFail(key) {
+  loginFailStore.delete(key);
+}
+
+// 定期清理过期锁定记录
+setInterval(() => {
+  const now = Date.now();
+  for (const [key, rec] of loginFailStore) {
+    if (!rec.lockedUntil || now > rec.lockedUntil) loginFailStore.delete(key);
+  }
+}, 60_000);
+
+// ───────────────────────────────────────────────────────
 // WebSocket 连接管理
 // key = deviceId, value = Set<WebSocket>
 // ───────────────────────────────────────────────────────
@@ -35,6 +85,8 @@ const wsClients = new Map();
 const ADMIN_RAW_PASSWORD = process.env.ADMIN_PASSWORD ?? '    ';
 const ADMIN_PASSWORD_HASH = crypto.createHash('sha256').update(ADMIN_RAW_PASSWORD).digest('hex');
 console.log(`[AUTH] Admin password hash: ${ADMIN_PASSWORD_HASH.substring(0, 16)}...`);
+
+const SERVER_HOST = process.env.SERVER_HOST || '47.106.11.127';
 
 // ───────────────────────────────────────────────────────
 // AES 加解密工具（用于设备密码传输加密）
@@ -89,7 +141,7 @@ const DEFAULT_VERSION_CONFIG = {
       forceUpdate: false,
       downloadUrl: '/download/full/rustdesk-latest.apk',
       updateLog: '1. 修复连接稳定性问题\n2. 优化画面传输质量',
-      releaseUrl: 'http://112.74.59.152/releases/tag/1.8.0',
+      releaseUrl: `http://${SERVER_HOST}/releases/tag/1.8.0`,
     },
     share_only: {
       latestVersion: '1.8.0',
@@ -99,7 +151,7 @@ const DEFAULT_VERSION_CONFIG = {
       forceUpdate: false,
       downloadUrl: '/download/share_only/rustdesk-latest.apk',
       updateLog: '1. 修复连接稳定性问题\n2. 优化画面传输质量',
-      releaseUrl: 'http://112.74.59.152/releases/tag/1.8.0',
+      releaseUrl: `http://${SERVER_HOST}/releases/tag/1.8.0`,
     },
     desktop: {
       latestVersion: '1.8.0',
@@ -109,7 +161,7 @@ const DEFAULT_VERSION_CONFIG = {
       forceUpdate: false,
       downloadUrl: '/download/desktop/rustdesk-latest.apk',
       updateLog: '1. 修复连接稳定性问题\n2. 优化画面传输质量',
-      releaseUrl: 'http://112.74.59.152/releases/tag/1.8.0',
+      releaseUrl: `http://${SERVER_HOST}/releases/tag/1.8.0`,
     },
   },
 };
@@ -502,12 +554,18 @@ app.post('/api/user/login', async (req, res) => {
     if (!isValidUsername(normalizedUsername))
       return res.status(400).json({ code: 400, msg: '用户名只能包含中文、英文和数字' });
 
+    const lockMsg = checkLoginLock(normalizedUsername);
+    if (lockMsg) return res.status(429).json({ code: 429, msg: lockMsg });
+
     const user = await dbGetUser(normalizedUsername);
     if (!user) return res.status(401).json({ code: 401, msg: '用户名或密码错误' });
 
     const passwordMatch = await bcrypt.compare(password, user.password_hash);
-    if (!passwordMatch)
+    if (!passwordMatch) {
+      recordLoginFail(normalizedUsername);
       return res.status(401).json({ code: 401, msg: '用户名或密码错误' });
+    }
+    clearLoginFail(normalizedUsername);
 
     if (user.activation_code_hash) {
       const entry = await dbGetActivationCode(user.activation_code_hash);
@@ -612,14 +670,20 @@ app.post('/api/user/sms/login', async (req, res) => {
     if (!normalizedPhone || !normalizedCode)
       return res.status(400).json({ code: 400, msg: '手机号和验证码不能为空' });
 
+    const lockMsg = checkLoginLock(normalizedPhone);
+    if (lockMsg) return res.status(429).json({ code: 429, msg: lockMsg });
+
     const stored = smsCodeStore.get(normalizedPhone);
-    if (!stored || stored.code !== normalizedCode)
+    if (!stored || stored.code !== normalizedCode) {
+      recordLoginFail(normalizedPhone);
       return res.status(401).json({ code: 401, msg: '验证码错误' });
+    }
     if (Date.now() > stored.expireAt) {
       smsCodeStore.delete(normalizedPhone);
       return res.status(401).json({ code: 401, msg: '验证码已过期' });
     }
     smsCodeStore.delete(normalizedPhone);
+    clearLoginFail(normalizedPhone);
 
     const user = await dbGetUserByPhone(normalizedPhone);
     if (!user) return res.status(401).json({ code: 401, msg: '该手机号未注册' });

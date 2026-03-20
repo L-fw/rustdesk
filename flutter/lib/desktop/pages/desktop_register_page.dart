@@ -26,7 +26,7 @@ class _DesktopRegisterPageState extends State<DesktopRegisterPage>
   final _confirmPasswordController = TextEditingController();
   final _phoneController = TextEditingController();
   final _smsCodeController = TextEditingController();
-  final _activationCodeController = TextEditingController(text: '2BPS-MYTM-Y7UE-EUWM');
+  final _activationCodeController = TextEditingController(text: 'X99E-VDEY-TEFV-P7JS');
   final _usernameFocus = FocusNode();
   final _passwordFocus = FocusNode();
   final _confirmPasswordFocus = FocusNode();

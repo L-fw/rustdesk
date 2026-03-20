@@ -4,7 +4,7 @@
 use hbb_common::{config::Config, log, tokio};
 
 /// Base URL for session reporting API (same server as version check)
-const SESSION_API_BASE: &str = "http://112.74.59.152:3000";
+const SESSION_API_BASE: &str = "https://jyyxt.cloud";
 
 /// Report session start to the server.
 /// Called when a remote peer is authorized to control this device.
