@@ -27,6 +27,7 @@ import 'package:window_manager/window_manager.dart';
 import 'package:window_size/window_size.dart' as window_size;
 import '../widgets/button.dart';
 import 'desktop_login_page.dart' as desktop_login;
+import 'login_tab_page.dart';
 
 class DesktopHomePage extends StatefulWidget {
   const DesktopHomePage({Key? key}) : super(key: key);
@@ -994,7 +995,8 @@ class _DesktopHomePageState extends State<DesktopHomePage>
               stateGlobal.appLoginInvalidatedMessage.value = '';
               Navigator.of(context).pushAndRemoveUntil(
                 MaterialPageRoute(
-                    builder: (_) => const desktop_login.AppLoginPage()),
+                    builder: (_) => const LoginTabPage(
+                        child: desktop_login.AppLoginPage())),
                 (route) => false,
               );
             },

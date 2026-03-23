@@ -30,6 +30,7 @@ import '../../common/app_auth_service.dart';
 import 'desktop_login_page.dart' as desktop_login;
 import 'privacy_policy.dart' as privacy_pages;
 import 'terms_of_service.dart' as terms_pages;
+import 'login_tab_page.dart';
 
 const double _kTabWidth = 200;
 const double _kTabHeight = 42;
@@ -2075,7 +2076,8 @@ class _AccountState extends State<_Account> {
         if (mounted) {
           Navigator.of(context).pushAndRemoveUntil(
             MaterialPageRoute(
-                builder: (_) => const desktop_login.AppLoginPage()),
+                builder: (_) => const LoginTabPage(
+                    child: desktop_login.AppLoginPage())),
             (route) => false,
           );
         }
