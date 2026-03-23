@@ -19,6 +19,7 @@ const {
   dbGetDevice, dbGetAllDevices, dbUpsertDevice, dbGetDevicesByUser, dbSetDeviceBanned, dbDeleteDevice,
   dbAddSession, dbUpdateSessionHeartbeat, dbEndSession, dbGetDeviceSessions,
   dbGetActivationCode, dbGetAllActivationCodes, dbSaveActivationCode, dbDeleteActivationCode,
+  dbAddVersionHistory, dbGetVersionHistory,
 } = require('./sqlite_db');
 
 const app = express();
@@ -27,11 +28,12 @@ app.use(express.json());
 // ───────────────────────────────────────────────────────
 // IP 限流：同一 IP 15 分钟内最多 20 次
 // ───────────────────────────────────────────────────────
-const loginRateLimit = rateLimit({ windowMs: 15 * 60 * 1000, max: 20, standardHeaders: true, legacyHeaders: false });
+const rateLimitMessage = { code: 429, msg: '请求次数过多，请稍后再试' };
+const loginRateLimit = rateLimit({ windowMs: 15 * 60 * 1000, max: 20, standardHeaders: true, legacyHeaders: false, message: rateLimitMessage });
 app.use('/api/user/login', loginRateLimit);
 app.use('/api/user/sms/login', loginRateLimit);
-app.use('/api/user/sms/send', rateLimit({ windowMs: 60 * 1000, max: 3, standardHeaders: true, legacyHeaders: false }));
-app.use('/api/user/register', rateLimit({ windowMs: 60 * 60 * 1000, max: 5, standardHeaders: true, legacyHeaders: false }));
+app.use('/api/user/sms/send', rateLimit({ windowMs: 60 * 1000, max: 3, standardHeaders: true, legacyHeaders: false, message: rateLimitMessage }));
+app.use('/api/user/register', rateLimit({ windowMs: 60 * 60 * 1000, max: 5, standardHeaders: true, legacyHeaders: false, message: rateLimitMessage }));
 
 // ───────────────────────────────────────────────────────
 // 账号锁定：连续错误 5 次锁定 5 分钟
@@ -141,7 +143,7 @@ const DEFAULT_VERSION_CONFIG = {
       forceUpdate: false,
       downloadUrl: '/download/full/rustdesk-latest.apk',
       updateLog: '1. 修复连接稳定性问题\n2. 优化画面传输质量',
-      releaseUrl: `http://${SERVER_HOST}/releases/tag/1.8.0`,
+      releaseUrl: `https://${SERVER_HOST}/releases/tech`,
     },
     share_only: {
       latestVersion: '1.8.0',
@@ -151,7 +153,7 @@ const DEFAULT_VERSION_CONFIG = {
       forceUpdate: false,
       downloadUrl: '/download/share_only/rustdesk-latest.apk',
       updateLog: '1. 修复连接稳定性问题\n2. 优化画面传输质量',
-      releaseUrl: `http://${SERVER_HOST}/releases/tag/1.8.0`,
+      releaseUrl: `https://${SERVER_HOST}/releases/tech`,
     },
     desktop: {
       latestVersion: '1.8.0',
@@ -161,7 +163,7 @@ const DEFAULT_VERSION_CONFIG = {
       forceUpdate: false,
       downloadUrl: '/download/desktop/rustdesk-latest.apk',
       updateLog: '1. 修复连接稳定性问题\n2. 优化画面传输质量',
-      releaseUrl: `http://${SERVER_HOST}/releases/tag/1.8.0`,
+      releaseUrl: `https://${SERVER_HOST}/releases/tech`,
     },
   },
 };
@@ -1126,14 +1128,21 @@ app.get('/admin/version', authMiddleware, (req, res) => {
   res.json({ code: 200, data: config.android[clientType], clientType });
 });
 
-app.post('/admin/version', authMiddleware, (req, res) => {
+app.post('/admin/version', authMiddleware, async (req, res) => {
   const body = req.body || {};
   const clientType = normalizeVersionClientType(body.clientType);
   const config = loadVersionConfig();
   mergeVersionFields(config.android[clientType], body);
   saveVersionConfig(config);
-  console.log(`[VERSION] Config updated [${clientType}]:`, JSON.stringify(config.android[clientType]));
-  res.json({ code: 200, msg: '版本配置已更新', data: config.android[clientType], clientType });
+  const cfg = config.android[clientType];
+  // 自动写入历史版本
+  try {
+    await dbAddVersionHistory(clientType, cfg.latestVersion, cfg.updateLog, cfg.downloadUrl);
+  } catch (e) {
+    console.error('[VERSION HISTORY]', e);
+  }
+  console.log(`[VERSION] Config updated [${clientType}]:`, JSON.stringify(cfg));
+  res.json({ code: 200, msg: '版本配置已更新', data: cfg, clientType });
 });
 
 app.post('/admin/version/upload', authMiddleware, (req, res) => {
@@ -1288,6 +1297,43 @@ app.post('/admin/activation-codes/revoke', authMiddleware, async (req, res) => {
 
 app.get('/health', (_req, res) => res.json({ status: 'ok', time: new Date().toISOString() }));
 app.get('/admin', (_req, res) => res.sendFile(path.join(__dirname, 'admin.html')));
+app.get('/releases/tech', (_req, res) => res.sendFile(path.join(__dirname, 'releases.html')));
+app.get('/releases/share', (_req, res) => res.sendFile(path.join(__dirname, 'releases_share.html')));
+
+// 公开版本信息接口（供发布页动态读取，无需鉴权）
+app.get('/api/public/version', (req, res) => {
+  const clientType = normalizeVersionClientType(req.query.client_type);
+  const config = loadVersionConfig();
+  const cfg = config.android[clientType];
+  res.json({
+    code: 200,
+    data: {
+      latestVersion: cfg.latestVersion,
+      updateLog: cfg.updateLog,
+      downloadUrl: cfg.downloadUrl,
+      clientType,
+    },
+  });
+});
+
+// 公开历史版本接口
+app.get('/api/public/version/history', async (req, res) => {
+  try {
+    const clientType = normalizeVersionClientType(req.query.client_type);
+    const rows = await dbGetVersionHistory(clientType, 20);
+    res.json({
+      code: 200,
+      data: rows.map(r => ({
+        version: r.version,
+        updateLog: r.update_log || '',
+        downloadUrl: r.download_url || '',
+        createdAt: r.created_at || '',
+      })),
+    });
+  } catch (e) {
+    res.status(500).json({ code: 500, msg: '服务器内部错误' });
+  }
+});
 
 // ───────────────────────────────────────────────────────
 // WebSocket 工具函数
