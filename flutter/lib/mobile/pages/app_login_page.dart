@@ -52,6 +52,7 @@ class _AppLoginPageState extends State<AppLoginPage>
   final String _currentPrivacyVersion = privacy_pages.privacyPolicyVersion;
   final String _accountHistoryKey = 'app_login_accounts';
   final String _lastAccountKey = 'app_login_last_account';
+  final String _lastPhoneKey = 'app_login_last_phone';
   final String _rememberPasswordEnabledKey = 'app_login_remember_password_enabled';
   final Map<String, AnimationController> _shakeControllers = {};
   final Map<String, bool> _invalidFields = {};
@@ -76,6 +77,7 @@ class _AppLoginPageState extends State<AppLoginPage>
     _agreedToTerms = bind.mainGetLocalOption(key: _agreedTermsVersionKey) == _currentTermsVersion &&
                      bind.mainGetLocalOption(key: _agreedPrivacyVersionKey) == _currentPrivacyVersion;
     _loadAccountHistory();
+    _loadPhoneHistory();
     _loadRememberedPasswordForUser(_usernameController.text.trim());
   }
 
@@ -158,6 +160,19 @@ class _AppLoginPageState extends State<AppLoginPage>
     if (initial.isNotEmpty && _usernameController.text.isEmpty) {
       _usernameController.text = initial;
     }
+  }
+
+  void _loadPhoneHistory() {
+    final lastPhone = bind.mainGetLocalOption(key: _lastPhoneKey).trim();
+    if (lastPhone.isNotEmpty && _phoneController.text.isEmpty) {
+      _phoneController.text = lastPhone;
+    }
+  }
+
+  void _rememberPhone(String phone) {
+    final normalized = phone.trim();
+    if (normalized.isEmpty) return;
+    bind.mainSetLocalOption(key: _lastPhoneKey, value: normalized);
   }
 
   Future<void> _loadRememberedPasswordForUser(String username) async {
@@ -468,6 +483,7 @@ class _AppLoginPageState extends State<AppLoginPage>
           if (retryError != null) {
             setState(() => _errorMsg = retryError);
           } else {
+            _rememberPhone(phone);
             bind.mainSetLocalOption(
                 key: _agreedTermsVersionKey, value: _currentTermsVersion);
             bind.mainSetLocalOption(
@@ -478,6 +494,7 @@ class _AppLoginPageState extends State<AppLoginPage>
         }
         setState(() => _errorMsg = error);
       } else {
+        _rememberPhone(phone);
         bind.mainSetLocalOption(key: _agreedTermsVersionKey, value: _currentTermsVersion);
         bind.mainSetLocalOption(key: _agreedPrivacyVersionKey, value: _currentPrivacyVersion);
         _goToHome();
