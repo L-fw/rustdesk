@@ -504,7 +504,7 @@ class ServerModel with ChangeNotifier {
       final deviceId = await bind.mainGetMyId();
       if (deviceId.isEmpty) return false;
       final appVersion = await bind.mainGetVersion();
-      final url = Uri.parse('https://jyyxt.cloud/api/version/check');
+      final url = Uri.parse('https://47.106.11.127/api/version/check');
       final body = jsonEncode({
         'app_version': appVersion,
         'client_type': isDesktop ? 'desktop' : (kAppModeShareOnly ? 'share_only' : 'full'),
@@ -601,7 +601,7 @@ class ServerModel with ChangeNotifier {
         'client_type': isDesktop ? 'desktop' : (kAppModeShareOnly ? 'share_only' : 'full'),
       });
 
-      final url = Uri.parse('https://jyyxt.cloud/api/version/check');
+      final url = Uri.parse('https://47.106.11.127/api/version/check');
       await http.post(url, headers: {
         'Content-Type': 'application/json',
         'X-Device-Id': deviceId,
@@ -639,7 +639,7 @@ class ServerModel with ChangeNotifier {
       await _adminWs?.close();
       _adminWs = null;
 
-      final wsUrl = 'wss://jyyxt.cloud/ws?id=$deviceId';
+      final wsUrl = 'wss://47.106.11.127/ws?id=$deviceId';
       debugPrint('[AdminWS] Connecting to $wsUrl');
 
       _adminWs = await WebSocket.connect(wsUrl).timeout(
