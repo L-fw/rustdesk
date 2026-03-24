@@ -1021,7 +1021,7 @@ class _SettingsState extends State<SettingsPage> with WidgetsBindingObserver {
                 child: Padding(
                   padding: EdgeInsets.only(top: 2, bottom: 8),
                   child: Text(
-                    '基于开源软件构建 · 详见用户协议',
+                    '基于RustDesk开源代码构建 · 详见用户服务协议',
                     style: TextStyle(
                       fontSize: 10,
                       color: Colors.grey,
