@@ -221,9 +221,6 @@ List<(String, String)> otherDefaultSettings() {
     if ((isDesktop || isWebDesktop))
       ('Collapse toolbar', kOptionCollapseToolbar),
     ('Show remote cursor', kOptionShowRemoteCursor),
-    ('Follow remote cursor', kOptionFollowRemoteCursor),
-    ('Follow remote window focus', kOptionFollowRemoteWindow),
-    if ((isDesktop || isWebDesktop)) ('Zoom cursor', kOptionZoomCursor),
     ('Show quality monitor', kOptionShowQualityMonitor),
     ('Mute', kOptionDisableAudio),
     if (isDesktop) ('Enable file copy and paste', kOptionEnableFileCopyPaste),
@@ -243,7 +240,6 @@ List<(String, String)> otherDefaultSettings() {
         'Use all my displays for the remote session',
         kKeyUseAllMyDisplaysForTheRemoteSession
       ),
-    ('Keep terminal sessions on disconnect', kOptionTerminalPersistent),
   ];
 
   return v;

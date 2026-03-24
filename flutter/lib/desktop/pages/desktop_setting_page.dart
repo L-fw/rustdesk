@@ -1737,39 +1737,7 @@ class _DisplayState extends State<_Display> {
   }
 
   Widget privacyModeImpl(BuildContext context) {
-    final supportedPrivacyModeImpls = bind.mainSupportedPrivacyModeImpls();
-    late final List<dynamic> privacyModeImpls;
-    try {
-      privacyModeImpls = jsonDecode(supportedPrivacyModeImpls);
-    } catch (e) {
-      debugPrint('failed to parse supported privacy mode impls, err=$e');
-      return Offstage();
-    }
-    if (privacyModeImpls.length < 2) {
-      return Offstage();
-    }
-
-    final key = 'privacy-mode-impl-key';
-    onChanged(String value) async {
-      await bind.mainSetOption(key: key, value: value);
-      setState(() {});
-    }
-
-    String groupValue = bind.mainGetOptionSync(key: key);
-    if (groupValue.isEmpty) {
-      groupValue = bind.mainDefaultPrivacyModeImpl();
-    }
-    return _Card(
-      title: 'Privacy mode',
-      children: privacyModeImpls.map((impl) {
-        final d = impl as List<dynamic>;
-        return _Radio(context,
-            value: d[0] as String,
-            groupValue: groupValue,
-            label: d[1] as String,
-            onChanged: onChanged);
-      }).toList(),
-    );
+    return Offstage();
   }
 
   Widget otherRow(String label, String key) {
