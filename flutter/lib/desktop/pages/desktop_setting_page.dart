@@ -840,7 +840,6 @@ class _SafetyState extends State<_Safety> with AutomaticKeepAliveClientMixin {
   Widget tfa() {
     return Offstage();
   }
-  }
 
   Widget changeId() {
     return ChangeNotifierProvider.value(
