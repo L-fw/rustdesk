@@ -1038,6 +1038,14 @@ class FfiModel with ChangeNotifier {
     } else {
       _reconnects = 1;
       _offlineReconnectStartTime = null;
+      // 手机端连接断开后，自动关闭连接防止黑屏
+      // 当连接错误且没有重试时，5秒后自动返回主页面
+      if (isMobile && (type.contains('error') || title == 'Connection Error')) {
+        _timer?.cancel();
+        _timer = Timer(Duration(seconds: 5), () {
+          closeConnection();
+        });
+      }
     }
   }
 

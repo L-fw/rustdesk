@@ -703,6 +703,8 @@ String formatDurationToTime(Duration duration) {
 
 closeConnection({String? id}) {
   if (isAndroid || isIOS) {
+    // 防止重复调用导致异常（例如自动关闭定时器和用户手动关闭同时触发）
+    if (stateGlobal.isInMainPage) return;
     () async {
       await SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual,
           overlays: SystemUiOverlay.values);
