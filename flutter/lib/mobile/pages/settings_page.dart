@@ -1187,7 +1187,7 @@ class ScanButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return IconButton(
-      icon: Icon(Icons.qr_code_scanner),
+      icon: Icon(Icons.camera_alt),
       onPressed: () {
         Navigator.push(
           context,
