@@ -937,9 +937,8 @@ class FfiModel with ChangeNotifier {
     } else if (text == kMsgboxTextWaitingForImage) {
       showConnectedWaitingForImage(dialogManager, sessionId, type, title, text);
     } else if (title == 'Privacy mode') {
-      final hasRetry = evt['hasRetry'] == 'true';
-      showPrivacyFailedDialog(
-          sessionId, type, title, text, link, hasRetry, dialogManager);
+      // Suppress the "Privacy mode - Unsupported" dialog
+      return;
     } else {
       var hasRetry = evt['hasRetry'] == 'true';
       if (!hasRetry) {
