@@ -28,12 +28,11 @@ app.use(express.json());
 // ───────────────────────────────────────────────────────
 // IP 限流：同一 IP 15 分钟内最多 20 次
 // ───────────────────────────────────────────────────────
-const rateLimitMessage = { code: 429, msg: '请求次数过多，请稍后再试' };
-const loginRateLimit = rateLimit({ windowMs: 15 * 60 * 1000, max: 20, standardHeaders: true, legacyHeaders: false, message: rateLimitMessage });
+const loginRateLimit = rateLimit({ windowMs: 15 * 60 * 1000, max: 20, standardHeaders: true, legacyHeaders: false });
 app.use('/api/user/login', loginRateLimit);
 app.use('/api/user/sms/login', loginRateLimit);
-app.use('/api/user/sms/send', rateLimit({ windowMs: 60 * 1000, max: 3, standardHeaders: true, legacyHeaders: false, message: rateLimitMessage }));
-app.use('/api/user/register', rateLimit({ windowMs: 60 * 60 * 1000, max: 5, standardHeaders: true, legacyHeaders: false, message: rateLimitMessage }));
+app.use('/api/user/sms/send', rateLimit({ windowMs: 60 * 1000, max: 3, standardHeaders: true, legacyHeaders: false }));
+app.use('/api/user/register', rateLimit({ windowMs: 60 * 60 * 1000, max: 5, standardHeaders: true, legacyHeaders: false }));
 
 // ───────────────────────────────────────────────────────
 // 账号锁定：连续错误 5 次锁定 5 分钟

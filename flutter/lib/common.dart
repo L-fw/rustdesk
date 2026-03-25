@@ -2509,6 +2509,12 @@ connect(BuildContext context, String id,
     String? connToken,
     bool? isSharedPassword}) async {
   if (id == '') return;
+  // 不允许连接自己的设备ID
+  final myId = await bind.mainGetMyId();
+  if (myId.isNotEmpty && id.replaceAll(' ', '') == myId.replaceAll(' ', '')) {
+    showToast(translate('不能连接自己的设备'));
+    return;
+  }
   // 设备被禁用时阻止发起远程连接
   if (stateGlobal.deviceBanned.value) {
     showToast(stateGlobal.bannedMessage.value.isNotEmpty
