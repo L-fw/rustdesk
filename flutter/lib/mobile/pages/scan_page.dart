@@ -53,7 +53,7 @@ class _ScanPageState extends State<ScanPage> {
 
   void _onPermissionSet(BuildContext context, QRViewController ctrl, bool p) {
     if (!p) {
-      showToast('No permission');
+      showToast('没有相机权限');
     }
   }
 

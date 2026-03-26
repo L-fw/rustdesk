@@ -48,7 +48,7 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
         ("Slogan_tip", "用匠心致初心，以初心驭佳影！"),
         ("Privacy Statement", "隐私政策"),
         ("Mute", "静音"),
-        ("Build Date", "安装日期"),
+        ("Build Date", "版本发布日期"),
         ("Version", "版本"),
         ("Home", "主页"),
         ("Audio Input", "音频输入"),
