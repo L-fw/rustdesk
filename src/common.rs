@@ -96,6 +96,7 @@ lazy_static::lazy_static! {
     pub static ref SOFTWARE_UPDATE_URL: Arc<Mutex<String>> = Default::default();
     pub static ref DEVICE_ID: Arc<Mutex<String>> = Default::default();
     pub static ref DEVICE_NAME: Arc<Mutex<String>> = Default::default();
+    pub static ref CLIENT_TYPE: Arc<Mutex<String>> = Default::default();
     static ref PUBLIC_IPV6_ADDR: Arc<Mutex<(Option<SocketAddr>, Option<Instant>)>> = Default::default();
 }
 
@@ -948,10 +949,12 @@ pub fn check_software_update() {
 // Accept invalid cert because self-hosted server may use self-signed certificate.
 #[tokio::main(flavor = "current_thread")]
 pub async fn do_check_software_update() -> hbb_common::ResultType<()> {
+    let client_type = CLIENT_TYPE.lock().unwrap().clone();
     let (request, url, device_id_hex) =
         hbb_common::version_check_request(
             hbb_common::VER_TYPE_RUSTDESK_CLIENT.to_string(),
             crate::VERSION.to_string(),
+            client_type,
         );
     let proxy_conf = Config::get_socks();
     let tls_url = get_url_for_tls(&url, &proxy_conf);

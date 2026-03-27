@@ -1,6 +1,6 @@
 // ═══════════════════════════════════════════════════════
 // Gamwing 设备管理后台 + 版本检查 API
-// 端口：3000
+// 端口：3001
 // ═══════════════════════════════════════════════════════
 
 const express = require('express');
@@ -160,7 +160,7 @@ const DEFAULT_VERSION_CONFIG = {
       latestPrivacyVersion: '1.0',
       minRequired: '1.4.5',
       forceUpdate: false,
-      downloadUrl: '/download/desktop/rustdesk-latest.apk',
+      downloadUrl: '/download/desktop/rustdesk-latest.exe',
       updateLog: '1. 修复连接稳定性问题\n2. 优化画面传输质量',
       releaseUrl: `https://${SERVER_HOST}/releases/tech`,
     },
@@ -269,7 +269,11 @@ function saveVersionConfig(config) {
 const apkStorage = multer.diskStorage({
   destination: (req, _file, cb) =>
     cb(null, getApkDirByClientType(getVersionClientTypeFromReq(req))),
-  filename: (_req, file, cb) => cb(null, file.originalname),
+  filename: (_req, file, cb) => {
+    // 修复中文文件名乱码：multer 默认用 latin1，需转为 utf8
+    const filename = Buffer.from(file.originalname, 'latin1').toString('utf8');
+    cb(null, filename);
+  },
 });
 const uploadApk = multer({
   storage: apkStorage,

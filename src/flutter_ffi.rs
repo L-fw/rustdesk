@@ -1725,6 +1725,10 @@ pub fn main_device_name(name: String) {
     *crate::common::DEVICE_NAME.lock().unwrap() = name;
 }
 
+pub fn main_client_type(client_type: String) {
+    *crate::common::CLIENT_TYPE.lock().unwrap() = client_type;
+}
+
 pub fn main_remove_peer(id: String) {
     PeerConfig::remove(&id);
 }

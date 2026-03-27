@@ -211,6 +211,7 @@ class PlatformFFI {
       }
       await _ffiBind.mainDeviceId(id: id);
       await _ffiBind.mainDeviceName(name: name);
+      await _ffiBind.mainClientType(clientType: isDesktop ? 'desktop' : kAppMode);
       await _ffiBind.mainSetHomeDir(home: _homeDir);
       await _ffiBind.mainInit(
         appDir: _dir,

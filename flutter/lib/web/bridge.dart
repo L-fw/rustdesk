@@ -1193,6 +1193,11 @@ class RustdeskImpl {
     throw UnimplementedError("mainDeviceName");
   }
 
+  Future<void> mainClientType({required String clientType, dynamic hint}) {
+    // TODO: ?
+    throw UnimplementedError("mainClientType");
+  }
+
   Future<void> mainRemovePeer({required String id, dynamic hint}) {
     return Future(
         () => js.context.callMethod('setByName', ['remove_peer', id]));
