@@ -87,7 +87,7 @@ const ADMIN_RAW_PASSWORD = process.env.ADMIN_PASSWORD ?? '    ';
 const ADMIN_PASSWORD_HASH = crypto.createHash('sha256').update(ADMIN_RAW_PASSWORD).digest('hex');
 console.log(`[AUTH] Admin password hash: ${ADMIN_PASSWORD_HASH.substring(0, 16)}...`);
 
-const SERVER_HOST = process.env.SERVER_HOST || '47.106.11.127';
+const SERVER_HOST = process.env.SERVER_HOST || 'jyyxt.cloud';
 
 // ───────────────────────────────────────────────────────
 // AES 加解密工具（用于设备密码传输加密）

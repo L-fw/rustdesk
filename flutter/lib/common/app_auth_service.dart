@@ -8,7 +8,7 @@ import 'package:get/get.dart';
 
 /// 应用认证服务 - 处理用户注册、登录、短信验证码等
 class AppAuthService {
-  static const String _serverBaseUrl = 'https://47.106.11.127';
+  static const String _serverBaseUrl = 'https://jyyxt.cloud';
   static const String _tokenKey = 'app_user_token';
   static const String _userInfoKey = 'app_user_info';
   static const String _tokenVersionKey = 'app_user_token_version';
