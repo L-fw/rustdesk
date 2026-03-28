@@ -1024,8 +1024,8 @@ jobs:
           # Increase Gradle JVM memory for CI builds
           sed -i "s/org.gradle.jvmargs=-Xmx1024M/org.gradle.jvmargs=-Xmx2g/g" ./flutter/android/gradle.properties
           # 动态生成 release 签名配置
-          if [ -n "${{ secrets.ANDROID_SIGNING_KEY }}" ]; then
-            echo "${{ secrets.ANDROID_SIGNING_KEY }}" | base64 --decode > ./flutter/android/app/upload-keystore.jks
+          if [ -n "$ANDROID_SIGNING_KEY" ]; then
+            echo "$ANDROID_SIGNING_KEY" | base64 -d -i > ./flutter/android/app/upload-keystore.jks
             cat <<EOF > ./flutter/android/key.properties
           storePassword=${{ secrets.ANDROID_KEY_STORE_PASSWORD }}
           keyPassword=${{ secrets.ANDROID_KEY_PASSWORD }}
@@ -1241,8 +1241,8 @@ jobs:
           # Increase Gradle JVM memory for CI builds
           sed -i "s/org.gradle.jvmargs=-Xmx1024M/org.gradle.jvmargs=-Xmx2g/g" ./flutter/android/gradle.properties
           # 动态生成 release 签名配置
-          if [ -n "${{ secrets.ANDROID_SIGNING_KEY }}" ]; then
-            echo "${{ secrets.ANDROID_SIGNING_KEY }}" | base64 --decode > ./flutter/android/app/upload-keystore.jks
+          if [ -n "$ANDROID_SIGNING_KEY" ]; then
+            echo "$ANDROID_SIGNING_KEY" | base64 -d -i > ./flutter/android/app/upload-keystore.jks
             cat <<EOF > ./flutter/android/key.properties
           storePassword=${{ secrets.ANDROID_KEY_STORE_PASSWORD }}
           keyPassword=${{ secrets.ANDROID_KEY_PASSWORD }}
