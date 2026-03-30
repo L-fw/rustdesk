@@ -899,17 +899,7 @@ class _SettingsState extends State<SettingsPage> with WidgetsBindingObserver {
           title: Text(translate("About")),
           tiles: [
             SettingsTile(
-                onPressed: (context) async {
-                  await launchUrl(Uri.parse(url));
-                },
                 title: Text('${translate("Version")}: $version'),
-                value: Padding(
-                  padding: EdgeInsets.symmetric(vertical: 8),
-                  child: Text('jygamwing.com',
-                      style: TextStyle(
-                        decoration: TextDecoration.underline,
-                      )),
-                ),
                 leading: Icon(Icons.info)),
             SettingsTile(
                 title: Text(translate("Build Date")),
@@ -950,6 +940,13 @@ class _SettingsState extends State<SettingsPage> with WidgetsBindingObserver {
                 );
           },
               leading: Icon(Icons.privacy_tip),
+            ),
+            SettingsTile(
+              title: Text(translate("Website")),
+              onPressed: (context) async {
+                await launchUrl(Uri.parse(url));
+              },
+              leading: Icon(Icons.language),
             )
           ],
         ),
