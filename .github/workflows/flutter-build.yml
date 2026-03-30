@@ -1026,12 +1026,10 @@ jobs:
           # 动态生成 release 签名配置
           if [ -n "$ANDROID_SIGNING_KEY" ]; then
             echo "$ANDROID_SIGNING_KEY" | base64 -d -i > ./flutter/android/app/upload-keystore.jks
-            cat <<EOF > ./flutter/android/key.properties
-          storePassword=${{ secrets.ANDROID_KEY_STORE_PASSWORD }}
-          keyPassword=${{ secrets.ANDROID_KEY_PASSWORD }}
-          keyAlias=${{ secrets.ANDROID_ALIAS }}
-          storeFile=upload-keystore.jks
-          EOF
+            echo "storePassword=${{ secrets.ANDROID_KEY_STORE_PASSWORD }}" > ./flutter/android/key.properties
+            echo "keyPassword=${{ secrets.ANDROID_KEY_PASSWORD }}" >> ./flutter/android/key.properties
+            echo "keyAlias=${{ secrets.ANDROID_ALIAS }}" >> ./flutter/android/key.properties
+            echo "storeFile=upload-keystore.jks" >> ./flutter/android/key.properties
           else
             # 如果没有配置密钥，则回退到 debug 签名
             sed -i "s/signingConfigs.release/signingConfigs.debug/g" ./flutter/android/app/build.gradle
@@ -1045,6 +1043,7 @@ jobs:
               pushd flutter
               flutter build apk "--${{ matrix.job.reltype }}" --target-platform android-arm64 --split-per-abi --no-tree-shake-icons
               mv build/app/outputs/flutter-apk/app-arm64-v8a-${{ matrix.job.reltype }}.apk ../rustdesk-${{ env.VERSION }}-${{ matrix.job.arch }}${{ matrix.job.suffix }}.apk
+              flutter clean
               flutter build apk "--${{ matrix.job.reltype }}" --target-platform android-arm64 --split-per-abi --no-tree-shake-icons --dart-define=APP_MODE=share_only
               mv build/app/outputs/flutter-apk/app-arm64-v8a-${{ matrix.job.reltype }}.apk ../rustdesk-${{ env.VERSION }}-${{ matrix.job.arch }}${{ matrix.job.suffix }}-share-only.apk
             ;;
@@ -1056,6 +1055,7 @@ jobs:
               pushd flutter
               flutter build apk "--${{ matrix.job.reltype }}" --target-platform android-arm --split-per-abi --no-tree-shake-icons
               mv build/app/outputs/flutter-apk/app-armeabi-v7a-${{ matrix.job.reltype }}.apk ../rustdesk-${{ env.VERSION }}-${{ matrix.job.arch }}${{ matrix.job.suffix }}.apk
+              flutter clean
               flutter build apk "--${{ matrix.job.reltype }}" --target-platform android-arm --split-per-abi --no-tree-shake-icons --dart-define=APP_MODE=share_only
               mv build/app/outputs/flutter-apk/app-armeabi-v7a-${{ matrix.job.reltype }}.apk ../rustdesk-${{ env.VERSION }}-${{ matrix.job.arch }}${{ matrix.job.suffix }}-share-only.apk
             ;;
@@ -1067,6 +1067,7 @@ jobs:
               pushd flutter
               flutter build apk "--${{ matrix.job.reltype }}" --target-platform android-x64 --split-per-abi --no-tree-shake-icons
               mv build/app/outputs/flutter-apk/app-x86_64-${{ matrix.job.reltype }}.apk ../rustdesk-${{ env.VERSION }}-${{ matrix.job.arch }}${{ matrix.job.suffix }}.apk
+              flutter clean
               flutter build apk "--${{ matrix.job.reltype }}" --target-platform android-x64 --split-per-abi --no-tree-shake-icons --dart-define=APP_MODE=share_only
               mv build/app/outputs/flutter-apk/app-x86_64-${{ matrix.job.reltype }}.apk ../rustdesk-${{ env.VERSION }}-${{ matrix.job.arch }}${{ matrix.job.suffix }}-share-only.apk
             ;;
@@ -1078,6 +1079,7 @@ jobs:
               pushd flutter
               flutter build apk "--${{ matrix.job.reltype }}" --target-platform android-x86 --split-per-abi --no-tree-shake-icons
               mv build/app/outputs/flutter-apk/app-x86-${{ matrix.job.reltype }}.apk ../rustdesk-${{ env.VERSION }}-${{ matrix.job.arch }}${{ matrix.job.suffix }}.apk
+              flutter clean
               flutter build apk "--${{ matrix.job.reltype }}" --target-platform android-x86 --split-per-abi --no-tree-shake-icons --dart-define=APP_MODE=share_only
               mv build/app/outputs/flutter-apk/app-x86-${{ matrix.job.reltype }}.apk ../rustdesk-${{ env.VERSION }}-${{ matrix.job.arch }}${{ matrix.job.suffix }}-share-only.apk
             ;;
@@ -1243,12 +1245,10 @@ jobs:
           # 动态生成 release 签名配置
           if [ -n "$ANDROID_SIGNING_KEY" ]; then
             echo "$ANDROID_SIGNING_KEY" | base64 -d -i > ./flutter/android/app/upload-keystore.jks
-            cat <<EOF > ./flutter/android/key.properties
-          storePassword=${{ secrets.ANDROID_KEY_STORE_PASSWORD }}
-          keyPassword=${{ secrets.ANDROID_KEY_PASSWORD }}
-          keyAlias=${{ secrets.ANDROID_ALIAS }}
-          storeFile=upload-keystore.jks
-          EOF
+            echo "storePassword=${{ secrets.ANDROID_KEY_STORE_PASSWORD }}" > ./flutter/android/key.properties
+            echo "keyPassword=${{ secrets.ANDROID_KEY_PASSWORD }}" >> ./flutter/android/key.properties
+            echo "keyAlias=${{ secrets.ANDROID_ALIAS }}" >> ./flutter/android/key.properties
+            echo "storeFile=upload-keystore.jks" >> ./flutter/android/key.properties
           else
             # 如果没有配置密钥，则回退到 debug 签名
             sed -i "s/signingConfigs.release/signingConfigs.debug/g" ./flutter/android/app/build.gradle
@@ -1270,6 +1270,7 @@ jobs:
           mkdir -p signed-apk
           mv ./flutter/build/app/outputs/flutter-apk/app-${{ env.reltype }}.apk signed-apk/rustdesk-${{ env.VERSION }}-universal${{ env.suffix }}.apk
           pushd flutter
+          flutter clean
           flutter build apk "--${{ env.reltype }}" --target-platform android-arm64,android-arm,android-x64${{ env.x86_target }} --no-tree-shake-icons --dart-define=APP_MODE=share_only
           popd
           mv ./flutter/build/app/outputs/flutter-apk/app-${{ env.reltype }}.apk signed-apk/rustdesk-${{ env.VERSION }}-universal${{ env.suffix }}-share-only.apk
