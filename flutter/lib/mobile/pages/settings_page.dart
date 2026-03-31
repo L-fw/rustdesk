@@ -997,28 +997,32 @@ class _SettingsState extends State<SettingsPage> with WidgetsBindingObserver {
         ),
         SettingsSection(
           tiles: [
-            if (_deviceModel.isNotEmpty)
-              SettingsTile(
-                title: Text('设备型号'),
-                value: Text(_deviceModel),
-                leading: Icon(Icons.phone_android),
-              ),
-            if (_memoryUsage.isNotEmpty)
-              SettingsTile(
-                title: Text('内存占用'),
-                value: Text(_memoryUsage),
-                leading: Icon(Icons.memory),
-              ),
             SettingsTile(
               title: Center(
                 child: Padding(
                   padding: EdgeInsets.only(top: 2, bottom: 8),
-                  child: Text(
-                    '基于RustDesk开源代码构建 · 详见用户服务协议',
-                    style: TextStyle(
-                      fontSize: 10,
-                      color: Colors.grey,
-                    ),
+                  child: Column(
+                    children: [
+                      if (_deviceModel.isNotEmpty || _memoryUsage.isNotEmpty)
+                        Text(
+                          [
+                            if (_deviceModel.isNotEmpty) _deviceModel,
+                            if (_memoryUsage.isNotEmpty) '内存 $_memoryUsage',
+                          ].join(' · '),
+                          style: TextStyle(
+                            fontSize: 10,
+                            color: Colors.grey,
+                          ),
+                        ),
+                      SizedBox(height: 2),
+                      Text(
+                        '基于RustDesk开源代码构建 · 详见用户服务协议',
+                        style: TextStyle(
+                          fontSize: 10,
+                          color: Colors.grey,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
