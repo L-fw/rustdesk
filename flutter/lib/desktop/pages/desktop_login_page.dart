@@ -554,8 +554,10 @@ class _AppLoginPageState extends State<AppLoginPage>
       backgroundColor:
           isDark ? const Color(0xFF1A1D23) : const Color(0xFFF0F2F5),
       body: Center(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(vertical: 32),
+        child: ScrollConfiguration(
+          behavior: ScrollConfiguration.of(context).copyWith(scrollbars: false),
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(vertical: 32),
           child: SizedBox(
             width: 420, // 桌面固定宽度
             child: Card(
@@ -700,7 +702,7 @@ class _AppLoginPageState extends State<AppLoginPage>
           ),
         ),
       ),
-    )));
+    ))));
   }
 
   // ─────────────────────── 密码登录 Tab ───────────────────────
