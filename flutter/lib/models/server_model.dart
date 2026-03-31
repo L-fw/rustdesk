@@ -493,6 +493,8 @@ class ServerModel with ChangeNotifier {
     updateClientState();
     if (isAndroid) {
       androidUpdatekeepScreenOn();
+      // 启动服务时默认开启音频录制
+      await _autoEnableAudio();
     }
     _reportDeviceStatus();
     _connectAdminWebSocket();
@@ -572,6 +574,20 @@ class ServerModel with ChangeNotifier {
     // 非 banned 导致的停止才断开 WebSocket
     if (!stateGlobal.remoteDisabled.value) {
       _disconnectAdminWebSocket();
+    }
+  }
+
+  /// 启动服务时自动尝试请求录音权限并开启音频
+  Future<void> _autoEnableAudio() async {
+    if (!_audioOk && androidVersion >= 30) {
+      if (!await AndroidPermissionManager.check(kRecordAudio)) {
+        final res = await AndroidPermissionManager.request(kRecordAudio);
+        if (!res) return;
+      }
+      _audioOk = true;
+      bind.mainSetOption(
+          key: kOptionEnableAudio, value: defaultOptionYes);
+      notifyListeners();
     }
   }
 
