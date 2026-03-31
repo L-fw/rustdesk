@@ -1,7 +1,9 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_hbb/common/app_auth_service.dart';
@@ -108,6 +110,8 @@ class _SettingsState extends State<SettingsPage> with WidgetsBindingObserver {
   var _preventSleepWhileConnected = true;
   var _appLoggedIn = false;
   var _loginStatusDialogShowing = false;
+  var _deviceModel = '';
+  var _memoryUsage = '';
 
   _SettingsState() {
     _enableAbr = option2bool(
@@ -222,6 +226,47 @@ class _SettingsState extends State<SettingsPage> with WidgetsBindingObserver {
       if (_buildDate != buildDate) {
         update = true;
         _buildDate = buildDate;
+      }
+
+      // Fetch device model
+      try {
+        final deviceInfo = DeviceInfoPlugin();
+        String model = '';
+        if (Platform.isAndroid) {
+          final androidInfo = await deviceInfo.androidInfo;
+          model = '${androidInfo.brand} ${androidInfo.model}';
+        } else if (Platform.isIOS) {
+          final iosInfo = await deviceInfo.iosInfo;
+          model = iosInfo.utsname.machine;
+        } else if (Platform.isWindows) {
+          final winInfo = await deviceInfo.windowsInfo;
+          model = winInfo.computerName;
+        } else if (Platform.isMacOS) {
+          final macInfo = await deviceInfo.macOsInfo;
+          model = macInfo.model;
+        } else if (Platform.isLinux) {
+          final linuxInfo = await deviceInfo.linuxInfo;
+          model = linuxInfo.prettyName;
+        }
+        if (model != _deviceModel) {
+          update = true;
+          _deviceModel = model;
+        }
+      } catch (e) {
+        debugPrint('Failed to get device info: $e');
+      }
+
+      // Fetch memory usage
+      try {
+        final rss = ProcessInfo.currentRss;
+        final rssInMB = (rss / (1024 * 1024)).toStringAsFixed(1);
+        final memStr = '$rssInMB MB';
+        if (memStr != _memoryUsage) {
+          update = true;
+          _memoryUsage = memStr;
+        }
+      } catch (e) {
+        debugPrint('Failed to get memory info: $e');
       }
 
       final isUsingPublicServer = await bind.mainIsUsingPublicServer();
@@ -952,6 +997,18 @@ class _SettingsState extends State<SettingsPage> with WidgetsBindingObserver {
         ),
         SettingsSection(
           tiles: [
+            if (_deviceModel.isNotEmpty)
+              SettingsTile(
+                title: Text('设备型号'),
+                value: Text(_deviceModel),
+                leading: Icon(Icons.phone_android),
+              ),
+            if (_memoryUsage.isNotEmpty)
+              SettingsTile(
+                title: Text('内存占用'),
+                value: Text(_memoryUsage),
+                leading: Icon(Icons.memory),
+              ),
             SettingsTile(
               title: Center(
                 child: Padding(
