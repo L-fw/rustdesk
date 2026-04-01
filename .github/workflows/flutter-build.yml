@@ -244,14 +244,18 @@ jobs:
           path: rustdesk
 
       - name: Sign rustdesk files
-        if: env.UPLOAD_ARTIFACT == 'true' && env.CERT_PFX_BASE64 != ''
+        if: env.UPLOAD_ARTIFACT == 'true'
         shell: powershell
         run: |
+          if ("${{ secrets.CERT_PFX_BASE64 }}" -eq "") {
+            Write-Host "No certificate configured, skipping signing"
+            exit 0
+          }
           # Decode PFX certificate from base64
           $pfxBytes = [Convert]::FromBase64String("${{ secrets.CERT_PFX_BASE64 }}")
           [IO.File]::WriteAllBytes("${{ github.workspace }}\cert.pfx", $pfxBytes)
           # Find signtool.exe
-          $signtool = (Get-ChildItem -Path "C:\Program Files (x86)\Windows Kits" -Recurse -Filter "signtool.exe" | Where-Object { $_.FullName -match "x64" } | Select-Object -First 1).FullName
+          $signtool = (Get-ChildItem -Path "C:\Program Files (x86)\Windows Kits" -Recurse -Filter "signtool.exe" | Where-Object { $_.FullName -match "x64" } | Select-Object -Last 1).FullName
           Write-Host "Using signtool: $signtool"
           # Sign all exe and dll files in ./rustdesk/
           $files = Get-ChildItem -Path ./rustdesk/ -Recurse -Include *.exe,*.dll
@@ -291,14 +295,18 @@ jobs:
           sha256sum ../../SignOutput/rustdesk-*.msi
 
       - name: Sign rustdesk self-extracted file
-        if: env.UPLOAD_ARTIFACT == 'true' && env.CERT_PFX_BASE64 != ''
+        if: env.UPLOAD_ARTIFACT == 'true'
         shell: powershell
         run: |
+          if ("${{ secrets.CERT_PFX_BASE64 }}" -eq "") {
+            Write-Host "No certificate configured, skipping signing"
+            exit 0
+          }
           # Decode PFX certificate from base64
           $pfxBytes = [Convert]::FromBase64String("${{ secrets.CERT_PFX_BASE64 }}")
           [IO.File]::WriteAllBytes("${{ github.workspace }}\cert.pfx", $pfxBytes)
           # Find signtool.exe
-          $signtool = (Get-ChildItem -Path "C:\Program Files (x86)\Windows Kits" -Recurse -Filter "signtool.exe" | Where-Object { $_.FullName -match "x64" } | Select-Object -First 1).FullName
+          $signtool = (Get-ChildItem -Path "C:\Program Files (x86)\Windows Kits" -Recurse -Filter "signtool.exe" | Where-Object { $_.FullName -match "x64" } | Select-Object -Last 1).FullName
           Write-Host "Using signtool: $signtool"
           # Sign all exe and msi files in ./SignOutput/
           $files = Get-ChildItem -Path ./SignOutput/ -Recurse -Include *.exe,*.msi
@@ -311,6 +319,7 @@ jobs:
           }
           # Clean up
           Remove-Item -Force "${{ github.workspace }}\cert.pfx"
+          Write-Host "签名完成"
 
       - name: Publish Release
         uses: softprops/action-gh-release@v1
