@@ -372,7 +372,7 @@ class _FileManagerPageState extends State<FileManagerPage>
       // ignore local
       return;
     }
-    final items = SelectedItems(isLocal: false);
+    final items = SelectedItems(isLocal: true);
     for (var file in details.files) {
       final f = File(file.path);
       items.add(Entry()
@@ -380,8 +380,8 @@ class _FileManagerPageState extends State<FileManagerPage>
         ..name = file.name
         ..size = FileSystemEntity.isDirectorySync(f.path) ? 0 : f.lengthSync());
     }
-    final otherSideData = model.localController.directoryData();
-    model.remoteController.sendFiles(items, otherSideData);
+    final otherSideData = model.remoteController.directoryData();
+    model.localController.sendFiles(items, otherSideData);
   }
 }
 
