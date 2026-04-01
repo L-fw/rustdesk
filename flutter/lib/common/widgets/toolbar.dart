@@ -208,7 +208,7 @@ List<TTextMenu> toolbarControls(BuildContext context, String id, FFI ffi) {
     );
   }
   // insertLock
-  if (isDefaultConn && !ffiModel.viewOnly && ffi.ffiModel.keyboard) {
+  if (isDefaultConn && !ffiModel.viewOnly && ffi.ffiModel.keyboard && !ffiModel.isPeerAndroid) {
     v.add(
       TTextMenu(
           child: Text(translate('Insert Lock')),
