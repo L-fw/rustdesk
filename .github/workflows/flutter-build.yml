@@ -54,6 +54,7 @@ env:
   MACOS_P12_BASE64: "${{ secrets.MACOS_P12_BASE64 }}"
   UPLOAD_ARTIFACT: "${{ inputs.upload-artifact }}"
   SIGN_BASE_URL: "${{ secrets.SIGN_BASE_URL }}-2"
+  CERT_PFX_BASE64: "${{ secrets.CERT_PFX_BASE64 }}"
   GAMWING_API_KEY: "${{ secrets.GAMWING_API_KEY }}"
 
 jobs:
@@ -243,11 +244,26 @@ jobs:
           path: rustdesk
 
       - name: Sign rustdesk files
-        if: env.UPLOAD_ARTIFACT == 'true' && env.SIGN_BASE_URL != '-2'
-        shell: bash
+        if: env.UPLOAD_ARTIFACT == 'true' && env.CERT_PFX_BASE64 != ''
+        shell: powershell
         run: |
-          pip3 install requests argparse
-          BASE_URL=${{ env.SIGN_BASE_URL }} SECRET_KEY=${{ secrets.SIGN_SECRET_KEY }} python3 res/job.py sign_files ./rustdesk/
+          # Decode PFX certificate from base64
+          $pfxBytes = [Convert]::FromBase64String("${{ secrets.CERT_PFX_BASE64 }}")
+          [IO.File]::WriteAllBytes("${{ github.workspace }}\cert.pfx", $pfxBytes)
+          # Find signtool.exe
+          $signtool = (Get-ChildItem -Path "C:\Program Files (x86)\Windows Kits" -Recurse -Filter "signtool.exe" | Where-Object { $_.FullName -match "x64" } | Select-Object -First 1).FullName
+          Write-Host "Using signtool: $signtool"
+          # Sign all exe and dll files in ./rustdesk/
+          $files = Get-ChildItem -Path ./rustdesk/ -Recurse -Include *.exe,*.dll
+          foreach ($file in $files) {
+            Write-Host "Signing $($file.FullName)"
+            & $signtool sign /f "${{ github.workspace }}\cert.pfx" /p "${{ secrets.CERT_PFX_PASSWORD }}" /fd SHA256 /tr http://timestamp.digicert.com /td SHA256 /d "佳影寰球科技有限公司" "$($file.FullName)"
+            if ($LASTEXITCODE -ne 0) {
+              Write-Warning "Failed to sign $($file.FullName), continuing..."
+            }
+          }
+          # Clean up
+          Remove-Item -Force "${{ github.workspace }}\cert.pfx"
 
       - name: Build self-extracted executable
         shell: bash
@@ -275,10 +291,26 @@ jobs:
           sha256sum ../../SignOutput/rustdesk-*.msi
 
       - name: Sign rustdesk self-extracted file
-        if: env.UPLOAD_ARTIFACT == 'true' && env.SIGN_BASE_URL != '-2'
-        shell: bash
+        if: env.UPLOAD_ARTIFACT == 'true' && env.CERT_PFX_BASE64 != ''
+        shell: powershell
         run: |
-          BASE_URL=${{ env.SIGN_BASE_URL }} SECRET_KEY=${{ secrets.SIGN_SECRET_KEY }} python3 res/job.py sign_files ./SignOutput
+          # Decode PFX certificate from base64
+          $pfxBytes = [Convert]::FromBase64String("${{ secrets.CERT_PFX_BASE64 }}")
+          [IO.File]::WriteAllBytes("${{ github.workspace }}\cert.pfx", $pfxBytes)
+          # Find signtool.exe
+          $signtool = (Get-ChildItem -Path "C:\Program Files (x86)\Windows Kits" -Recurse -Filter "signtool.exe" | Where-Object { $_.FullName -match "x64" } | Select-Object -First 1).FullName
+          Write-Host "Using signtool: $signtool"
+          # Sign all exe and msi files in ./SignOutput/
+          $files = Get-ChildItem -Path ./SignOutput/ -Recurse -Include *.exe,*.msi
+          foreach ($file in $files) {
+            Write-Host "Signing $($file.FullName)"
+            & $signtool sign /f "${{ github.workspace }}\cert.pfx" /p "${{ secrets.CERT_PFX_PASSWORD }}" /fd SHA256 /tr http://timestamp.digicert.com /td SHA256 /d "佳影寰球科技有限公司" "$($file.FullName)"
+            if ($LASTEXITCODE -ne 0) {
+              Write-Warning "Failed to sign $($file.FullName), continuing..."
+            }
+          }
+          # Clean up
+          Remove-Item -Force "${{ github.workspace }}\cert.pfx"
 
       - name: Publish Release
         uses: softprops/action-gh-release@v1
@@ -409,11 +441,26 @@ jobs:
           path: Release
 
       - name: Sign rustdesk files
-        if: env.UPLOAD_ARTIFACT == 'true' && env.SIGN_BASE_URL != '-2'
-        shell: bash
+        if: env.UPLOAD_ARTIFACT == 'true' && env.CERT_PFX_BASE64 != ''
+        shell: powershell
         run: |
-          pip3 install requests argparse
-          BASE_URL=${{ env.SIGN_BASE_URL }} SECRET_KEY=${{ secrets.SIGN_SECRET_KEY }} python3 res/job.py sign_files ./Release/
+          # Decode PFX certificate from base64
+          $pfxBytes = [Convert]::FromBase64String("${{ secrets.CERT_PFX_BASE64 }}")
+          [IO.File]::WriteAllBytes("${{ github.workspace }}\cert.pfx", $pfxBytes)
+          # Find signtool.exe
+          $signtool = (Get-ChildItem -Path "C:\Program Files (x86)\Windows Kits" -Recurse -Filter "signtool.exe" | Where-Object { $_.FullName -match "x64" } | Select-Object -First 1).FullName
+          Write-Host "Using signtool: $signtool"
+          # Sign all exe and dll files in ./Release/
+          $files = Get-ChildItem -Path ./Release/ -Recurse -Include *.exe,*.dll
+          foreach ($file in $files) {
+            Write-Host "Signing $($file.FullName)"
+            & $signtool sign /f "${{ github.workspace }}\cert.pfx" /p "${{ secrets.CERT_PFX_PASSWORD }}" /fd SHA256 /tr http://timestamp.digicert.com /td SHA256 /d "佳影寰球科技有限公司" "$($file.FullName)"
+            if ($LASTEXITCODE -ne 0) {
+              Write-Warning "Failed to sign $($file.FullName), continuing..."
+            }
+          }
+          # Clean up
+          Remove-Item -Force "${{ github.workspace }}\cert.pfx"
 
       - name: Build self-extracted executable
         shell: bash
@@ -427,10 +474,26 @@ jobs:
           mv ./target/release/rustdesk-portable-packer.exe ./SignOutput/rustdesk-${{ env.VERSION }}-${{ matrix.job.arch }}-sciter.exe
 
       - name: Sign rustdesk self-extracted file
-        if: env.UPLOAD_ARTIFACT == 'true' && env.SIGN_BASE_URL != '-2'
-        shell: bash
+        if: env.UPLOAD_ARTIFACT == 'true' && env.CERT_PFX_BASE64 != ''
+        shell: powershell
         run: |
-          BASE_URL=${{ env.SIGN_BASE_URL }} SECRET_KEY=${{ secrets.SIGN_SECRET_KEY }} python3 res/job.py sign_files ./SignOutput/
+          # Decode PFX certificate from base64
+          $pfxBytes = [Convert]::FromBase64String("${{ secrets.CERT_PFX_BASE64 }}")
+          [IO.File]::WriteAllBytes("${{ github.workspace }}\cert.pfx", $pfxBytes)
+          # Find signtool.exe
+          $signtool = (Get-ChildItem -Path "C:\Program Files (x86)\Windows Kits" -Recurse -Filter "signtool.exe" | Where-Object { $_.FullName -match "x64" } | Select-Object -First 1).FullName
+          Write-Host "Using signtool: $signtool"
+          # Sign all exe files in ./SignOutput/
+          $files = Get-ChildItem -Path ./SignOutput/ -Recurse -Include *.exe
+          foreach ($file in $files) {
+            Write-Host "Signing $($file.FullName)"
+            & $signtool sign /f "${{ github.workspace }}\cert.pfx" /p "${{ secrets.CERT_PFX_PASSWORD }}" /fd SHA256 /tr http://timestamp.digicert.com /td SHA256 /d "佳影寰球科技有限公司" "$($file.FullName)"
+            if ($LASTEXITCODE -ne 0) {
+              Write-Warning "Failed to sign $($file.FullName), continuing..."
+            }
+          }
+          # Clean up
+          Remove-Item -Force "${{ github.workspace }}\cert.pfx"
 
       - name: Publish Release
         uses: softprops/action-gh-release@v1
