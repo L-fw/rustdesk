@@ -3044,16 +3044,6 @@ pub mod server_side {
     }
 
     #[no_mangle]
-    pub unsafe extern "system" fn Java_ffi_FFI_onInputFocusChange(
-        _env: JNIEnv,
-        _class: JClass,
-        focused: jni::sys::jboolean,
-    ) {
-        let focused = focused != 0;
-        crate::server::connection::broadcast_input_focus_state(focused);
-    }
-
-    #[no_mangle]
     pub unsafe extern "system" fn Java_ffi_FFI_getLocalOption(
         env: JNIEnv,
         _class: JClass,

@@ -1876,10 +1876,6 @@ impl<T: InvokeUiSession> Remote<T> {
                         #[cfg(feature = "flutter")]
                         self.handler.switch_back(&self.handler.get_id());
                     }
-                    Some(misc::Union::MobileInputFocusState(state)) => {
-                        #[cfg(feature = "flutter")]
-                        self.handler.mobile_input_focus_state(&self.handler.get_id(), state);
-                    }
                     #[cfg(all(feature = "flutter", feature = "plugin_framework"))]
                     #[cfg(not(any(target_os = "android", target_os = "ios")))]
                     Some(misc::Union::PluginRequest(p)) => {
