@@ -61,6 +61,7 @@ class _DesktopTabPageState extends State<DesktopTabPage> {
           closable: false,
           page: DesktopSettingPage(
             key: const ValueKey(kTabLabelSettingPage),
+            initialTabkey: SettingsTabKey.general,
           )));
     }
     if (bind.isIncomingOnly()) {
