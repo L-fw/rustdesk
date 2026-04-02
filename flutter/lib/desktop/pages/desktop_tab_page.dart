@@ -64,6 +64,10 @@ class _DesktopTabPageState extends State<DesktopTabPage> {
             initialTabkey: SettingsTabKey.general,
           )));
     }
+    // 所有 tab 添加完毕后，重置回主页（index 0）
+    // 因为每次 add() 内部都会 jumpTo 到新 tab，
+    // 不手动跳回会导致启动时停留在最后添加的设置页
+    tabController.jumpTo(0);
     if (bind.isIncomingOnly()) {
       tabController.onSelected = (key) {
         if (key == kTabLabelHomePage) {
