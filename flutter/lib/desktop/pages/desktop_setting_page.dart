@@ -63,6 +63,7 @@ enum SettingsTabKey {
   plugin,
   account,
   printer,
+  releases,
   about,
 }
 
@@ -87,6 +88,7 @@ class DesktopSettingPage extends StatefulWidget {
         !isDesktop &&
         bind.mainGetBuildinOption(key: kOptionHideRemotePrinterSetting) != 'Y')
       SettingsTabKey.printer,
+    SettingsTabKey.releases,
     SettingsTabKey.about,
   ];
 
@@ -215,6 +217,10 @@ class _DesktopSettingPageState extends State<DesktopSettingPage>
           settingTabs
               .add(_TabInfo(tab, 'Printer', Icons.print_outlined, Icons.print));
           break;
+        case SettingsTabKey.releases:
+          settingTabs.add(_TabInfo(tab, '发布页',
+              Icons.download_outlined, Icons.download));
+          break;
         case SettingsTabKey.about:
           settingTabs
               .add(_TabInfo(tab, 'About', Icons.info_outline, Icons.info));
@@ -248,6 +254,9 @@ class _DesktopSettingPageState extends State<DesktopSettingPage>
           break;
         case SettingsTabKey.printer:
           children.add(const _Printer());
+          break;
+        case SettingsTabKey.releases:
+          children.add(const _Releases());
           break;
         case SettingsTabKey.about:
           children.add(const _About());
@@ -2099,6 +2108,74 @@ class __PrinterState extends State<_Printer> {
         enabled: printerOptions.action != kValuePrinterIncomingJobDismiss,
       )
     ]);
+  }
+}
+
+class _Releases extends StatelessWidget {
+  const _Releases({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    const linkStyle = TextStyle(
+      decoration: TextDecoration.underline,
+      color: Color(0xFF2c8cff),
+    );
+    return SingleChildScrollView(
+      child: _Card(title: '发布页', topMargin: 0, children: [
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // 用户版
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8.0),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Icon(Icons.people_outline,
+                      size: 20, color: Color(0xFF2c8cff)),
+                  const SizedBox(width: 8),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        '用户版 Gamwing 工具',
+                        style: TextStyle(
+                            fontWeight: FontWeight.w600, fontSize: 14),
+                      ),
+                      const SizedBox(height: 2),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            const Divider(height: 1),
+            // 客服版
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8.0),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Icon(Icons.support_agent_outlined,
+                      size: 20, color: Color(0xFF2c8cff)),
+                  const SizedBox(width: 8),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        '客服版 Gamwing 工具',
+                        style: TextStyle(
+                            fontWeight: FontWeight.w600, fontSize: 14),
+                      ),
+                      const SizedBox(height: 2),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ).marginOnly(left: _kContentHMargin),
+      ]),
+    );
   }
 }
 
