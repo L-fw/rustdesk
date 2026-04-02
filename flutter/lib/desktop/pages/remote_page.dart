@@ -432,6 +432,14 @@ class _RemotePageState extends State<RemotePage>
                         ])
                       : remoteToolbar(context)),
               _ffi.ffiModel.pi.isSet.isFalse ? emptyOverlay() : Offstage(),
+              // Text input overlay for Chinese/IME input (Android peer only)
+              if (_ffi.ffiModel.isPeerAndroid)
+                Obx(() => _ffi.dialogManager.textInputOverlayVisible.isTrue
+                    ? TextInputOverlay(
+                        sessionId: _ffi.sessionId,
+                        onClose: () => _ffi.dialogManager.hideTextInputOverlay(),
+                      )
+                    : const Offstage()),
             ],
           ),
         ],

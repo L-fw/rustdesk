@@ -1,6 +1,7 @@
 import 'package:auto_size_text/auto_size_text.dart';
 import 'package:debounce_throttle/debounce_throttle.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_hbb/common.dart';
 import 'package:flutter_hbb/models/platform_model.dart';
 import 'package:get/get.dart';
@@ -176,6 +177,7 @@ class DraggableMobileActions extends StatelessWidget {
       this.onRecentPressed,
       this.onHomePressed,
       this.onHidePressed,
+      this.onKeyboardPressed,
       required this.position,
       required this.width,
       required this.height,
@@ -189,6 +191,7 @@ class DraggableMobileActions extends StatelessWidget {
   final VoidCallback? onHomePressed;
   final VoidCallback? onRecentPressed;
   final VoidCallback? onHidePressed;
+  final VoidCallback? onKeyboardPressed;
 
   @override
   Widget build(BuildContext context) {
@@ -227,6 +230,12 @@ class DraggableMobileActions extends StatelessWidget {
                             onPressed: onRecentPressed,
                             splashRadius: kDesktopIconButtonSplashRadius,
                             icon: const Icon(Icons.more_horiz),
+                            iconSize: 24 * scale),
+                        IconButton(
+                            color: Colors.white,
+                            onPressed: onKeyboardPressed,
+                            splashRadius: kDesktopIconButtonSplashRadius,
+                            icon: const Icon(Icons.keyboard),
                             iconSize: 24 * scale),
                         const VerticalDivider(
                           width: 0,
@@ -670,5 +679,189 @@ class BlockableOverlay extends StatelessWidget {
 
     /// set key
     return Overlay(key: state.key, initialEntries: initialEntries);
+  }
+}
+
+/// Floating text input widget for Chinese/IME input when controlling Android devices.
+/// Sends text character-by-character via sessionInputString.
+/// Enter sends, Ctrl+Enter inserts newline, cleared on close.
+class TextInputOverlay extends StatefulWidget {
+  final SessionID sessionId;
+  final VoidCallback onClose;
+
+  const TextInputOverlay({
+    Key? key,
+    required this.sessionId,
+    required this.onClose,
+  }) : super(key: key);
+
+  @override
+  State<TextInputOverlay> createState() => _TextInputOverlayState();
+}
+
+class _TextInputOverlayState extends State<TextInputOverlay> {
+  final TextEditingController _controller = TextEditingController();
+  final FocusNode _focusNode = FocusNode();
+  final FocusNode _keyboardListenerFocusNode = FocusNode();
+  String _lastSentText = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _controller.addListener(_onTextChanged);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _focusNode.requestFocus();
+    });
+  }
+
+  @override
+  void dispose() {
+    _controller.removeListener(_onTextChanged);
+    _controller.dispose();
+    _focusNode.dispose();
+    _keyboardListenerFocusNode.dispose();
+    super.dispose();
+  }
+
+  void _onTextChanged() {
+    // Skip sending during IME composition
+    if (_controller.value.isComposingRangeValid) {
+      return;
+    }
+
+    final currentText = _controller.text;
+    // Only send newly added characters (逐字发送)
+    if (currentText.length > _lastSentText.length &&
+        currentText.startsWith(_lastSentText)) {
+      final newChars = currentText.substring(_lastSentText.length);
+      if (newChars.isNotEmpty && newChars != '\n') {
+        bind.sessionInputString(
+            sessionId: widget.sessionId, value: newChars);
+      }
+    } else if (currentText.length < _lastSentText.length) {
+      // User deleted characters — send backspace for each deleted char
+      final deletedCount = _lastSentText.length - currentText.length;
+      for (int i = 0; i < deletedCount; i++) {
+        bind.sessionInputKey(
+          sessionId: widget.sessionId,
+          name: 'VK_BACK',
+          down: true,
+          press: true,
+          alt: false,
+          ctrl: false,
+          shift: false,
+          command: false,
+        );
+      }
+    }
+    _lastSentText = currentText;
+  }
+
+  void _handleSubmit() {
+    // Send Enter key to remote
+    bind.sessionInputKey(
+      sessionId: widget.sessionId,
+      name: 'VK_RETURN',
+      down: true,
+      press: true,
+      alt: false,
+      ctrl: false,
+      shift: false,
+      command: false,
+    );
+    // Clear input after sending
+    _lastSentText = '';
+    _controller.clear();
+  }
+
+  void _handleClose() {
+    _lastSentText = '';
+    _controller.clear();
+    widget.onClose();
+  }
+
+  KeyEventResult _handleKeyEvent(FocusNode node, KeyEvent event) {
+    if (event is KeyDownEvent &&
+        event.logicalKey == LogicalKeyboardKey.enter) {
+      if (HardwareKeyboard.instance.isControlPressed) {
+        // Ctrl+Enter → insert newline
+        final text = _controller.text;
+        final selection = _controller.selection;
+        if (selection.isValid) {
+          final newText = text.replaceRange(
+              selection.start, selection.end, '\n');
+          _controller.value = TextEditingValue(
+            text: newText,
+            selection: TextSelection.collapsed(
+                offset: selection.start + 1),
+          );
+        }
+        return KeyEventResult.handled;
+      } else {
+        // Enter → send text
+        _handleSubmit();
+        return KeyEventResult.handled;
+      }
+    }
+    return KeyEventResult.ignored;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Positioned(
+      left: 0,
+      right: 0,
+      bottom: 0,
+      child: Material(
+        elevation: 8,
+        color: Theme.of(context).colorScheme.surface,
+        child: Container(
+          decoration: BoxDecoration(
+            border: Border(top: BorderSide(color: MyTheme.border, width: 1)),
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          child: Row(
+            children: [
+              Expanded(
+                child: Focus(
+                  onKeyEvent: _handleKeyEvent,
+                  child: TextField(
+                    controller: _controller,
+                    focusNode: _focusNode,
+                    autofocus: true,
+                    maxLines: 3,
+                    minLines: 1,
+                    decoration: InputDecoration(
+                      hintText: translate('Input text'),
+                      isDense: true,
+                      contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 10),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: BorderSide(color: MyTheme.accent, width: 2),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              IconButton(
+                icon: Icon(Icons.send, color: MyTheme.accent),
+                tooltip: translate('Send'),
+                onPressed: _handleSubmit,
+              ),
+              IconButton(
+                icon: const Icon(Icons.close),
+                tooltip: translate('Close'),
+                onPressed: _handleClose,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }

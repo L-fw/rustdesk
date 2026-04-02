@@ -783,6 +783,7 @@ class OverlayDialogManager {
 
   OverlayEntry? _mobileActionsOverlayEntry;
   RxBool mobileActionsOverlayVisible = true.obs;
+  RxBool textInputOverlayVisible = false.obs;
 
   setMobileActionsOverlayVisible(bool v, {store = true}) {
     if (store) {
@@ -967,16 +968,28 @@ class OverlayDialogManager {
     }
   }
 
+  void toggleTextInputOverlay() {
+    textInputOverlayVisible.value = !textInputOverlayVisible.value;
+  }
+
+  void showTextInputOverlay() {
+    textInputOverlayVisible.value = true;
+  }
+
+  void hideTextInputOverlay() {
+    textInputOverlayVisible.value = false;
+  }
+
   bool existing(String tag) {
     return _dialogs.keys.contains(tag);
   }
 }
 
-makeMobileActionsOverlayEntry(VoidCallback? onHide, {FFI? ffi}) {
+makeMobileActionsOverlayEntry(VoidCallback? onHide, {FFI? ffi, VoidCallback? onKeyboardPressed}) {
   makeMobileActions(BuildContext context, double s) {
     final scale = s < 0.85 ? 0.85 : s;
     final session = ffi ?? gFFI;
-    const double overlayW = 200;
+    const double overlayW = 240;
     const double overlayH = 45;
     computeOverlayPosition() {
       final screenW = MediaQuery.of(context).size.width;
@@ -999,9 +1012,11 @@ makeMobileActionsOverlayEntry(VoidCallback? onHide, {FFI? ffi}) {
       onBackPressed: session.inputModel.onMobileBack,
       onHomePressed: session.inputModel.onMobileHome,
       onRecentPressed: session.inputModel.onMobileApps,
+      onKeyboardPressed: onKeyboardPressed ?? () => session.dialogManager.toggleTextInputOverlay(),
       onHidePressed: onHide,
     );
   }
+
 
   return OverlayEntry(builder: (context) {
     if (isDesktop) {
