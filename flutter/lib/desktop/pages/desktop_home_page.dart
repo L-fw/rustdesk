@@ -116,19 +116,28 @@ class _DesktopHomePageState extends State<DesktopHomePage>
             ),
           ),
           const SizedBox(width: 8),
-          // 公司名称
+          // 公司名称（可点击，跳转官网）
           Expanded(
-            child: Text(
-              '佳影寰球科技有限公司',
-              style: const TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w600,
-                color: Color(0xFF5260FF),
-                letterSpacing: 0.2,
-                height: 1.2,
+            child: InkWell(
+              onTap: () => launchUrl(
+                Uri.parse('https://jygamwing.com/'),
+                mode: LaunchMode.externalApplication,
               ),
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
+              borderRadius: BorderRadius.circular(4),
+              child: const Text(
+                '佳影寰球科技有限公司',
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF5260FF),
+                  letterSpacing: 0.2,
+                  height: 1.2,
+                  decoration: TextDecoration.underline,
+                  decorationColor: Color(0xFF5260FF),
+                ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
           ),
         ],
