@@ -743,5 +743,7 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
         ("Display Name", "显示名称"),
         ("Terms of Service", "用户服务协议"),
         ("verify_rustdesk_password_tip", "请输入 Gamwing工具 验证密码"),
+        ("Remote Control", "远程协助"),
+        ("Input text", "我不会读心术，请打字..."),
     ].iter().cloned().collect();
 }
