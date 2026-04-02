@@ -1060,6 +1060,10 @@ impl InvokeUiSession for FlutterHandler {
         self.push_event("switch_back", &[("peer_id", peer_id)], &[]);
     }
 
+    fn mobile_input_focus_state(&self, peer_id: &str, state: bool) {
+        self.push_event("mobile_input_focus_state", &[("peer_id", peer_id), ("state", &state.to_string())], &[]);
+    }
+
     fn portable_service_running(&self, running: bool) {
         self.push_event(
             "portable_service_running",

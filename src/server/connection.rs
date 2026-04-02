@@ -5299,6 +5299,22 @@ pub struct AuthedConn {
     pub printer: bool,
 }
 
+pub fn broadcast_input_focus_state(focused: bool) {
+    use hbb_common::protobuf::Message;
+    let mut misc = hbb_common::message_proto::Misc::new();
+    misc.set_mobile_input_focus_state(focused);
+    let mut msg_out = hbb_common::message_proto::Message::new();
+    msg_out.set_misc(misc);
+    if let Ok(bytes) = msg_out.write_to_bytes() {
+        let conns = AUTHED_CONNS.lock().unwrap();
+        for c in conns.iter() {
+            if c.conn_type == AuthConnType::Remote {
+                c.sender.send(crate::ipc::Data::RawMessage(bytes.clone())).ok();
+            }
+        }
+    }
+}
+
 mod raii {
     // ALIVE_CONNS: all connections, including unauthorized connections
     // AUTHED_CONNS: all authorized connections

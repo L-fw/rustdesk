@@ -455,6 +455,13 @@ class FfiModel with ChangeNotifier {
         handleFollowCurrentDisplay(evt, sessionId, peerId);
       } else if (name == 'use_texture_render') {
         _handleUseTextureRender(evt, sessionId, peerId);
+      } else if (name == 'mobile_input_focus_state') {
+        final state = evt['state'] == 'true';
+        if (state) {
+          OverlayDialogManager.instance.showTextInputOverlay();
+        } else {
+          OverlayDialogManager.instance.hideTextInputOverlay();
+        }
       } else if (name == "selected_files") {
         if (isWeb) {
           parent.target?.fileModel.onSelectedFiles(evt);

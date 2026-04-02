@@ -711,6 +711,18 @@ class InputService : AccessibilityService() {
 
 
     override fun onAccessibilityEvent(event: AccessibilityEvent) {
+        if (event.eventType == AccessibilityEvent.TYPE_VIEW_FOCUSED) {
+            val node = event.source
+            if (node != null) {
+                if (node.isEditable || node.className?.toString()?.contains("EditText") == true) {
+                    ffi.FFI.onInputFocusChange(true)
+                } else {
+                    ffi.FFI.onInputFocusChange(false)
+                }
+            } else {
+                ffi.FFI.onInputFocusChange(false)
+            }
+        }
     }
 
     override fun onServiceConnected() {
