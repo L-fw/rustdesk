@@ -3980,6 +3980,9 @@ void checkUpdate() {
       if (evt['banned'] == 'true') {
         stateGlobal.deviceBanned.value = true;
         stateGlobal.bannedMessage.value = evt['msg'] ?? '设备已被禁用，请联系管理员';
+        // 统一通过 remoteDisabled 触发"远程功能已禁用"弹框
+        stateGlobal.remoteDisabled.value = true;
+        stateGlobal.remoteDisabledMessage.value = evt['msg'] ?? '远程功能已被管理员禁用';
         return;
       }
       if (evt['url'] is String) {

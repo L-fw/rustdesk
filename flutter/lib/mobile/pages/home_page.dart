@@ -47,12 +47,6 @@ class HomePageState extends State<HomePage> with WidgetsBindingObserver {
     WidgetsBinding.instance.addObserver(this);
     initPages();
     _checkLoginStatus();
-    // Listen for device banned status
-    ever(stateGlobal.deviceBanned, (banned) {
-      if (banned) {
-        _showBannedDialog();
-      }
-    });
     // Listen for remote disabled status (WebSocket push)
     ever(stateGlobal.remoteDisabled, (disabled) {
       if (disabled) {
@@ -83,21 +77,6 @@ class HomePageState extends State<HomePage> with WidgetsBindingObserver {
     }
   }
 
-  void _showBannedDialog() {
-    if (!mounted) return;
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => WillPopScope(
-        onWillPop: () async => false,
-        child: AlertDialog(
-          title: const Text('设备已被禁用'),
-          content: Obx(() => Text(stateGlobal.bannedMessage.value)),
-          actions: const [],
-        ),
-      ),
-    );
-  }
 
   void _showRemoteDisabledDialog() {
     if (!mounted || !stateGlobal.isInMainPage) return;

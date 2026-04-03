@@ -2118,6 +2118,9 @@ class _Releases extends StatelessWidget {
     required IconData icon,
     required Color iconColor,
     required Color iconBg,
+    required Color cardBg,
+    required Color cardBorder,
+    required Color btnColor,
     required String title,
     required String subtitle,
     required String url,
@@ -2126,9 +2129,9 @@ class _Releases extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       decoration: BoxDecoration(
-        color: iconBg.withOpacity(0.15),
+        color: cardBg,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: iconBg.withOpacity(0.4), width: 0.5),
+        border: Border.all(color: cardBorder, width: 1),
       ),
       child: Row(
         children: [
@@ -2166,7 +2169,7 @@ class _Releases extends StatelessWidget {
             icon: const Icon(Icons.download_outlined, size: 16),
             label: const Text('前往下载', style: TextStyle(fontSize: 13)),
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF2c8cff),
+              backgroundColor: btnColor,
               foregroundColor: Colors.white,
               padding:
                   const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
@@ -2183,14 +2186,25 @@ class _Releases extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
-      child: _Card(title: '发布页', topMargin: 0, children: [
-        Column(
+      child: Padding(
+        padding: const EdgeInsets.only(
+            left: _kCardLeftMargin + _kContentHMargin,
+            top: 15,
+            right: _kContentHMargin),
+        child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            Text(
+              '发布页',
+              style: const TextStyle(fontSize: _kTitleFontSize),
+            ).marginOnly(bottom: 12),
             _releaseItem(
               icon: Icons.people_outline,
               iconColor: const Color(0xFF2c8cff),
               iconBg: const Color(0xFFe6f1fb),
+              cardBg: const Color(0xFFeff6ff),
+              cardBorder: const Color(0xFFbfdbfe),
+              btnColor: const Color(0xFF2c8cff),
               title: '用户版 Gamwing 工具',
               subtitle: '面向普通用户的工具下载',
               url: 'https://jyyxt.cloud/releases/share',
@@ -2199,13 +2213,16 @@ class _Releases extends StatelessWidget {
               icon: Icons.chat_bubble_outline,
               iconColor: const Color(0xFF0f6e56),
               iconBg: const Color(0xFFe1f5ee),
+              cardBg: const Color(0xFFecfdf5),
+              cardBorder: const Color(0xFFa7f3d0),
+              btnColor: const Color(0xFF0f6e56),
               title: '客服版 Gamwing 工具',
               subtitle: '面向客服人员的专属工具下载',
               url: 'https://jyyxt.cloud/releases/tech',
             ),
           ],
-        ).marginOnly(left: _kContentHMargin),
-      ]),
+        ),
+      ),
     );
   }
 }
