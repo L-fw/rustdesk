@@ -130,8 +130,22 @@ class ChatPage extends StatelessWidget implements PageShape {
                         icon: Icons.send_rounded,
                       ),
                     ),
+                    messageListOptions: MessageListOptions(
+                      dateSeparatorBuilder: (date) {
+                        return Center(
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 8),
+                            child: Text(
+                              "${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}",
+                              style: const TextStyle(fontSize: 12, color: Colors.white70),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
                     messageOptions: MessageOptions(
                       showOtherUsersAvatar: false,
+                      showTime: false,
                       showOtherUsersName: false,
                       textColor: Colors.white,
                       maxWidth: constraints.maxWidth * 0.7,
@@ -144,12 +158,12 @@ class ChatPage extends StatelessWidget implements PageShape {
                           children: <Widget>[
                             Text(message.text,
                                 style: const TextStyle(
-                                    color: Colors.white, fontSize: 14)),
+                                    color: Colors.white, fontSize: 13)),
                             Text(
                               "${message.createdAt.hour}:${message.createdAt.minute.toString().padLeft(2, '0')}",
-                              style: TextStyle(
+                              style: const TextStyle(
                                 color: Colors.white,
-                                fontSize: 8,
+                                fontSize: 7,
                               ),
                             ).marginOnly(top: 3),
                           ],
