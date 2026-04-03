@@ -143,7 +143,8 @@ class ChatPage extends StatelessWidget implements PageShape {
                               : CrossAxisAlignment.start,
                           children: <Widget>[
                             Text(message.text,
-                                style: TextStyle(color: Colors.white)),
+                                style: const TextStyle(
+                                    color: Colors.white, fontSize: 14)),
                             Text(
                               "${message.createdAt.hour}:${message.createdAt.minute.toString().padLeft(2, '0')}",
                               style: TextStyle(

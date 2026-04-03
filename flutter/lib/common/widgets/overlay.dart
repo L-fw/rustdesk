@@ -829,6 +829,7 @@ class _TextInputOverlayState extends State<TextInputOverlay> {
                     controller: _controller,
                     focusNode: _focusNode,
                     autofocus: true,
+                    style: const TextStyle(fontSize: 14),
                     maxLines: 3,
                     minLines: 1,
                     decoration: InputDecoration(
