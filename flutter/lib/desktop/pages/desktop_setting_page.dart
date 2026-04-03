@@ -2114,63 +2114,94 @@ class __PrinterState extends State<_Printer> {
 class _Releases extends StatelessWidget {
   const _Releases({Key? key}) : super(key: key);
 
+  Widget _releaseItem({
+    required IconData icon,
+    required Color iconColor,
+    required Color iconBg,
+    required String title,
+    required String subtitle,
+    required String url,
+  }) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      decoration: BoxDecoration(
+        color: iconBg.withOpacity(0.15),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: iconBg.withOpacity(0.4), width: 0.5),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 38,
+            height: 38,
+            decoration: BoxDecoration(
+              color: iconBg,
+              shape: BoxShape.circle,
+            ),
+            child: Icon(icon, size: 20, color: iconColor),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                      fontSize: 14, fontWeight: FontWeight.w500),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  subtitle,
+                  style: const TextStyle(
+                      fontSize: 12, color: Colors.grey),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 12),
+          ElevatedButton.icon(
+            onPressed: () => launchUrlString(url),
+            icon: const Icon(Icons.download_outlined, size: 16),
+            label: const Text('前往下载', style: TextStyle(fontSize: 13)),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF2c8cff),
+              foregroundColor: Colors.white,
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(6)),
+              elevation: 0,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    const linkStyle = TextStyle(
-      decoration: TextDecoration.underline,
-      color: Color(0xFF2c8cff),
-    );
     return SingleChildScrollView(
       child: _Card(title: '发布页', topMargin: 0, children: [
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 用户版
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 8.0),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Icon(Icons.people_outline,
-                      size: 20, color: Color(0xFF2c8cff)),
-                  const SizedBox(width: 8),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        '用户版 Gamwing 工具',
-                        style: TextStyle(
-                            fontWeight: FontWeight.w600, fontSize: 14),
-                      ),
-                      const SizedBox(height: 2),
-                    ],
-                  ),
-                ],
-              ),
+            _releaseItem(
+              icon: Icons.people_outline,
+              iconColor: const Color(0xFF2c8cff),
+              iconBg: const Color(0xFFe6f1fb),
+              title: '用户版 Gamwing 工具',
+              subtitle: '面向普通用户的工具下载',
+              url: 'https://jyyxt.cloud/releases/share',
             ),
-            const Divider(height: 1),
-            // 客服版
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 8.0),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Icon(Icons.support_agent_outlined,
-                      size: 20, color: Color(0xFF2c8cff)),
-                  const SizedBox(width: 8),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        '客服版 Gamwing 工具',
-                        style: TextStyle(
-                            fontWeight: FontWeight.w600, fontSize: 14),
-                      ),
-                      const SizedBox(height: 2),
-                    ],
-                  ),
-                ],
-              ),
+            _releaseItem(
+              icon: Icons.chat_bubble_outline,
+              iconColor: const Color(0xFF0f6e56),
+              iconBg: const Color(0xFFe1f5ee),
+              title: '客服版 Gamwing 工具',
+              subtitle: '面向客服人员的专属工具下载',
+              url: 'https://jyyxt.cloud/releases/tech',
             ),
           ],
         ).marginOnly(left: _kContentHMargin),
