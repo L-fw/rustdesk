@@ -274,7 +274,7 @@ class ChatPage extends StatelessWidget implements PageShape {
                       messageRowBuilder: (message, previousMessage,
                           nextMessage, isAfterDateSeparator,
                           isBeforeDateSeparator) {
-                        final isOwnMessage = message.user.id.isBlank!;
+                        final isOwnMessage = message.user.id == chatModel.me.id;
                         final bubbleContent = DefaultTextStyle(
                           style: const TextStyle(
                             decoration: TextDecoration.none,
