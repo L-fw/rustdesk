@@ -52,7 +52,8 @@ class _TabInfo {
   late final String label;
   late final IconData unselected;
   late final IconData selected;
-  _TabInfo(this.key, this.label, this.unselected, this.selected);
+  late final String category;
+  _TabInfo(this.key, this.label, this.unselected, this.selected, {this.category = ''});
 }
 
 enum SettingsTabKey {
@@ -191,39 +192,48 @@ class _DesktopSettingPageState extends State<DesktopSettingPage>
       switch (tab) {
         case SettingsTabKey.general:
           settingTabs.add(_TabInfo(
-              tab, 'General', Icons.settings_outlined, Icons.settings));
+              tab, 'General', Icons.settings_outlined, Icons.settings,
+              category: '通用'));
           break;
         case SettingsTabKey.safety:
           settingTabs.add(_TabInfo(tab, 'Security',
-              Icons.enhanced_encryption_outlined, Icons.enhanced_encryption));
+              Icons.enhanced_encryption_outlined, Icons.enhanced_encryption,
+              category: '通用'));
           break;
         case SettingsTabKey.network:
           settingTabs
-              .add(_TabInfo(tab, 'Network', Icons.link_outlined, Icons.link));
+              .add(_TabInfo(tab, 'Network', Icons.link_outlined, Icons.link,
+              category: '通用'));
           break;
         case SettingsTabKey.display:
           settingTabs.add(_TabInfo(tab, 'Display',
-              Icons.desktop_windows_outlined, Icons.desktop_windows));
+              Icons.desktop_windows_outlined, Icons.desktop_windows,
+              category: '通用'));
           break;
         case SettingsTabKey.plugin:
           settingTabs.add(_TabInfo(
-              tab, 'Plugin', Icons.extension_outlined, Icons.extension));
+              tab, 'Plugin', Icons.extension_outlined, Icons.extension,
+              category: '通用'));
           break;
         case SettingsTabKey.account:
           settingTabs.add(
-              _TabInfo(tab, 'Account', Icons.person_outline, Icons.person));
+              _TabInfo(tab, 'Account', Icons.person_outline, Icons.person,
+              category: '通用'));
           break;
         case SettingsTabKey.printer:
           settingTabs
-              .add(_TabInfo(tab, 'Printer', Icons.print_outlined, Icons.print));
+              .add(_TabInfo(tab, 'Printer', Icons.print_outlined, Icons.print,
+              category: '通用'));
           break;
         case SettingsTabKey.releases:
           settingTabs.add(_TabInfo(tab, '发布页',
-              Icons.download_outlined, Icons.download));
+              Icons.download_outlined, Icons.download,
+              category: '资源'));
           break;
         case SettingsTabKey.about:
           settingTabs
-              .add(_TabInfo(tab, 'About', Icons.info_outline, Icons.info));
+              .add(_TabInfo(tab, 'About', Icons.info_outline, Icons.info,
+              category: '资源'));
           break;
       }
     }
@@ -322,88 +332,118 @@ class _DesktopSettingPageState extends State<DesktopSettingPage>
   }
 
   Widget _header(BuildContext context) {
-    final settingsText = Text(
-      translate('Settings'),
-      textAlign: TextAlign.left,
-      style: const TextStyle(
-        color: _accentColor,
-        fontSize: _kTitleFontSize,
-        fontWeight: FontWeight.w400,
+    return Container(
+      padding: const EdgeInsets.only(left: 20, top: 20, bottom: 12),
+      child: Row(
+        children: [
+          if (isWeb)
+            IconButton(
+              onPressed: () {
+                if (Navigator.canPop(context)) {
+                  Navigator.pop(context);
+                }
+              },
+              icon: Icon(Icons.arrow_back),
+            ),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: Image.asset(
+              'assets/about_logo.png',
+              width: 36,
+              height: 36,
+              fit: BoxFit.cover,
+            ),
+          ),
+          const SizedBox(width: 10),
+          Text(
+            bind.mainGetAppNameSync(),
+            style: const TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const Spacer(),
+        ],
       ),
     );
-    return Row(
-      children: [
-        if (isWeb)
-          IconButton(
-            onPressed: () {
-              if (Navigator.canPop(context)) {
-                Navigator.pop(context);
-              }
-            },
-            icon: Icon(Icons.arrow_back),
-          ).marginOnly(left: 5),
-        if (isWeb)
-          SizedBox(
-            height: 62,
-            child: Align(
-              alignment: Alignment.center,
-              child: settingsText,
-            ),
-          ).marginOnly(left: 20),
-        if (!isWeb)
-          SizedBox(
-            height: 62,
-            child: settingsText,
-          ).marginOnly(left: 20, top: 10),
-        const Spacer(),
-      ],
+  }
+
+  Widget _categoryHeader(String category) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 20, top: 16, bottom: 6),
+      child: Text(
+        category,
+        style: TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.w500,
+          color: Theme.of(context).textTheme.bodySmall?.color?.withOpacity(0.5) ?? Colors.grey,
+        ),
+      ),
     );
   }
 
   Widget _listView({required List<_TabInfo> tabs}) {
     final scrollController = ScrollController();
+    final List<Widget> children = [];
+    String? lastCategory;
+    for (final tab in tabs) {
+      if (tab.category.isNotEmpty && tab.category != lastCategory) {
+        children.add(_categoryHeader(tab.category));
+        lastCategory = tab.category;
+      }
+      children.add(_listItem(tab: tab));
+    }
     return ListView(
       controller: scrollController,
-      children: tabs.map((tab) => _listItem(tab: tab)).toList(),
+      padding: const EdgeInsets.only(bottom: 16),
+      children: children,
     );
   }
 
   Widget _listItem({required _TabInfo tab}) {
     return Obx(() {
       bool selected = tab.key == selectedTab.value;
-      return SizedBox(
-        width: _kTabWidth,
-        height: _kTabHeight,
-        child: InkWell(
-          onTap: () {
-            if (selectedTab.value != tab.key) {
-              int index = DesktopSettingPage.tabKeys.indexOf(tab.key);
-              if (index == -1) {
-                return;
+      final selectedBgColor = _accentColor.withOpacity(0.08);
+      final hoverColor = _accentColor.withOpacity(0.04);
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 1),
+        child: Material(
+          color: selected ? selectedBgColor : Colors.transparent,
+          borderRadius: BorderRadius.circular(8),
+          child: InkWell(
+            borderRadius: BorderRadius.circular(8),
+            hoverColor: hoverColor,
+            onTap: () {
+              if (selectedTab.value != tab.key) {
+                int index = DesktopSettingPage.tabKeys.indexOf(tab.key);
+                if (index == -1) {
+                  return;
+                }
+                controller.jumpToPage(index);
               }
-              controller.jumpToPage(index);
-            }
-            selectedTab.value = tab.key;
-          },
-          child: Row(children: [
-            Container(
-              width: 4,
-              height: _kTabHeight * 0.7,
-              color: selected ? _accentColor : null,
+              selectedTab.value = tab.key;
+            },
+            child: Container(
+              height: _kTabHeight,
+              padding: const EdgeInsets.symmetric(horizontal: 10),
+              child: Row(children: [
+                Icon(
+                  selected ? tab.selected : tab.unselected,
+                  color: selected ? _accentColor : Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.6),
+                  size: 20,
+                ),
+                const SizedBox(width: 10),
+                Text(
+                  translate(tab.label),
+                  style: TextStyle(
+                    color: selected ? _accentColor : null,
+                    fontWeight: selected ? FontWeight.w500 : FontWeight.w400,
+                    fontSize: 14,
+                  ),
+                ),
+              ]),
             ),
-            Icon(
-              selected ? tab.selected : tab.unselected,
-              color: selected ? _accentColor : null,
-              size: 20,
-            ).marginOnly(left: 13, right: 10),
-            Text(
-              translate(tab.label),
-              style: TextStyle(
-                  color: selected ? _accentColor : null,
-                  fontWeight: FontWeight.w400,
-                  fontSize: _kContentFontSize),
-            ),
-          ]),
+          ),
         ),
       );
     });
@@ -2123,32 +2163,32 @@ class _Releases extends StatelessWidget {
     required Color iconBg,
     required Color cardBg,
     required Color cardBorder,
+    required Color btnColor,
     required String title,
     required String subtitle,
     required String url,
   }) {
-    final borderColor = Theme.of(context).dividerColor.withOpacity(0.5);
     return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+      margin: const EdgeInsets.only(bottom: 14),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
       decoration: BoxDecoration(
         color: cardBg,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: cardBorder, width: 0.5),
+        border: Border.all(color: cardBorder, width: 1),
       ),
       child: Row(
         children: [
-          // Icon wrap — rounded square, like HTML .r-icon
+          // Icon wrap — rounded circle
           Container(
-            width: 40,
-            height: 40,
+            width: 44,
+            height: 44,
             decoration: BoxDecoration(
               color: iconBg,
-              borderRadius: BorderRadius.circular(10),
+              borderRadius: BorderRadius.circular(22),
             ),
-            child: Icon(icon, size: 18, color: iconColor),
+            child: Icon(icon, size: 22, color: iconColor),
           ),
-          const SizedBox(width: 14),
+          const SizedBox(width: 16),
           // Title + subtitle
           Expanded(
             child: Column(
@@ -2157,38 +2197,38 @@ class _Releases extends StatelessWidget {
                 Text(
                   title,
                   style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w500,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
                     color: Theme.of(context).textTheme.bodyLarge?.color,
                   ),
                 ),
-                const SizedBox(height: 2),
+                const SizedBox(height: 4),
                 Text(
                   subtitle,
                   style: TextStyle(
-                    fontSize: 11,
+                    fontSize: 12,
                     color: Theme.of(context)
                         .textTheme
                         .bodySmall
                         ?.color
-                        ?.withOpacity(0.6),
+                        ?.withOpacity(0.55),
                   ),
                 ),
               ],
             ),
           ),
           const SizedBox(width: 12),
-          // Outlined download button — matches HTML .r-btn
-          OutlinedButton.icon(
+          // Solid filled download button
+          ElevatedButton.icon(
             onPressed: () => launchUrlString(url),
-            icon: Icon(Icons.download_outlined, size: 12, color: iconColor),
-            label: Text('前往下载', style: TextStyle(fontSize: 12, color: iconColor)),
-            style: OutlinedButton.styleFrom(
-              foregroundColor: iconColor,
-              side: BorderSide(color: cardBorder, width: 0.5),
-              backgroundColor: Colors.transparent,
+            icon: const Icon(Icons.download_outlined, size: 14, color: Colors.white),
+            label: const Text('前往下载', style: TextStyle(fontSize: 13, color: Colors.white)),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: btnColor,
+              foregroundColor: Colors.white,
+              elevation: 0,
               padding:
-                  const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8)),
             ),
@@ -2231,10 +2271,11 @@ class _Releases extends StatelessWidget {
               context,
               icon: Icons.people_outline,
               iconColor: const Color(0xFF3b82f6),
-              iconBg: const Color(0xFFeff6ff),
+              iconBg: const Color(0xFFdbeafe),
               cardBg: const Color(0xFFeff6ff),
               cardBorder: const Color(0xFFbfdbfe),
-              title: '用户版',
+              btnColor: const Color(0xFF3b82f6),
+              title: '用户版 Gamwing 工具',
               subtitle: '面向普通用户的工具下载',
               url: 'https://jyyxt.cloud/releases/share',
             ),
@@ -2242,10 +2283,11 @@ class _Releases extends StatelessWidget {
               context,
               icon: Icons.chat_bubble_outline,
               iconColor: const Color(0xFF16a34a),
-              iconBg: const Color(0xFFf0fdf4),
+              iconBg: const Color(0xFFdcfce7),
               cardBg: const Color(0xFFf0fdf4),
               cardBorder: const Color(0xFFa7f3d0),
-              title: '客服版',
+              btnColor: const Color(0xFF16a34a),
+              title: '客服版 Gamwing 工具',
               subtitle: '面向客服人员的专属工具下载',
               url: 'https://jyyxt.cloud/releases/tech',
             ),
@@ -2296,18 +2338,23 @@ class _AboutState extends State<_About> {
               color: Theme.of(context).textTheme.bodyLarge?.color,
             ),
           ),
-          const Spacer(),
-          SelectionArea(
-            child: Text(
-              value,
-              style: TextStyle(
-                fontSize: 12,
-                fontFamily: 'monospace',
-                color: Theme.of(context)
-                    .textTheme
-                    .bodySmall
-                    ?.color
-                    ?.withOpacity(0.6),
+          const SizedBox(width: 12),
+          Flexible(
+            child: SelectionArea(
+              child: Text(
+                value,
+                textAlign: TextAlign.right,
+                overflow: TextOverflow.ellipsis,
+                maxLines: 1,
+                style: TextStyle(
+                  fontSize: 12,
+                  fontFamily: 'monospace',
+                  color: Theme.of(context)
+                      .textTheme
+                      .bodySmall
+                      ?.color
+                      ?.withOpacity(0.6),
+                ),
               ),
             ),
           ),
@@ -2514,17 +2561,13 @@ class _AboutState extends State<_About> {
                     child: Column(
                       children: [
                         // Small icon in rounded square
-                        Container(
-                          width: 36,
-                          height: 36,
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFeff6ff),
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: const Icon(
-                            Icons.important_devices_rounded,
-                            color: Color(0xFF3b82f6),
-                            size: 16,
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(10),
+                          child: Image.asset(
+                            'assets/brand.jpg',
+                            width: 36,
+                            height: 36,
+                            fit: BoxFit.cover,
                           ),
                         ),
                         const SizedBox(height: 14),
