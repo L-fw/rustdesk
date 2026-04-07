@@ -66,15 +66,6 @@ class _LoginTabPageState extends State<LoginTabPage> with WindowListener {
       height: kDesktopRemoteTabBarHeight,
       child: Row(
         children: [
-          if (widget.showBackButton)
-            Padding(
-              padding: const EdgeInsets.only(left: 8.0, right: 8.0),
-              child: IconButton(
-                icon: const Icon(Icons.arrow_back, size: 20),
-                onPressed: () => Navigator.of(context).pop(),
-                splashRadius: 20,
-              ),
-            ),
           Expanded(
             child: GestureDetector(
               onPanStart: (_) => startDragging(true),
@@ -99,6 +90,12 @@ class _LoginTabPageState extends State<LoginTabPage> with WindowListener {
             showMinimize: true,
             showMaximize: true,
             showClose: true,
+            onClose: widget.showBackButton
+                ? () async {
+                    Navigator.of(context).pop();
+                    return false;
+                  }
+                : null,
           ).paddingOnly(left: 10),
         ],
       ),
