@@ -2399,7 +2399,7 @@ class _AboutState extends State<_About> {
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(18),
                       child: Image.asset(
-                        'flutter/assets/about_logo.png',
+                        'assets/about_logo.png',
                         width: 72,
                         height: 72,
                         fit: BoxFit.cover,
