@@ -2116,68 +2116,81 @@ class __PrinterState extends State<_Printer> {
 class _Releases extends StatelessWidget {
   const _Releases({Key? key}) : super(key: key);
 
-  Widget _releaseItem({
+  Widget _releaseItem(
+    BuildContext context, {
     required IconData icon,
     required Color iconColor,
     required Color iconBg,
     required Color cardBg,
     required Color cardBorder,
-    required Color btnColor,
     required String title,
     required String subtitle,
     required String url,
   }) {
+    final borderColor = Theme.of(context).dividerColor.withOpacity(0.5);
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
       decoration: BoxDecoration(
         color: cardBg,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: cardBorder, width: 1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: cardBorder, width: 0.5),
       ),
       child: Row(
         children: [
+          // Icon wrap — rounded square, like HTML .r-icon
           Container(
-            width: 38,
-            height: 38,
+            width: 40,
+            height: 40,
             decoration: BoxDecoration(
               color: iconBg,
-              shape: BoxShape.circle,
+              borderRadius: BorderRadius.circular(10),
             ),
-            child: Icon(icon, size: 20, color: iconColor),
+            child: Icon(icon, size: 18, color: iconColor),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 14),
+          // Title + subtitle
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   title,
-                  style: const TextStyle(
-                      fontSize: 14, fontWeight: FontWeight.w500),
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                    color: Theme.of(context).textTheme.bodyLarge?.color,
+                  ),
                 ),
                 const SizedBox(height: 2),
                 Text(
                   subtitle,
-                  style: const TextStyle(
-                      fontSize: 12, color: Colors.grey),
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: Theme.of(context)
+                        .textTheme
+                        .bodySmall
+                        ?.color
+                        ?.withOpacity(0.6),
+                  ),
                 ),
               ],
             ),
           ),
           const SizedBox(width: 12),
-          ElevatedButton.icon(
+          // Outlined download button — matches HTML .r-btn
+          OutlinedButton.icon(
             onPressed: () => launchUrlString(url),
-            icon: const Icon(Icons.download_outlined, size: 16),
-            label: const Text('前往下载', style: TextStyle(fontSize: 13)),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: btnColor,
-              foregroundColor: Colors.white,
+            icon: Icon(Icons.download_outlined, size: 12, color: iconColor),
+            label: Text('前往下载', style: TextStyle(fontSize: 12, color: iconColor)),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: iconColor,
+              side: BorderSide(color: cardBorder, width: 0.5),
+              backgroundColor: Colors.transparent,
               padding:
-                  const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
               shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(6)),
-              elevation: 0,
+                  borderRadius: BorderRadius.circular(8)),
             ),
           ),
         ],
@@ -2189,36 +2202,50 @@ class _Releases extends StatelessWidget {
   Widget build(BuildContext context) {
     return SingleChildScrollView(
       child: Padding(
-        padding: const EdgeInsets.only(
-            left: _kCardLeftMargin + _kContentHMargin,
-            top: 15,
-            right: _kContentHMargin),
+        padding: const EdgeInsets.fromLTRB(32, 32, 32, 32),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
               '发布页',
-              style: const TextStyle(fontSize: _kTitleFontSize),
-            ).marginOnly(bottom: 12),
+              style: TextStyle(
+                fontSize: 17,
+                fontWeight: FontWeight.w500,
+                color: Theme.of(context).textTheme.bodyLarge?.color,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              '下载适合您身份的 Gamwing 工具版本',
+              style: TextStyle(
+                fontSize: 12,
+                color: Theme.of(context)
+                    .textTheme
+                    .bodySmall
+                    ?.color
+                    ?.withOpacity(0.6),
+              ),
+            ),
+            const SizedBox(height: 24),
             _releaseItem(
+              context,
               icon: Icons.people_outline,
-              iconColor: const Color(0xFF2c8cff),
-              iconBg: const Color(0xFFe6f1fb),
+              iconColor: const Color(0xFF3b82f6),
+              iconBg: const Color(0xFFeff6ff),
               cardBg: const Color(0xFFeff6ff),
               cardBorder: const Color(0xFFbfdbfe),
-              btnColor: const Color(0xFF2c8cff),
-              title: '用户版 Gamwing 工具',
+              title: '用户版',
               subtitle: '面向普通用户的工具下载',
               url: 'https://jyyxt.cloud/releases/share',
             ),
             _releaseItem(
+              context,
               icon: Icons.chat_bubble_outline,
-              iconColor: const Color(0xFF0f6e56),
-              iconBg: const Color(0xFFe1f5ee),
-              cardBg: const Color(0xFFecfdf5),
+              iconColor: const Color(0xFF16a34a),
+              iconBg: const Color(0xFFf0fdf4),
+              cardBg: const Color(0xFFf0fdf4),
               cardBorder: const Color(0xFFa7f3d0),
-              btnColor: const Color(0xFF0f6e56),
-              title: '客服版 Gamwing 工具',
+              title: '客服版',
               subtitle: '面向客服人员的专属工具下载',
               url: 'https://jyyxt.cloud/releases/tech',
             ),
@@ -2237,31 +2264,50 @@ class _About extends StatefulWidget {
 }
 
 class _AboutState extends State<_About> {
-  Widget _buildInfoTile(BuildContext context, IconData icon, String title, String value) {
+  /// Single info row: icon-wrap on left, label, monospace value on right.
+  /// Mirrors HTML .info-row structure.
+  Widget _infoRow(
+    BuildContext context, {
+    required IconData icon,
+    required String label,
+    required String value,
+  }) {
+    final divColor = Theme.of(context).dividerColor.withOpacity(0.5);
+    final secondaryBg = Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.5);
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
       child: Row(
         children: [
-          Icon(icon, size: 20, color: Theme.of(context).primaryColor),
-          const SizedBox(width: 16),
+          // Icon wrap — 28×28 rounded square with secondary bg
+          Container(
+            width: 28,
+            height: 28,
+            decoration: BoxDecoration(
+              color: secondaryBg,
+              borderRadius: BorderRadius.circular(7),
+            ),
+            child: Icon(icon, size: 13, color: const Color(0xFF3b82f6)),
+          ),
+          const SizedBox(width: 10),
           Text(
-            title,
+            label,
             style: TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.w500,
+              fontSize: 13,
               color: Theme.of(context).textTheme.bodyLarge?.color,
             ),
           ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: SelectionArea(
-              child: Text(
-                value,
-                textAlign: TextAlign.right,
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.7),
-                ),
+          const Spacer(),
+          SelectionArea(
+            child: Text(
+              value,
+              style: TextStyle(
+                fontSize: 12,
+                fontFamily: 'monospace',
+                color: Theme.of(context)
+                    .textTheme
+                    .bodySmall
+                    ?.color
+                    ?.withOpacity(0.6),
               ),
             ),
           ),
@@ -2270,23 +2316,34 @@ class _AboutState extends State<_About> {
     );
   }
 
-  Widget _buildLinkItem(BuildContext context, IconData icon, String label, VoidCallback onTap) {
+  /// Pill-shaped link button — mirrors HTML .link-pill
+  Widget _linkPill(
+    BuildContext context, {
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+  }) {
+    final borderColor = Theme.of(context).dividerColor.withOpacity(0.5);
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(8),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      borderRadius: BorderRadius.circular(20),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          border: Border.all(color: borderColor, width: 0.5),
+          borderRadius: BorderRadius.circular(20),
+        ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 18, color: Theme.of(context).primaryColor),
-            const SizedBox(width: 8),
+            Icon(icon, size: 12,
+                color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.7)),
+            const SizedBox(width: 6),
             Text(
               label,
               style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-                color: Theme.of(context).primaryColor,
+                fontSize: 12,
+                color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.7),
               ),
             ),
           ],
@@ -2306,176 +2363,200 @@ class _AboutState extends State<_About> {
         'license': license,
         'version': version,
         'buildDate': buildDate,
-        'fingerprint': fingerprint
+        'fingerprint': fingerprint,
       };
     }(), hasData: (data) {
       final version = data['version'].toString();
       final buildDate = data['buildDate'].toString();
       final fingerprint = data['fingerprint'].toString();
       final scrollController = ScrollController();
+      final borderColor = Theme.of(context).dividerColor.withOpacity(0.5);
+      final secondaryBg =
+          Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.4);
+
       return SingleChildScrollView(
         controller: scrollController,
-        child: Container(
-          width: double.infinity,
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              // Logo
-              Container(
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: Theme.of(context).primaryColor.withOpacity(0.15),
-                      blurRadius: 24,
-                      offset: const Offset(0, 8),
-                    ),
-                  ],
-                ),
-                child: ClipOval(
-                  child: Image.asset(
-                    'assets/about_logo.png',
-                    width: 100,
-                    height: 100,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 24),
-              // App Name
-              Text(
-                bind.mainGetAppNameSync(),
-                style: const TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 1.2,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                translate('Remote Control'),
-                style: TextStyle(
-                  fontSize: 16,
-                  color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.6),
-                  letterSpacing: 1.5,
-                ),
-              ),
-              const SizedBox(height: 48),
-
-              // Version Info Card
-              Container(
-                constraints: const BoxConstraints(maxWidth: 500),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).cardColor,
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.04),
-                      blurRadius: 10,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                  border: Border.all(
-                    color: Theme.of(context).dividerColor.withOpacity(0.5),
-                  ),
-                ),
-                child: Column(
-                  children: [
-                    _buildInfoTile(context, Icons.info_outline, translate('Version'), version),
-                    const Divider(height: 1),
-                    _buildInfoTile(context, Icons.calendar_today_outlined, translate('Build Date'), buildDate),
-                    if (!isWeb) ...[
-                      const Divider(height: 1),
-                      _buildInfoTile(context, Icons.fingerprint, translate('Fingerprint'), fingerprint),
-                    ]
-                  ],
-                ),
-              ),
-              const SizedBox(height: 48),
-
-              // Links
-              Wrap(
-                spacing: 24,
-                runSpacing: 16,
-                alignment: WrapAlignment.center,
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 520),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 48),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  _buildLinkItem(context, Icons.privacy_tip_outlined, translate('Privacy Statement'), () {
-                    Navigator.of(context).push(PageRouteBuilder(
-                        pageBuilder: (_, __, ___) => const privacy_pages.PrivacyPolicyPage(),
-                        transitionDuration: Duration.zero,
-                        reverseTransitionDuration: Duration.zero));
-                  }),
-                  _buildLinkItem(context, Icons.description_outlined, '用户服务协议', () {
-                    Navigator.of(context).push(PageRouteBuilder(
-                        pageBuilder: (_, __, ___) => const terms_pages.TermsOfServicePage(),
-                        transitionDuration: Duration.zero,
-                        reverseTransitionDuration: Duration.zero));
-                  }),
-                  _buildLinkItem(context, Icons.language, translate('Website'), () {
-                    launchUrlString('https://jygamwing.com/');
-                  }),
+                  // ── Logo ── rounded square with actual app icon image
+                  Container(
+                    width: 72,
+                    height: 72,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(18),
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFF3b82f6), Color(0xFF1d4ed8)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(18),
+                      child: Image.asset(
+                        'flutter/assets/about_logo.png',
+                        width: 72,
+                        height: 72,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => const Icon(
+                          Icons.important_devices_rounded,
+                          color: Colors.white,
+                          size: 30,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+
+                  // ── App name ──
+                  Text(
+                    bind.mainGetAppNameSync(),
+                    style: const TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.w500,
+                      letterSpacing: -0.3,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+
+                  // ── Tagline ──
+                  Text(
+                    'Remote Control · 远程控制工具',
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: Theme.of(context)
+                          .textTheme
+                          .bodySmall
+                          ?.color
+                          ?.withOpacity(0.6),
+                    ),
+                  ),
+                  const SizedBox(height: 40),
+
+                  // ── Info block — bordered card with dividers ──
+                  Container(
+                    width: double.infinity,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: borderColor, width: 0.5),
+                    ),
+                    child: Column(
+                      children: [
+                        _infoRow(context,
+                            icon: Icons.info_outline,
+                            label: translate('Version'),
+                            value: version),
+                        Divider(height: 0.5, thickness: 0.5, color: borderColor),
+                        _infoRow(context,
+                            icon: Icons.calendar_today_outlined,
+                            label: translate('Build Date'),
+                            value: buildDate),
+                        if (!isWeb) ...[
+                          Divider(height: 0.5, thickness: 0.5, color: borderColor),
+                          _infoRow(context,
+                              icon: Icons.fingerprint,
+                              label: translate('Fingerprint'),
+                              value: fingerprint),
+                        ],
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 36),
+
+                  // ── Link pills ──
+                  Wrap(
+                    spacing: 6,
+                    runSpacing: 6,
+                    alignment: WrapAlignment.center,
+                    children: [
+                      _linkPill(context,
+                          icon: Icons.privacy_tip_outlined,
+                          label: translate('Privacy Statement'),
+                          onTap: () {
+                            Navigator.of(context).push(PageRouteBuilder(
+                                pageBuilder: (_, __, ___) =>
+                                    const privacy_pages.PrivacyPolicyPage(),
+                                transitionDuration: Duration.zero,
+                                reverseTransitionDuration: Duration.zero));
+                          }),
+                      _linkPill(context,
+                          icon: Icons.description_outlined,
+                          label: '用户服务协议',
+                          onTap: () {
+                            Navigator.of(context).push(PageRouteBuilder(
+                                pageBuilder: (_, __, ___) =>
+                                    const terms_pages.TermsOfServicePage(),
+                                transitionDuration: Duration.zero,
+                                reverseTransitionDuration: Duration.zero));
+                          }),
+                      _linkPill(context,
+                          icon: Icons.language,
+                          label: translate('Website'),
+                          onTap: () => launchUrlString('https://jygamwing.com/')),
+                    ],
+                  ),
+                  const SizedBox(height: 40),
+
+                  // ── Footer block — secondary bg card ──
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(24),
+                    decoration: BoxDecoration(
+                      color: secondaryBg,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: borderColor, width: 0.5),
+                    ),
+                    child: Column(
+                      children: [
+                        // Small icon in rounded square
+                        Container(
+                          width: 36,
+                          height: 36,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFeff6ff),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: const Icon(
+                            Icons.important_devices_rounded,
+                            color: Color(0xFF3b82f6),
+                            size: 16,
+                          ),
+                        ),
+                        const SizedBox(height: 14),
+                        Text(
+                          translate('Slogan_tip'),
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                            color: Theme.of(context).textTheme.bodyLarge?.color,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 10),
+                        Text(
+                          '© 2026 佳影寰球科技有限公司 版权所有\n基于开源项目构建，详见用户协议',
+                          style: TextStyle(
+                            fontSize: 11,
+                            height: 1.8,
+                            color: Theme.of(context)
+                                .textTheme
+                                .bodySmall
+                                ?.color
+                                ?.withOpacity(0.6),
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
+                    ),
+                  ),
                 ],
               ),
-              const SizedBox(height: 64),
-
-              // Slogan and Copyright Banner
-              Container(
-                constraints: const BoxConstraints(maxWidth: 600),
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFF2c8cff), Color(0xFF1a6ace)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  borderRadius: BorderRadius.circular(20),
-                  boxShadow: [
-                    BoxShadow(
-                      color: const Color(0xFF2c8cff).withOpacity(0.3),
-                      blurRadius: 15,
-                      offset: const Offset(0, 8),
-                    ),
-                  ],
-                ),
-                padding: const EdgeInsets.symmetric(vertical: 36, horizontal: 24),
-                child: Column(
-                  children: [
-                    const Icon(
-                      Icons.important_devices_rounded,
-                      color: Colors.white,
-                      size: 40,
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      translate('Slogan_tip'),
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                        fontSize: 18,
-                        letterSpacing: 1.2,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 16),
-                    Container(
-                      width: 40,
-                      height: 2,
-                      color: Colors.white.withOpacity(0.5),
-                    ),
-                    const SizedBox(height: 16),
-                    const Text(
-                      '© 2026 佳影寰球科技有限公司 版权所有\n基于Rustdesk开源代码构建，详见用户服务协议',
-                      style: TextStyle(
-                        color: Colors.white70,
-                        fontSize: 13,
-                        height: 1.6,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ],
-                ),
-              ),
-            ],
+            ),
           ),
         ),
       );
