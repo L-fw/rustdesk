@@ -1048,9 +1048,11 @@ class _DesktopHomePageState extends State<DesktopHomePage>
               stateGlobal.appLoginInvalidated.value = false;
               stateGlobal.appLoginInvalidatedMessage.value = '';
               Navigator.of(context).pushAndRemoveUntil(
-                MaterialPageRoute(
-                    builder: (_) => const LoginTabPage(
-                        child: desktop_login.AppLoginPage())),
+                PageRouteBuilder(
+                    pageBuilder: (_, __, ___) => const LoginTabPage(
+                        child: desktop_login.AppLoginPage()),
+                    transitionDuration: Duration.zero,
+                    reverseTransitionDuration: Duration.zero),
                 (route) => false,
               );
             },

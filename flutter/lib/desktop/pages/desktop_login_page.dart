@@ -514,8 +514,11 @@ class _AppLoginPageState extends State<AppLoginPage>
 
   void _goToRegister() {
     Navigator.of(context).push(
-      MaterialPageRoute(
-          builder: (_) => const LoginTabPage(child: DesktopRegisterPage())),
+      PageRouteBuilder(
+        pageBuilder: (_, __, ___) => const LoginTabPage(child: DesktopRegisterPage()),
+        transitionDuration: Duration.zero,
+        reverseTransitionDuration: Duration.zero,
+      ),
     );
   }
 
@@ -919,9 +922,11 @@ class _AppLoginPageState extends State<AppLoginPage>
                   MouseRegion(
                     cursor: SystemMouseCursors.click,
                     child: GestureDetector(
-                      onTap: () => Navigator.of(context).push(MaterialPageRoute(
-                          builder: (_) =>
-                              const terms_pages.TermsOfServicePage())),
+                      onTap: () => Navigator.of(context).push(PageRouteBuilder(
+                          pageBuilder: (_, __, ___) =>
+                              const terms_pages.TermsOfServicePage(),
+                          transitionDuration: Duration.zero,
+                          reverseTransitionDuration: Duration.zero)),
                       child: Text('《用户协议》',
                           style:
                               TextStyle(fontSize: 12, color: MyTheme.accent)),
@@ -936,9 +941,11 @@ class _AppLoginPageState extends State<AppLoginPage>
                   MouseRegion(
                     cursor: SystemMouseCursors.click,
                     child: GestureDetector(
-                      onTap: () => Navigator.of(context).push(MaterialPageRoute(
-                          builder: (_) =>
-                              const privacy_pages.PrivacyPolicyPage())),
+                      onTap: () => Navigator.of(context).push(PageRouteBuilder(
+                          pageBuilder: (_, __, ___) =>
+                              const privacy_pages.PrivacyPolicyPage(),
+                          transitionDuration: Duration.zero,
+                          reverseTransitionDuration: Duration.zero)),
                       child: Text('《隐私政策》',
                           style:
                               TextStyle(fontSize: 12, color: MyTheme.accent)),

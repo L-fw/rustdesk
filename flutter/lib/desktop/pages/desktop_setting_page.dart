@@ -1857,9 +1857,11 @@ class _AccountState extends State<_Account> {
         await AppAuthService().logout();
         if (mounted) {
           Navigator.of(context).pushAndRemoveUntil(
-            MaterialPageRoute(
-                builder: (_) => const LoginTabPage(
-                    child: desktop_login.AppLoginPage())),
+            PageRouteBuilder(
+                pageBuilder: (_, __, ___) => const LoginTabPage(
+                    child: desktop_login.AppLoginPage()),
+                transitionDuration: Duration.zero,
+                reverseTransitionDuration: Duration.zero),
             (route) => false,
           );
         }
@@ -2399,12 +2401,16 @@ class _AboutState extends State<_About> {
                 alignment: WrapAlignment.center,
                 children: [
                   _buildLinkItem(context, Icons.privacy_tip_outlined, translate('Privacy Statement'), () {
-                    Navigator.of(context).push(MaterialPageRoute(
-                        builder: (_) => const privacy_pages.PrivacyPolicyPage()));
+                    Navigator.of(context).push(PageRouteBuilder(
+                        pageBuilder: (_, __, ___) => const privacy_pages.PrivacyPolicyPage(),
+                        transitionDuration: Duration.zero,
+                        reverseTransitionDuration: Duration.zero));
                   }),
                   _buildLinkItem(context, Icons.description_outlined, '用户服务协议', () {
-                    Navigator.of(context).push(MaterialPageRoute(
-                        builder: (_) => const terms_pages.TermsOfServicePage()));
+                    Navigator.of(context).push(PageRouteBuilder(
+                        pageBuilder: (_, __, ___) => const terms_pages.TermsOfServicePage(),
+                        transitionDuration: Duration.zero,
+                        reverseTransitionDuration: Duration.zero));
                   }),
                   _buildLinkItem(context, Icons.language, translate('Website'), () {
                     launchUrlString('https://jygamwing.com/');

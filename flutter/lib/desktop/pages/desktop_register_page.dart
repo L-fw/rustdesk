@@ -624,9 +624,11 @@ class _DesktopRegisterPageState extends State<DesktopRegisterPage>
                   _buildLinkText(
                     label: '《用户协议》',
                     onTap: () => Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) =>
+                      PageRouteBuilder(
+                        pageBuilder: (_, __, ___) =>
                             const LoginTabPage(showBackButton: true, child: terms_pages.TermsOfServicePage()),
+                        transitionDuration: Duration.zero,
+                        reverseTransitionDuration: Duration.zero,
                       ),
                     ),
                   ),
@@ -640,9 +642,11 @@ class _DesktopRegisterPageState extends State<DesktopRegisterPage>
                   _buildLinkText(
                     label: '《隐私政策》',
                     onTap: () => Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) =>
+                      PageRouteBuilder(
+                        pageBuilder: (_, __, ___) =>
                             const LoginTabPage(showBackButton: true, child: privacy_pages.PrivacyPolicyPage()),
+                        transitionDuration: Duration.zero,
+                        reverseTransitionDuration: Duration.zero,
                       ),
                     ),
                   ),
