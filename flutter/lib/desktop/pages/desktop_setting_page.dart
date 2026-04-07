@@ -2235,6 +2235,64 @@ class _About extends StatefulWidget {
 }
 
 class _AboutState extends State<_About> {
+  Widget _buildInfoTile(BuildContext context, IconData icon, String title, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      child: Row(
+        children: [
+          Icon(icon, size: 20, color: Theme.of(context).primaryColor),
+          const SizedBox(width: 16),
+          Text(
+            title,
+            style: TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w500,
+              color: Theme.of(context).textTheme.bodyLarge?.color,
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: SelectionArea(
+              child: Text(
+                value,
+                textAlign: TextAlign.right,
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.7),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLinkItem(BuildContext context, IconData icon, String label, VoidCallback onTap) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(8),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 18, color: Theme.of(context).primaryColor),
+            const SizedBox(width: 8),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                color: Theme.of(context).primaryColor,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return futureBuilder(future: () async {
@@ -2249,117 +2307,171 @@ class _AboutState extends State<_About> {
         'fingerprint': fingerprint
       };
     }(), hasData: (data) {
-      final license = data['license'].toString();
       final version = data['version'].toString();
       final buildDate = data['buildDate'].toString();
       final fingerprint = data['fingerprint'].toString();
-      const linkStyle = TextStyle(decoration: TextDecoration.underline);
       final scrollController = ScrollController();
       return SingleChildScrollView(
         controller: scrollController,
-        child: _Card(title: '', topMargin: 0, children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Row(
-                children: [
-                  Image.asset(
-                    'assets/about_logo.png',
-                    width: 48,
-                    height: 48,
-                  ),
-                  const SizedBox(width: 12),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        bind.mainGetAppNameSync(),
-                        style: const TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      Text(
-                        translate('Remote Control'),
-                        style: const TextStyle(
-                          fontSize: 13,
-                          color: Colors.grey,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ).marginOnly(bottom: 12),
-              const Divider(height: 1),
-              const SizedBox(height: 8),
-              SelectionArea(
-                  child: Text('${translate('Version')}: $version')
-                      .marginSymmetric(vertical: 4.0)),
-              SelectionArea(
-                  child: Text('${translate('Build Date')}: $buildDate')
-                      .marginSymmetric(vertical: 4.0)),
-              if (!isWeb)
-                SelectionArea(
-                    child: Text('${translate('Fingerprint')}: $fingerprint')
-                        .marginSymmetric(vertical: 4.0)),
-              InkWell(
-                  onTap: () {
-                    Navigator.of(context).push(MaterialPageRoute(
-                        builder: (_) =>
-                            const privacy_pages.PrivacyPolicyPage()));
-                  },
-                  child: Text(
-                    translate('Privacy Statement'),
-                    style: linkStyle,
-                  ).marginSymmetric(vertical: 4.0)),
-              InkWell(
-                  onTap: () {
-                    Navigator.of(context).push(MaterialPageRoute(
-                        builder: (_) =>
-                            const terms_pages.TermsOfServicePage()));
-                  },
-                  child: Text(
-                    '用户服务协议',
-                    style: linkStyle,
-                  ).marginSymmetric(vertical: 4.0)),
-              InkWell(
-                  onTap: () {
-                    launchUrlString('https://jygamwing.com/');
-                  },
-                  child: Text(
-                    translate('Website'),
-                    style: linkStyle,
-                  ).marginSymmetric(vertical: 4.0)),
+              // Logo
               Container(
-                decoration: const BoxDecoration(color: Color(0xFF2c8cff)),
-                padding:
-                    const EdgeInsets.symmetric(vertical: 24, horizontal: 8),
-                child: SelectionArea(
-                    child: Row(
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            '© 2026 佳影寰球科技有限公司 版权所有\n基于开源项目构建，详见用户协议',
-                            style: const TextStyle(color: Colors.white),
-                          ),
-                          Text(
-                            translate('Slogan_tip'),
-                            style: TextStyle(
-                                fontWeight: FontWeight.w800,
-                                color: Colors.white),
-                          )
-                        ],
-                      ),
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Theme.of(context).primaryColor.withOpacity(0.15),
+                      blurRadius: 24,
+                      offset: const Offset(0, 8),
                     ),
                   ],
-                )),
-              ).marginSymmetric(vertical: 4.0)
+                ),
+                child: ClipOval(
+                  child: Image.asset(
+                    'assets/about_logo.png',
+                    width: 100,
+                    height: 100,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 24),
+              // App Name
+              Text(
+                bind.mainGetAppNameSync(),
+                style: const TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 1.2,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                translate('Remote Control'),
+                style: TextStyle(
+                  fontSize: 16,
+                  color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.6),
+                  letterSpacing: 1.5,
+                ),
+              ),
+              const SizedBox(height: 48),
+
+              // Version Info Card
+              Container(
+                constraints: const BoxConstraints(maxWidth: 500),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).cardColor,
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.04),
+                      blurRadius: 10,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                  border: Border.all(
+                    color: Theme.of(context).dividerColor.withOpacity(0.5),
+                  ),
+                ),
+                child: Column(
+                  children: [
+                    _buildInfoTile(context, Icons.info_outline, translate('Version'), version),
+                    const Divider(height: 1),
+                    _buildInfoTile(context, Icons.calendar_today_outlined, translate('Build Date'), buildDate),
+                    if (!isWeb) ...[
+                      const Divider(height: 1),
+                      _buildInfoTile(context, Icons.fingerprint, translate('Fingerprint'), fingerprint),
+                    ]
+                  ],
+                ),
+              ),
+              const SizedBox(height: 48),
+
+              // Links
+              Wrap(
+                spacing: 24,
+                runSpacing: 16,
+                alignment: WrapAlignment.center,
+                children: [
+                  _buildLinkItem(context, Icons.privacy_tip_outlined, translate('Privacy Statement'), () {
+                    Navigator.of(context).push(MaterialPageRoute(
+                        builder: (_) => const privacy_pages.PrivacyPolicyPage()));
+                  }),
+                  _buildLinkItem(context, Icons.description_outlined, '用户服务协议', () {
+                    Navigator.of(context).push(MaterialPageRoute(
+                        builder: (_) => const terms_pages.TermsOfServicePage()));
+                  }),
+                  _buildLinkItem(context, Icons.language, translate('Website'), () {
+                    launchUrlString('https://jygamwing.com/');
+                  }),
+                ],
+              ),
+              const SizedBox(height: 64),
+
+              // Slogan and Copyright Banner
+              Container(
+                constraints: const BoxConstraints(maxWidth: 600),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFF2c8cff), Color(0xFF1a6ace)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFF2c8cff).withOpacity(0.3),
+                      blurRadius: 15,
+                      offset: const Offset(0, 8),
+                    ),
+                  ],
+                ),
+                padding: const EdgeInsets.symmetric(vertical: 36, horizontal: 24),
+                child: Column(
+                  children: [
+                    const Icon(
+                      Icons.important_devices_rounded,
+                      color: Colors.white,
+                      size: 40,
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      translate('Slogan_tip'),
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                        fontSize: 18,
+                        letterSpacing: 1.2,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 16),
+                    Container(
+                      width: 40,
+                      height: 2,
+                      color: Colors.white.withOpacity(0.5),
+                    ),
+                    const SizedBox(height: 16),
+                    const Text(
+                      '© 2026 佳影寰球科技有限公司 版权所有\n基于Rustdesk开源代码构建，详见用户服务协议',
+                      style: TextStyle(
+                        color: Colors.white70,
+                        fontSize: 13,
+                        height: 1.6,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ),
+              ),
             ],
-          ).marginOnly(left: _kContentHMargin)
-        ]),
+          ),
+        ),
       );
     });
   }
