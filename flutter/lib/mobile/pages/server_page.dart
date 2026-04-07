@@ -679,8 +679,17 @@ class ConnectionManager extends StatelessWidget {
                                         .mobileClearClientUnread(client.id);
                                     Navigator.of(context).push(
                                       MaterialPageRoute(
-                                        builder: (_) => ChatPage(
-                                            type: ChatPageType.mobileMain),
+                                        builder: (_) {
+                                          final page = ChatPage(
+                                              type: ChatPageType.mobileMain);
+                                          return Scaffold(
+                                            appBar: AppBar(
+                                              title: Text(page.title),
+                                              actions: page.appBarActions,
+                                            ),
+                                            body: SafeArea(child: page),
+                                          );
+                                        },
                                       ),
                                     );
                                   },

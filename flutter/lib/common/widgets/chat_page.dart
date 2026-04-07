@@ -86,6 +86,63 @@ class ChatPage extends StatelessWidget implements PageShape {
   static const _wechatDateBadgeBg = Color(0xFFCECECE);
   static const _wechatDateTextColor = Color(0xFFFFFFFF);
 
+  /// Build a WeChat-style bubble with a triangular tail
+  Widget _buildWeChatBubble({
+    required Widget child,
+    required bool isOwnMessage,
+    required double maxWidth,
+  }) {
+    final bubbleColor =
+        isOwnMessage ? _wechatGreenBubble : _wechatWhiteBubble;
+    const tailWidth = 6.0;
+    const tailHeight = 10.0;
+    const radius = 4.0;
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Left tail (for other's messages)
+        if (!isOwnMessage)
+          Padding(
+            padding: const EdgeInsets.only(top: 10),
+            child: CustomPaint(
+              size: const Size(tailWidth, tailHeight),
+              painter: _BubbleTailPainter(
+                color: bubbleColor,
+                isOwnMessage: false,
+              ),
+            ),
+          ),
+        // Bubble body
+        Flexible(
+          child: Container(
+            constraints: BoxConstraints(maxWidth: maxWidth - tailWidth),
+            padding:
+                const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: bubbleColor,
+              borderRadius: BorderRadius.circular(radius),
+            ),
+            child: child,
+          ),
+        ),
+        // Right tail (for own messages)
+        if (isOwnMessage)
+          Padding(
+            padding: const EdgeInsets.only(top: 10),
+            child: CustomPaint(
+              size: const Size(tailWidth, tailHeight),
+              painter: _BubbleTailPainter(
+                color: bubbleColor,
+                isOwnMessage: true,
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider.value(
@@ -201,6 +258,7 @@ class ChatPage extends StatelessWidget implements PageShape {
                               style: const TextStyle(
                                 fontSize: 11,
                                 color: _wechatDateTextColor,
+                                decoration: TextDecoration.none,
                               ),
                             ),
                           ),
@@ -213,52 +271,61 @@ class ChatPage extends StatelessWidget implements PageShape {
                       showOtherUsersName: false,
                       textColor: _wechatTextColor,
                       maxWidth: constraints.maxWidth * 0.7,
-                      messagePadding: const EdgeInsets.symmetric(
-                          horizontal: 12, vertical: 8),
-                      messageTextBuilder: (message, _, __) {
+                      messageRowBuilder: (message, previousMessage,
+                          nextMessage, isAfterDateSeparator,
+                          isBeforeDateSeparator) {
                         final isOwnMessage = message.user.id.isBlank!;
-                        return Column(
-                          crossAxisAlignment: isOwnMessage
-                              ? CrossAxisAlignment.end
-                              : CrossAxisAlignment.start,
-                          children: <Widget>[
-                            Text(message.text,
-                                style: const TextStyle(
-                                    color: _wechatTextColor,
-                                    fontSize: 14,
-                                    height: 1.4)),
-                            const SizedBox(height: 4),
-                            Text(
-                              "${message.createdAt.hour}:${message.createdAt.minute.toString().padLeft(2, '0')}",
-                              style: const TextStyle(
-                                color: _wechatTimeColor,
-                                fontSize: 10,
-                              ),
-                            ),
-                          ],
-                        );
-                      },
-                      messageDecorationBuilder:
-                          (message, previousMessage, nextMessage) {
-                        final isOwnMessage = message.user.id.isBlank!;
-                        return BoxDecoration(
-                          color: isOwnMessage
-                              ? _wechatGreenBubble
-                              : _wechatWhiteBubble,
-                          borderRadius: BorderRadius.only(
-                            topLeft: const Radius.circular(10),
-                            topRight: const Radius.circular(10),
-                            bottomLeft: Radius.circular(isOwnMessage ? 10 : 2),
-                            bottomRight:
-                                Radius.circular(isOwnMessage ? 2 : 10),
+                        final bubbleContent = DefaultTextStyle(
+                          style: const TextStyle(
+                            decoration: TextDecoration.none,
+                            color: _wechatTextColor,
+                            fontSize: 14,
                           ),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.04),
-                              blurRadius: 3,
-                              offset: const Offset(0, 1),
-                            ),
-                          ],
+                          child: Column(
+                            crossAxisAlignment: isOwnMessage
+                                ? CrossAxisAlignment.end
+                                : CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                message.text,
+                                style: const TextStyle(
+                                  color: _wechatTextColor,
+                                  fontSize: 14,
+                                  height: 1.4,
+                                  decoration: TextDecoration.none,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                "${message.createdAt.hour}:${message.createdAt.minute.toString().padLeft(2, '0')}",
+                                style: const TextStyle(
+                                  color: _wechatTimeColor,
+                                  fontSize: 10,
+                                  decoration: TextDecoration.none,
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 10, vertical: 4),
+                          child: Row(
+                            mainAxisAlignment: isOwnMessage
+                                ? MainAxisAlignment.end
+                                : MainAxisAlignment.start,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Flexible(
+                                child: _buildWeChatBubble(
+                                  child: bubbleContent,
+                                  isOwnMessage: isOwnMessage,
+                                  maxWidth: constraints.maxWidth * 0.7,
+                                ),
+                              ),
+                            ],
+                          ),
                         );
                       },
                     ),
@@ -273,3 +340,39 @@ class ChatPage extends StatelessWidget implements PageShape {
     );
   }
 }
+
+/// Paints a small triangular tail for WeChat-style chat bubbles.
+class _BubbleTailPainter extends CustomPainter {
+  final Color color;
+  final bool isOwnMessage;
+
+  _BubbleTailPainter({required this.color, required this.isOwnMessage});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..style = PaintingStyle.fill;
+
+    final path = Path();
+    if (isOwnMessage) {
+      // Right-pointing tail
+      path.moveTo(0, 0);
+      path.lineTo(size.width, size.height * 0.3);
+      path.lineTo(0, size.height);
+      path.close();
+    } else {
+      // Left-pointing tail
+      path.moveTo(size.width, 0);
+      path.lineTo(0, size.height * 0.3);
+      path.lineTo(size.width, size.height);
+      path.close();
+    }
+    canvas.drawPath(path, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant _BubbleTailPainter oldDelegate) =>
+      color != oldDelegate.color || isOwnMessage != oldDelegate.isOwnMessage;
+}
+
