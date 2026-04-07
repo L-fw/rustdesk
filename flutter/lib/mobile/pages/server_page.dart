@@ -639,6 +639,7 @@ class PermissionRow extends StatelessWidget {
         visualDensity: VisualDensity.compact,
         contentPadding: EdgeInsets.all(0),
         title: Text(name),
+        onTap: () {}, // 添加空的回调以保留整行的悬停/点击水波纹动画
         trailing: Switch(
           value: isOk,
           onChanged: (bool value) {
