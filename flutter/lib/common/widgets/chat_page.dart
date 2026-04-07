@@ -74,12 +74,24 @@ class ChatPage extends StatelessWidget implements PageShape {
         })
   ];
 
+  // WeChat-style color constants
+  static const _wechatBgColor = Color(0xFFEDEDED);
+  static const _wechatGreenBubble = Color(0xFF95EC69);
+  static const _wechatWhiteBubble = Color(0xFFFFFFFF);
+  static const _wechatInputBarBg = Color(0xFFF7F7F7);
+  static const _wechatInputFieldBg = Color(0xFFFFFFFF);
+  static const _wechatSendBtnColor = Color(0xFF07C160);
+  static const _wechatTextColor = Color(0xFF1C1C1E);
+  static const _wechatTimeColor = Color(0xFFB2B2B2);
+  static const _wechatDateBadgeBg = Color(0xFFCECECE);
+  static const _wechatDateTextColor = Color(0xFFFFFFFF);
+
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider.value(
       value: chatModel,
       child: Container(
-        color: Theme.of(context).scaffoldBackgroundColor,
+        color: _wechatBgColor,
         child: Consumer<ChatModel>(
           builder: (context, chatModel, child) {
             final readOnly = type == ChatPageType.mobileMain &&
@@ -106,38 +118,90 @@ class ChatPage extends StatelessWidget implements PageShape {
                     inputOptions: InputOptions(
                       focusNode: chatModel.inputNode,
                       textController: chatModel.textController,
-                      inputTextStyle: TextStyle(
+                      inputTextStyle: const TextStyle(
                           fontSize: 14,
-                          color: Theme.of(context).textTheme.titleLarge?.color),
+                          color: _wechatTextColor),
                       inputDecoration: InputDecoration(
                         isDense: true,
                         hintText: translate('Write a message'),
+                        hintStyle: TextStyle(
+                          color: _wechatTimeColor,
+                          fontSize: 14,
+                        ),
                         filled: true,
-                        fillColor: Theme.of(context).colorScheme.background,
-                        contentPadding: EdgeInsets.all(10),
+                        fillColor: _wechatInputFieldBg,
+                        contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 10),
                         border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10.0),
-                          borderSide: const BorderSide(
-                            width: 1,
-                            style: BorderStyle.solid,
+                          borderRadius: BorderRadius.circular(6.0),
+                          borderSide: BorderSide.none,
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(6.0),
+                          borderSide: BorderSide.none,
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(6.0),
+                          borderSide: BorderSide.none,
+                        ),
+                      ),
+                      inputToolbarPadding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 6),
+                      inputToolbarStyle: BoxDecoration(
+                        color: _wechatInputBarBg,
+                        border: Border(
+                          top: BorderSide(
+                            color: const Color(0xFFD9D9D9),
+                            width: 0.5,
                           ),
                         ),
                       ),
-                      sendButtonBuilder: defaultSendButton(
-                        padding:
-                            EdgeInsets.symmetric(horizontal: 6, vertical: 0),
-                        color: MyTheme.accent,
-                        icon: Icons.send_rounded,
-                      ),
+                      sendButtonBuilder: (onSend) {
+                        return Padding(
+                          padding: const EdgeInsets.only(left: 6),
+                          child: SizedBox(
+                            height: 34,
+                            child: ElevatedButton(
+                              onPressed: onSend,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: _wechatSendBtnColor,
+                                foregroundColor: Colors.white,
+                                elevation: 0,
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 14),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                              ),
+                              child: Text(
+                                translate('Send'),
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ),
+                          ),
+                        );
+                      },
                     ),
                     messageListOptions: MessageListOptions(
                       dateSeparatorBuilder: (date) {
                         return Center(
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 8),
+                          child: Container(
+                            margin: const EdgeInsets.symmetric(vertical: 10),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 8, vertical: 3),
+                            decoration: BoxDecoration(
+                              color: _wechatDateBadgeBg,
+                              borderRadius: BorderRadius.circular(4),
+                            ),
                             child: Text(
                               "${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}",
-                              style: const TextStyle(fontSize: 12, color: Colors.white70),
+                              style: const TextStyle(
+                                fontSize: 11,
+                                color: _wechatDateTextColor,
+                              ),
                             ),
                           ),
                         );
@@ -147,8 +211,10 @@ class ChatPage extends StatelessWidget implements PageShape {
                       showOtherUsersAvatar: false,
                       showTime: false,
                       showOtherUsersName: false,
-                      textColor: Colors.white,
+                      textColor: _wechatTextColor,
                       maxWidth: constraints.maxWidth * 0.7,
+                      messagePadding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 8),
                       messageTextBuilder: (message, _, __) {
                         final isOwnMessage = message.user.id.isBlank!;
                         return Column(
@@ -158,27 +224,41 @@ class ChatPage extends StatelessWidget implements PageShape {
                           children: <Widget>[
                             Text(message.text,
                                 style: const TextStyle(
-                                    color: Colors.white, fontSize: 13)),
+                                    color: _wechatTextColor,
+                                    fontSize: 14,
+                                    height: 1.4)),
+                            const SizedBox(height: 4),
                             Text(
                               "${message.createdAt.hour}:${message.createdAt.minute.toString().padLeft(2, '0')}",
                               style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 7,
+                                color: _wechatTimeColor,
+                                fontSize: 10,
                               ),
-                            ).marginOnly(top: 3),
+                            ),
                           ],
                         );
                       },
                       messageDecorationBuilder:
                           (message, previousMessage, nextMessage) {
                         final isOwnMessage = message.user.id.isBlank!;
-                        return defaultMessageDecoration(
-                          color:
-                              isOwnMessage ? MyTheme.accent : Colors.blueGrey,
-                          borderTopLeft: 8,
-                          borderTopRight: 8,
-                          borderBottomRight: isOwnMessage ? 2 : 8,
-                          borderBottomLeft: isOwnMessage ? 8 : 2,
+                        return BoxDecoration(
+                          color: isOwnMessage
+                              ? _wechatGreenBubble
+                              : _wechatWhiteBubble,
+                          borderRadius: BorderRadius.only(
+                            topLeft: const Radius.circular(10),
+                            topRight: const Radius.circular(10),
+                            bottomLeft: Radius.circular(isOwnMessage ? 10 : 2),
+                            bottomRight:
+                                Radius.circular(isOwnMessage ? 2 : 10),
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.04),
+                              blurRadius: 3,
+                              offset: const Offset(0, 1),
+                            ),
+                          ],
                         );
                       },
                     ),
@@ -186,7 +266,7 @@ class ChatPage extends StatelessWidget implements PageShape {
                   return SelectionArea(child: chat);
                 }),
               ],
-            ).paddingOnly(bottom: 8);
+            );
           },
         ),
       ),

@@ -76,20 +76,25 @@ class DraggableChatWindow extends StatelessWidget {
 
   Widget _buildMobileAppBar(BuildContext context) {
     return Container(
-      color: Theme.of(context).colorScheme.primary,
+      color: const Color(0xFF07C160),
       height: 50,
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Padding(
               padding: const EdgeInsets.symmetric(horizontal: 15),
-              child: Text(
-                translate("Chat"),
-                style: const TextStyle(
-                    color: Colors.white,
-                    fontFamily: 'WorkSans',
-                    fontWeight: FontWeight.bold,
-                    fontSize: 20),
+              child: Row(
+                children: [
+                  const Icon(Icons.chat_bubble, color: Colors.white, size: 18),
+                  const SizedBox(width: 8),
+                  Text(
+                    translate("Chat"),
+                    style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 17),
+                  ),
+                ],
               )),
           Row(
             crossAxisAlignment: CrossAxisAlignment.center,
@@ -120,10 +125,11 @@ class DraggableChatWindow extends StatelessWidget {
 
   Widget _buildDesktopAppBar(BuildContext context) {
     return Container(
-      decoration: BoxDecoration(
+      decoration: const BoxDecoration(
+          color: Color(0xFF07C160),
           border: Border(
               bottom: BorderSide(
-                  color: Theme.of(context).hintColor.withOpacity(0.4)))),
+                  color: Color(0xFF06A94F), width: 0.5))),
       height: 38,
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -133,10 +139,14 @@ class DraggableChatWindow extends StatelessWidget {
               child: Obx(() => Opacity(
                   opacity: chatModel.isWindowFocus.value ? 1.0 : 0.4,
                   child: Row(children: [
-                    Icon(Icons.chat_bubble_outline,
-                        size: 20, color: Theme.of(context).colorScheme.primary),
-                    SizedBox(width: 6),
-                    Text(translate("Chat"))
+                    const Icon(Icons.chat_bubble,
+                        size: 16, color: Colors.white),
+                    const SizedBox(width: 6),
+                    Text(translate("Chat"),
+                        style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w500))
                   ])))),
           Padding(
               padding: EdgeInsets.all(2),
