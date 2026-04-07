@@ -635,14 +635,16 @@ class PermissionRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SwitchListTile(
+    return ListTile(
         visualDensity: VisualDensity.compact,
         contentPadding: EdgeInsets.all(0),
         title: Text(name),
-        value: isOk,
-        onChanged: (bool value) {
-          onPressed();
-        });
+        trailing: Switch(
+          value: isOk,
+          onChanged: (bool value) {
+            onPressed();
+          },
+        ));
   }
 }
 
