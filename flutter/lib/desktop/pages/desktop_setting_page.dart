@@ -2344,8 +2344,6 @@ class _AboutState extends State<_About> {
               child: Text(
                 value,
                 textAlign: TextAlign.right,
-                overflow: TextOverflow.ellipsis,
-                maxLines: 1,
                 style: TextStyle(
                   fontSize: _kContentFontSize,
                   color: Theme.of(context)
