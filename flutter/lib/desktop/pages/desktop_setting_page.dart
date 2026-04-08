@@ -2197,7 +2197,7 @@ class _Releases extends StatelessWidget {
                 Text(
                   title,
                   style: TextStyle(
-                    fontSize: 15,
+                    fontSize: _kContentFontSize,
                     fontWeight: FontWeight.w600,
                     color: Theme.of(context).textTheme.bodyLarge?.color,
                   ),
@@ -2249,7 +2249,7 @@ class _Releases extends StatelessWidget {
             Text(
               '发布页',
               style: TextStyle(
-                fontSize: 17,
+                fontSize: _kTitleFontSize,
                 fontWeight: FontWeight.w500,
                 color: Theme.of(context).textTheme.bodyLarge?.color,
               ),
@@ -2334,7 +2334,7 @@ class _AboutState extends State<_About> {
           Text(
             label,
             style: TextStyle(
-              fontSize: 13,
+              fontSize: _kContentFontSize,
               color: Theme.of(context).textTheme.bodyLarge?.color,
             ),
           ),
@@ -2347,8 +2347,7 @@ class _AboutState extends State<_About> {
                 overflow: TextOverflow.ellipsis,
                 maxLines: 1,
                 style: TextStyle(
-                  fontSize: 12,
-                  fontFamily: 'monospace',
+                  fontSize: _kContentFontSize,
                   color: Theme.of(context)
                       .textTheme
                       .bodySmall
@@ -2464,7 +2463,7 @@ class _AboutState extends State<_About> {
                   Text(
                     bind.mainGetAppNameSync(),
                     style: const TextStyle(
-                      fontSize: 22,
+                      fontSize: _kTitleFontSize,
                       fontWeight: FontWeight.w500,
                       letterSpacing: -0.3,
                     ),
@@ -2574,7 +2573,7 @@ class _AboutState extends State<_About> {
                         Text(
                           translate('Slogan_tip'),
                           style: TextStyle(
-                            fontSize: 14,
+                            fontSize: _kContentFontSize,
                             fontWeight: FontWeight.w500,
                             color: Theme.of(context).textTheme.bodyLarge?.color,
                           ),
