@@ -228,12 +228,12 @@ class _DesktopSettingPageState extends State<DesktopSettingPage>
         case SettingsTabKey.releases:
           settingTabs.add(_TabInfo(tab, '发布页',
               Icons.download_outlined, Icons.download,
-              category: '资源'));
+              category: '更多'));
           break;
         case SettingsTabKey.about:
           settingTabs
               .add(_TabInfo(tab, 'About', Icons.info_outline, Icons.info,
-              category: '资源'));
+              category: '更多'));
           break;
       }
     }
