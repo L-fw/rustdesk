@@ -358,7 +358,7 @@ class _DesktopSettingPageState extends State<DesktopSettingPage>
           Text(
             bind.mainGetAppNameSync(),
             style: const TextStyle(
-              fontSize: 18,
+              fontSize: _kTitleFontSize,
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -2462,7 +2462,7 @@ class _AboutState extends State<_About> {
                     bind.mainGetAppNameSync(),
                     style: const TextStyle(
                       fontSize: _kTitleFontSize,
-                      fontWeight: FontWeight.w500,
+                      fontWeight: FontWeight.w600,
                       letterSpacing: -0.3,
                     ),
                   ),
