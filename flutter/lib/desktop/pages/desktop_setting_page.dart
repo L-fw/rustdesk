@@ -2579,7 +2579,7 @@ class _AboutState extends State<_About> {
                         ),
                         const SizedBox(height: 10),
                         Text(
-                          '© 2026 佳影寰球科技有限公司 版权所有\n基于开源项目构建，详见用户协议',
+                          '© 2026 佳影寰球科技有限公司 版权所有\n基于Rustdesk开源项目构建，详见用户服务协议',
                           style: TextStyle(
                             fontSize: 11,
                             height: 1.8,
