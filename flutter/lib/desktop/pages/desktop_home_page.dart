@@ -513,19 +513,14 @@ class _DesktopHomePageState extends State<DesktopHomePage>
           ? serverLatestVersion
           : bind.mainGetNewVersion();
       GestureTapCallback onPressed = () async {
-        if (serverDownloadUrl.isNotEmpty) {
-          final Uri url = Uri.parse(serverDownloadUrl);
-          await launchUrl(url);
-        } else {
-          final Uri url = Uri.parse('https://rustdesk.com/download');
-          await launchUrl(url);
+        final url = serverDownloadUrl.isNotEmpty
+            ? serverDownloadUrl
+            : updateUrl;
+        if (url.isNotEmpty) {
+          await launchUrl(Uri.parse(url),
+              mode: LaunchMode.externalApplication);
         }
       };
-      if (isToUpdate) {
-        onPressed = () {
-          handleUpdate(updateUrl);
-        };
-      }
       String contentText =
           "${translate("new-version-of-{${bind.mainGetAppNameSync()}}-tip")} ($versionText).";
       return buildInstallCard(
