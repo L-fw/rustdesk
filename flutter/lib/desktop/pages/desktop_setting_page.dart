@@ -2314,11 +2314,11 @@ class _AboutState extends State<_About> {
     required String label,
     required String value,
   }) {
-    final divColor = Theme.of(context).dividerColor.withOpacity(0.5);
     final secondaryBg = Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.5);
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           // Icon wrap — 28×28 rounded square with secondary bg
           Container(
@@ -2331,26 +2331,33 @@ class _AboutState extends State<_About> {
             child: Icon(icon, size: 13, color: const Color(0xFF3b82f6)),
           ),
           const SizedBox(width: 10),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: _kContentFontSize,
-              color: Theme.of(context).textTheme.bodyLarge?.color,
+          Padding(
+            padding: const EdgeInsets.only(bottom: 2),
+            child: Text(
+              label,
+              style: TextStyle(
+                fontSize: _kContentFontSize,
+                color: Theme.of(context).textTheme.bodyLarge?.color,
+              ),
             ),
           ),
           const SizedBox(width: 12),
-          Flexible(
+          Expanded(
             child: SelectionArea(
-              child: Text(
-                value,
-                textAlign: TextAlign.right,
-                style: TextStyle(
-                  fontSize: _kContentFontSize,
-                  color: Theme.of(context)
-                      .textTheme
-                      .bodySmall
-                      ?.color
-                      ?.withOpacity(0.6),
+              child: Padding(
+                padding: const EdgeInsets.only(bottom: 2),
+                child: Text(
+                  value,
+                  textAlign: TextAlign.right,
+                  style: TextStyle(
+                    fontSize: 13,
+                    height: 1.4,
+                    color: Theme.of(context)
+                        .textTheme
+                        .bodySmall
+                        ?.color
+                        ?.withOpacity(0.6),
+                  ),
                 ),
               ),
             ),
