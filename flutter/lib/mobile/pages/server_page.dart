@@ -337,26 +337,20 @@ class ScamWarningDialogState extends State<ScamWarningDialog> {
                     Icon(
                       Icons.warning_amber_sharp,
                       color: Colors.white,
+                      size: 32.0,
                     ),
-                    SizedBox(width: 10),
+                    SizedBox(width: 12),
                     Text(
                       translate("Warning"),
                       style: TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.bold,
-                        fontSize: 20.0,
+                        fontSize: 28.0,
                       ),
                     ),
                   ],
                 ),
-                SizedBox(height: 20),
-                Center(
-                  child: Image.asset(
-                    'assets/scam.png',
-                    width: 180,
-                  ),
-                ),
-                SizedBox(height: 18),
+                SizedBox(height: 24),
                 Text(
                   translate("scam_title"),
                   textAlign: TextAlign.center,

@@ -2256,7 +2256,7 @@ class _Releases extends StatelessWidget {
             ),
             const SizedBox(height: 6),
             Text(
-              '下载适合您身份的 Gamwing 工具版本',
+              '下载不同版本的 Gamwing 工具',
               style: TextStyle(
                 fontSize: 12,
                 color: Theme.of(context)
