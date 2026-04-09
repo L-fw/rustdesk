@@ -9,19 +9,26 @@ import 'package:url_launcher/url_launcher.dart';
 
 final _isExtracting = false.obs;
 
-void handleUpdate(String releasePageUrl) {
+void handleUpdate(String releasePageUrl, {String? directDownloadUrl}) {
   _isExtracting.value = false;
-  String downloadUrl = releasePageUrl.replaceAll('tag', 'download');
-  String version = downloadUrl.substring(downloadUrl.lastIndexOf('/') + 1);
-  final String downloadFile =
-      bind.mainGetCommonSync(key: 'download-file-$version');
-  if (downloadFile.startsWith('error:')) {
-    final error = downloadFile.replaceFirst('error:', '');
-    msgBox(gFFI.sessionId, 'custom-nocancel-nook-hasclose', 'Error', error,
-        releasePageUrl, gFFI.dialogManager);
-    return;
+  String downloadUrl;
+  if (directDownloadUrl != null && directDownloadUrl.isNotEmpty) {
+    // Use server-provided direct download URL (for custom-branded builds)
+    downloadUrl = directDownloadUrl;
+  } else {
+    // Fallback: construct from release page URL (original RustDesk behavior)
+    downloadUrl = releasePageUrl.replaceAll('tag', 'download');
+    String version = downloadUrl.substring(downloadUrl.lastIndexOf('/') + 1);
+    final String downloadFile =
+        bind.mainGetCommonSync(key: 'download-file-$version');
+    if (downloadFile.startsWith('error:')) {
+      final error = downloadFile.replaceFirst('error:', '');
+      msgBox(gFFI.sessionId, 'custom-nocancel-nook-hasclose', 'Error', error,
+          releasePageUrl, gFFI.dialogManager);
+      return;
+    }
+    downloadUrl = '$downloadUrl/$downloadFile';
   }
-  downloadUrl = '$downloadUrl/$downloadFile';
 
   SimpleWrapper downloadId = SimpleWrapper('');
   SimpleWrapper<VoidCallback> onCanceled = SimpleWrapper(() {});

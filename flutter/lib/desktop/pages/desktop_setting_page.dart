@@ -2276,7 +2276,7 @@ class _Releases extends StatelessWidget {
               cardBorder: const Color(0xFF3b82f6).withOpacity(0.2),
               btnColor: const Color(0xFF3b82f6),
               title: '用户版 Gamwing 工具',
-              subtitle: '面向普通用户的工具下载',
+              subtitle: '面向普通用户的工具',
               url: 'https://jyyxt.cloud/releases/share',
             ),
             _releaseItem(
@@ -2288,7 +2288,7 @@ class _Releases extends StatelessWidget {
               cardBorder: const Color(0xFF16a34a).withOpacity(0.2),
               btnColor: const Color(0xFF16a34a),
               title: '客服版 Gamwing 工具',
-              subtitle: '面向客服人员的专属工具下载',
+              subtitle: '面向客服人员的专属工具',
               url: 'https://jyyxt.cloud/releases/tech',
             ),
           ],

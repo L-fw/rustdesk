@@ -521,6 +521,11 @@ class _DesktopHomePageState extends State<DesktopHomePage>
               mode: LaunchMode.externalApplication);
         }
       };
+      if (isToUpdate) {
+        onPressed = () {
+          handleUpdate(updateUrl, directDownloadUrl: serverDownloadUrl);
+        };
+      }
       String contentText =
           "${translate("new-version-of-{${bind.mainGetAppNameSync()}}-tip")} ($versionText).";
       return buildInstallCard(
