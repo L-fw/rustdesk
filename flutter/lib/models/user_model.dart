@@ -126,6 +126,7 @@ class UserModel {
     }
     userName.value = '';
     displayName.value = '';
+    bind.mainLoadRecentPeers();
   }
 
   _parseAndUpdateUser(UserPayload user) {
@@ -137,6 +138,7 @@ class UserModel {
       // ugly here, tmp solution
       bind.mainSetLocalOption(key: 'verifier', value: user.verifier ?? '');
     }
+    bind.mainLoadRecentPeers();
   }
 
   // update ab and group status
