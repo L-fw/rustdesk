@@ -1359,7 +1359,6 @@ fn load_recent_peers(
     peers_next.1
 }
 
-
 pub fn main_load_recent_peers() {
     let push_to_flutter = |peers, ids| {
         let mut data = HashMap::from([("name", "load_recent_peers".to_owned()), ("peers", peers)]);
