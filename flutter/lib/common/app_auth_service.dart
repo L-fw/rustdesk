@@ -48,7 +48,11 @@ class AppAuthService {
   Future<void> _saveLoginInfo(String token, Map<String, dynamic> user) async {
     await _setSecureLocalOption(_tokenKey, token);
     await _setSecureLocalOption(_userInfoKey, jsonEncode(user));
-    currentUserName.value = _extractUserName(user);
+    final userName = _extractUserName(user);
+    currentUserName.value = userName;
+    // Set plain-text user name for Rust-side peers directory isolation
+    await bind.mainSetLocalOption(key: 'current_user_name', value: userName);
+    bind.mainLoadRecentPeers();
     stateGlobal.appLoginInvalidated.value = false;
     stateGlobal.appLoginInvalidatedMessage.value = '';
   }
@@ -59,6 +63,9 @@ class AppAuthService {
     await _setSecureLocalOption(_userInfoKey, '');
     await _setSecureLocalOption(_tokenVersionKey, '');
     currentUserName.value = '';
+    // Clear user name so Rust uses the default 'peers' directory
+    await bind.mainSetLocalOption(key: 'current_user_name', value: '');
+    bind.mainLoadRecentPeers();
     if (stateGlobal.appLoginInvalidated.isFalse) {
       stateGlobal.appLoginInvalidatedMessage.value = '';
     }
@@ -70,15 +77,21 @@ class AppAuthService {
       if (currentUserName.value.isNotEmpty) {
         currentUserName.value = '';
       }
+      // Ensure Rust side also uses default peers directory
+      await bind.mainSetLocalOption(key: 'current_user_name', value: '');
       return;
     }
     try {
       final decoded = jsonDecode(raw);
       if (decoded is Map<String, dynamic>) {
-        currentUserName.value = _extractUserName(decoded);
+        final name = _extractUserName(decoded);
+        currentUserName.value = name;
+        // Sync to Rust side for peers directory isolation on app startup
+        await bind.mainSetLocalOption(key: 'current_user_name', value: name);
       }
     } catch (_) {
       currentUserName.value = '';
+      await bind.mainSetLocalOption(key: 'current_user_name', value: '');
     }
   }
 
