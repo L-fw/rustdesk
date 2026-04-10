@@ -117,7 +117,7 @@ function initSQLiteDatabase(baseDir) {
       `);
 
       // 给旧库兼容：尝试 ALTER TABLE 补列（若列已存在会报错，忽略即可）
-      const alterIgnore = (sql) => db.run(sql, [], () => { });
+      const alterIgnore = (sql) => db.run(sql, [], () => {});
       alterIgnore(`ALTER TABLE users ADD COLUMN agreed_privacy_version TEXT`);
       alterIgnore(`ALTER TABLE users ADD COLUMN token_version INTEGER DEFAULT 1`);
       alterIgnore(`ALTER TABLE devices ADD COLUMN client_type TEXT`);

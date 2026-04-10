@@ -81,6 +81,7 @@ class _GuidePageState extends State<GuidePage> {
                   ),
                 ),
               ),
+            ),
             if (_currentIndex == _images.length - 1)
               Positioned(
                 bottom: 80,
