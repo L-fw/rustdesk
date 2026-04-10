@@ -522,13 +522,10 @@ class _AppState extends State<App> with WidgetsBindingObserver {
                   : const LoginTabPage(child: desktop_login.AppLoginPage()))
               : isWeb
                   ? WebHomePage()
-                  : kAppModeShareOnly
-                      ? (bind.mainGetLocalOption(key: 'is_guide_page_shown') == 'Y'
-                          ? HomePage()
-                          : const GuidePage())
-                      : _isAppLoggedIn
-                          ? HomePage()
-                          : const AppLoginPage(),
+                  : kAppModeShareOnly || _isAppLoggedIn
+                      ? HomePage()
+                      : const AppLoginPage(),
+
           localizationsDelegates: const [
             GlobalMaterialLocalizations.delegate,
             GlobalWidgetsLocalizations.delegate,

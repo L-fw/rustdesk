@@ -12,6 +12,7 @@ import '../../models/platform_model.dart';
 import '../../models/state_model.dart';
 import 'app_login_page.dart';
 import 'connection_page.dart';
+import 'guide_page.dart';
 
 abstract class PageShape extends Widget {
   final String title = "";
@@ -62,6 +63,24 @@ class HomePageState extends State<HomePage> with WidgetsBindingObserver {
         _showLoginExpiredDialog();
       }
     });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (kAppModeShareOnly && bind.mainGetLocalOption(key: 'is_guide_page_shown') != 'Y') {
+        _showGuideDialog();
+      }
+    });
+  }
+
+  void _showGuideDialog() {
+    if (!mounted) return;
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Dialog(
+        backgroundColor: Colors.transparent,
+        child: GuidePage(),
+      ),
+    );
   }
 
   @override

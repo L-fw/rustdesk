@@ -117,7 +117,7 @@ function initSQLiteDatabase(baseDir) {
       `);
 
       // 给旧库兼容：尝试 ALTER TABLE 补列（若列已存在会报错，忽略即可）
-      const alterIgnore = (sql) => db.run(sql, [], () => {});
+      const alterIgnore = (sql) => db.run(sql, [], () => { });
       alterIgnore(`ALTER TABLE users ADD COLUMN agreed_privacy_version TEXT`);
       alterIgnore(`ALTER TABLE users ADD COLUMN token_version INTEGER DEFAULT 1`);
       alterIgnore(`ALTER TABLE devices ADD COLUMN client_type TEXT`);
@@ -209,15 +209,15 @@ async function dbListUsers(query) {
     rows = await all('SELECT * FROM users ORDER BY created_at DESC', []);
   }
   return rows.map(row => ({
-    username:             row.username,
-    phone:                row.phone || '',
-    created_at:           row.created_at || '',
-    last_login:           row.last_login || '',
-    activated:            !!row.activated,
-    token_version:        row.token_version ?? 0,
-    password_updated_at:  row.password_updated_at || '',
+    username: row.username,
+    phone: row.phone || '',
+    created_at: row.created_at || '',
+    last_login: row.last_login || '',
+    activated: !!row.activated,
+    token_version: row.token_version ?? 0,
+    password_updated_at: row.password_updated_at || '',
     agreed_terms_version: row.agreed_terms_version || '',
-    agreed_time:          row.agreed_time || '',
+    agreed_time: row.agreed_time || '',
   }));
 }
 
@@ -227,9 +227,9 @@ function rowToDevice(row) {
   if (!row) return null;
   return {
     ...row,
-    banned:      !!row.banned,
+    banned: !!row.banned,
     permissions: safeParseJson(row.permissions, {}),
-    clientType:  row.client_type || null,
+    clientType: row.client_type || null,
   };
 }
 
@@ -371,9 +371,9 @@ function rowToCode(row) {
   if (!row) return null;
   return {
     ...row,
-    revoked:      !!row.revoked,
-    max_uses:     row.max_uses ?? 1,
-    used_count:   row.used_count ?? 0,
+    revoked: !!row.revoked,
+    max_uses: row.max_uses ?? 1,
+    used_count: row.used_count ?? 0,
     used_records: safeParseJson(row.used_records, []),
   };
 }
