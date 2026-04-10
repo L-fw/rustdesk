@@ -1149,6 +1149,10 @@ pub fn main_set_env(key: String, value: Option<String>) -> SyncReturn<()> {
 pub fn main_set_local_option(key: String, value: String) {
     let is_texture_render_key = key.eq(config::keys::OPTION_TEXTURE_RENDER);
     let is_d3d_render_key = key.eq(config::keys::OPTION_ALLOW_D3D_RENDER);
+    // Intercept current_user_name to update the static variable for peers directory isolation
+    if key == "current_user_name" {
+        config::set_current_user_name(value.clone());
+    }
     set_local_option(key, value.clone());
     if is_texture_render_key {
         let session_event = [("v", &value)];
@@ -1354,6 +1358,7 @@ fn load_recent_peers(
     all_peers.extend(peers);
     peers_next.1
 }
+
 
 pub fn main_load_recent_peers() {
     let push_to_flutter = |peers, ids| {
