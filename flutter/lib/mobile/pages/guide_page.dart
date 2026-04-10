@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../common.dart';
+import '../../models/platform_model.dart';
 import 'home_page.dart';
 
 class GuidePage extends StatefulWidget {
