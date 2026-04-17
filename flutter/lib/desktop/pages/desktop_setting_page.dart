@@ -1837,103 +1837,134 @@ class _AccountState extends State<_Account> {
     return ListView(
       controller: scrollController,
       children: [
-        if (!kAppModeShareOnly)
-          _Card(title: '应用账号', children: [
-            appAuthChangePassword(),
-            appAuthLogout(),
-          ]),
+        if (!kAppModeShareOnly) ...[
+          _accountActionsCard(context),
+          _accountDangerCard(context),
+        ],
       ],
     ).marginOnly(bottom: _kListViewBottomMargin);
   }
 
-  Widget accountAction() {
-    return Obx(() => _Button(
-        gFFI.userModel.userName.value.isEmpty
-            ? 'Login'
-            : '${translate('Logout')} (${gFFI.userModel.accountLabelWithHandle})',
-        () => {
-              gFFI.userModel.userName.value.isEmpty
-                  ? loginDialog()
-                  : logOutConfirmDialog()
-            }));
-  }
 
-  Widget useInfo() {
-    text(String key, String value) {
-      return Align(
-        alignment: Alignment.centerLeft,
-        child: SelectionArea(child: Text('${translate(key)}: $value'))
-            .marginSymmetric(vertical: 4),
-      );
-    }
-
-    return Obx(() => Offstage(
-          offstage: gFFI.userModel.userName.value.isEmpty,
-          child: Column(
+  /// 通用操作行 tile
+  Widget _accountActionTile(
+    BuildContext context, {
+    required IconData icon,
+    required Color iconColor,
+    required String label,
+    required String subtitle,
+    required VoidCallback onTap,
+    Color? labelColor,
+  }) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(
+              horizontal: _kContentHMargin, vertical: 10),
+          child: Row(
             children: [
-              if (gFFI.userModel.displayName.value.trim().isNotEmpty &&
-                  gFFI.userModel.displayName.value.trim() !=
-                      gFFI.userModel.userName.value.trim())
-                text('Display Name', gFFI.userModel.displayName.value.trim()),
-              text('Username', gFFI.userModel.userName.value),
-              // text('Group', gFFI.groupModel.groupName.value),
+              Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: iconColor.withOpacity(0.1),
+                ),
+                child: Icon(icon, size: 18, color: iconColor),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      translate(label),
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        color: labelColor,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      translate(subtitle),
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Theme.of(context)
+                            .textTheme
+                            .bodySmall
+                            ?.color
+                            ?.withOpacity(0.5),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(
+                Icons.chevron_right,
+                size: 18,
+                color: Theme.of(context)
+                    .textTheme
+                    .bodySmall
+                    ?.color
+                    ?.withOpacity(0.3),
+              ),
             ],
           ),
-        )).marginOnly(left: 18, top: 16);
+        ),
+      ),
+    );
   }
 
-  Widget appAuthChangePassword() {
-    return _Button('修改密码', () async {
-      final ok = await showDialog<bool>(
-        context: context,
-        builder: (_) => const desktop_login.DesktopChangePasswordDialog(
-          title: '修改密码',
+  Future<void> _doChangePassword() async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (_) => const desktop_login.DesktopChangePasswordDialog(
+        title: '修改密码',
+      ),
+    );
+    if (!mounted) return;
+    if (ok == true) {
+      Navigator.of(context).pushAndRemoveUntil(
+        PageRouteBuilder(
+          pageBuilder: (_, __, ___) =>
+              const LoginTabPage(child: desktop_login.AppLoginPage()),
+          transitionDuration: Duration.zero,
+          reverseTransitionDuration: Duration.zero,
         ),
+        (route) => false,
       );
-      if (!mounted) return;
-      if (ok == true) {
-        // resetPassword() already calls logout() internally, redirect to login.
+    }
+  }
+
+  Future<void> _doLogout() async {
+    final confirmed = await gFFI.dialogManager.show<bool>(
+      (setState, close, context) {
+        return CustomAlertDialog(
+          title: const Text('退出登录'),
+          content: const Text('确定要退出当前应用账号吗？'),
+          actions: [
+            dialogButton('取消', onPressed: () => close(false)),
+            dialogButton('确定退出', onPressed: () => close(true)),
+          ],
+        );
+      },
+    );
+    if (confirmed == true) {
+      await AppAuthService().logout();
+      if (mounted) {
         Navigator.of(context).pushAndRemoveUntil(
           PageRouteBuilder(
-            pageBuilder: (_, __, ___) =>
-                const LoginTabPage(child: desktop_login.AppLoginPage()),
-            transitionDuration: Duration.zero,
-            reverseTransitionDuration: Duration.zero,
-          ),
+              pageBuilder: (_, __, ___) =>
+                  const LoginTabPage(child: desktop_login.AppLoginPage()),
+              transitionDuration: Duration.zero,
+              reverseTransitionDuration: Duration.zero),
           (route) => false,
         );
       }
-    });
-  }
-
-  Widget appAuthLogout() {
-    return _Button('退出登录', () async {
-      final confirmed = await gFFI.dialogManager.show<bool>(
-        (setState, close, context) {
-          return CustomAlertDialog(
-            title: const Text('退出登录'),
-            content: const Text('确定要退出当前应用账号吗？'),
-            actions: [
-              dialogButton('取消', onPressed: () => close(false)),
-              dialogButton('确定退出', onPressed: () => close(true)),
-            ],
-          );
-        },
-      );
-      if (confirmed == true) {
-        await AppAuthService().logout();
-        if (mounted) {
-          Navigator.of(context).pushAndRemoveUntil(
-            PageRouteBuilder(
-                pageBuilder: (_, __, ___) => const LoginTabPage(
-                    child: desktop_login.AppLoginPage()),
-                transitionDuration: Duration.zero,
-                reverseTransitionDuration: Duration.zero),
-            (route) => false,
-          );
-        }
-      }
-    });
+    }
   }
 }
 
