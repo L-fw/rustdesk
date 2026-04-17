@@ -1083,17 +1083,26 @@ class _AppLoginPageState extends State<AppLoginPage>
 }
 
 // ═══════════════════════════════════════════════════════════
-//  忘记密码 Dialog（desktop 版本，宽度限制 360）
+//  忘记密码 / 修改密码 Dialog（desktop 版本，宽度限制 360）
 // ═══════════════════════════════════════════════════════════
 
-class _ForgotPasswordDialog extends StatefulWidget {
-  const _ForgotPasswordDialog();
+/// Public widget – can be used from other pages (e.g. Settings > Account).
+class DesktopChangePasswordDialog extends StatefulWidget {
+  final String title;
+  const DesktopChangePasswordDialog({Key? key, this.title = '忘记密码'})
+      : super(key: key);
 
   @override
-  State<_ForgotPasswordDialog> createState() => _ForgotPasswordDialogState();
+  State<DesktopChangePasswordDialog> createState() =>
+      _ForgotPasswordDialogState();
 }
 
-class _ForgotPasswordDialogState extends State<_ForgotPasswordDialog> {
+/// Private alias kept for the login-page call-site.
+class _ForgotPasswordDialog extends DesktopChangePasswordDialog {
+  const _ForgotPasswordDialog() : super(title: '忘记密码');
+}
+
+class _ForgotPasswordDialogState extends State<DesktopChangePasswordDialog> {
   final _phoneController = TextEditingController();
   final _smsCodeController = TextEditingController();
   final _passwordController = TextEditingController();
@@ -1218,7 +1227,7 @@ class _ForgotPasswordDialogState extends State<_ForgotPasswordDialog> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return AlertDialog(
-      title: const Text('忘记密码'),
+      title: Text(widget.title),
       content: SingleChildScrollView(
         child: SizedBox(
           width: 360,

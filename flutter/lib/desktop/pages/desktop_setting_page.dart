@@ -1838,7 +1838,10 @@ class _AccountState extends State<_Account> {
       controller: scrollController,
       children: [
         if (!kAppModeShareOnly)
-          _Card(title: '应用账号', children: [appAuthLogout()]),
+          _Card(title: '应用账号', children: [
+            appAuthChangePassword(),
+            appAuthLogout(),
+          ]),
       ],
     ).marginOnly(bottom: _kListViewBottomMargin);
   }
@@ -1877,6 +1880,30 @@ class _AccountState extends State<_Account> {
             ],
           ),
         )).marginOnly(left: 18, top: 16);
+  }
+
+  Widget appAuthChangePassword() {
+    return _Button('修改密码', () async {
+      final ok = await showDialog<bool>(
+        context: context,
+        builder: (_) => const desktop_login.DesktopChangePasswordDialog(
+          title: '修改密码',
+        ),
+      );
+      if (!mounted) return;
+      if (ok == true) {
+        // resetPassword() already calls logout() internally, redirect to login.
+        Navigator.of(context).pushAndRemoveUntil(
+          PageRouteBuilder(
+            pageBuilder: (_, __, ___) =>
+                const LoginTabPage(child: desktop_login.AppLoginPage()),
+            transitionDuration: Duration.zero,
+            reverseTransitionDuration: Duration.zero,
+          ),
+          (route) => false,
+        );
+      }
+    });
   }
 
   Widget appAuthLogout() {
