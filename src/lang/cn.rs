@@ -746,5 +746,7 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
         ("Remote Control", "远程协助"),
         ("Input text", "随便说点什么吧"),
         ("Ready to start", "我准备好了"),
+        ("Update your account password", "修改账号密码"),
+        ("Sign out of your account", "退出登录"),
     ].iter().cloned().collect();
 }

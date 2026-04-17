@@ -1837,6 +1837,19 @@ class _AccountState extends State<_Account> {
     return ListView(
       controller: scrollController,
       children: [
+        Padding(
+          padding: const EdgeInsets.only(
+              left: _kCardLeftMargin + _kContentHMargin,
+              top: 20,
+              bottom: 8),
+          child: Text(
+            translate('Account'),
+            style: const TextStyle(
+              fontSize: _kTitleFontSize,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
         if (!kAppModeShareOnly) ...[
           _accountActionsCard(context),
           _accountDangerCard(context),
@@ -1969,14 +1982,14 @@ class _AccountState extends State<_Account> {
 
   Widget _accountActionsCard(BuildContext context) {
     return _Card(
-      title: translate('Account'),
+      title: '',
       children: [
         _accountActionTile(
           context,
           icon: Icons.lock_outline,
           iconColor: Colors.blue,
           label: 'Change Password',
-          subtitle: 'Update your account password',
+          subtitle: translate('Update your account password'),
           onTap: () => _doChangePassword(),
         ),
       ],
@@ -1985,14 +1998,14 @@ class _AccountState extends State<_Account> {
 
   Widget _accountDangerCard(BuildContext context) {
     return _Card(
-      title: translate('Danger Zone'),
+      title: '',
       children: [
         _accountActionTile(
           context,
           icon: Icons.logout,
           iconColor: Colors.red,
           label: 'Logout',
-          subtitle: 'Sign out of your account',
+          subtitle: translate('Sign out of your account'),
           labelColor: Colors.red,
           onTap: () => _doLogout(),
         ),
