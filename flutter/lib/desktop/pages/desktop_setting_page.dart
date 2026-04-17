@@ -1966,6 +1966,39 @@ class _AccountState extends State<_Account> {
       }
     }
   }
+
+  Widget _accountActionsCard(BuildContext context) {
+    return _Card(
+      title: translate('Account'),
+      children: [
+        _accountActionTile(
+          context,
+          icon: Icons.lock_outline,
+          iconColor: Colors.blue,
+          label: 'Change Password',
+          subtitle: 'Update your account password',
+          onTap: () => _doChangePassword(),
+        ),
+      ],
+    );
+  }
+
+  Widget _accountDangerCard(BuildContext context) {
+    return _Card(
+      title: translate('Danger Zone'),
+      children: [
+        _accountActionTile(
+          context,
+          icon: Icons.logout,
+          iconColor: Colors.red,
+          label: 'Logout',
+          subtitle: 'Sign out of your account',
+          labelColor: Colors.red,
+          onTap: () => _doLogout(),
+        ),
+      ],
+    );
+  }
 }
 
 class _Checkbox extends StatefulWidget {
