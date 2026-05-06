@@ -394,9 +394,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
     );
   }
 
-class _HomeUserInfoCard extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
+  Widget _buildHomeUserInfoCard(BuildContext context) {
     return Obx(() {
       final currentUserName = AppAuthService().currentUserName.value;
       if (currentUserName.isEmpty) {
@@ -486,7 +484,6 @@ class _HomeUserInfoCard extends StatelessWidget {
       );
     });
   }
-}
 
   buildTip(BuildContext context) {
     final isOutgoingOnly = bind.isOutgoingOnly();
@@ -499,7 +496,7 @@ class _HomeUserInfoCard extends StatelessWidget {
         children: [
           Column(
             children: [
-              if (!isOutgoingOnly) _HomeUserInfoCard(),
+              if (!isOutgoingOnly) _buildHomeUserInfoCard(context),
             ],
           ),
           SizedBox(
