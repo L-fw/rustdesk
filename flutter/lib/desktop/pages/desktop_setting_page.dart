@@ -12,6 +12,7 @@ import 'package:flutter_hbb/consts.dart';
 import 'package:flutter_hbb/desktop/pages/desktop_home_page.dart';
 import 'package:flutter_hbb/desktop/pages/desktop_tab_page.dart';
 import 'package:flutter_hbb/desktop/widgets/remote_toolbar.dart';
+import 'package:flutter_hbb/desktop/widgets/update_progress.dart';
 import 'package:flutter_hbb/mobile/widgets/dialog.dart';
 import 'package:flutter_hbb/models/platform_model.dart';
 import 'package:flutter_hbb/models/printer_model.dart';
@@ -63,6 +64,7 @@ enum SettingsTabKey {
   display,
   plugin,
   account,
+  update,
   printer,
   releases,
   about,
@@ -85,6 +87,7 @@ class DesktopSettingPage extends StatefulWidget {
     if (!isWeb && !bind.isIncomingOnly() && bind.pluginFeatureIsEnabled())
       SettingsTabKey.plugin,
     if (!bind.isDisableAccount()) SettingsTabKey.account,
+    SettingsTabKey.update,
     if (isWindows &&
         !isDesktop &&
         bind.mainGetBuildinOption(key: kOptionHideRemotePrinterSetting) != 'Y')
@@ -220,6 +223,11 @@ class _DesktopSettingPageState extends State<DesktopSettingPage>
               _TabInfo(tab, 'Account', Icons.person_outline, Icons.person,
               category: '通用'));
           break;
+        case SettingsTabKey.update:
+          settingTabs.add(
+              _TabInfo(tab, '更新', Icons.system_update_outlined, Icons.system_update,
+              category: '通用'));
+          break;
         case SettingsTabKey.printer:
           settingTabs
               .add(_TabInfo(tab, 'Printer', Icons.print_outlined, Icons.print,
@@ -261,6 +269,9 @@ class _DesktopSettingPageState extends State<DesktopSettingPage>
           break;
         case SettingsTabKey.account:
           children.add(const _Account());
+          break;
+        case SettingsTabKey.update:
+          children.add(const _Update());
           break;
         case SettingsTabKey.printer:
           children.add(const _Printer());
@@ -2246,6 +2257,69 @@ class _PluginState extends State<_Plugin> {
                   ? loginDialog()
                   : logOutConfirmDialog()
             }));
+  }
+}
+
+class _Update extends StatefulWidget {
+  const _Update({Key? key}) : super(key: key);
+
+  @override
+  State<_Update> createState() => _UpdateState();
+}
+
+class _UpdateState extends State<_Update> {
+  @override
+  Widget build(BuildContext context) {
+    return Obx(() {
+      final updateUrl = stateGlobal.updateUrl.value;
+      if (updateUrl.isNotEmpty) {
+        final serverDownloadUrl = stateGlobal.serverDownloadUrl.value;
+        final serverLatestVersion = stateGlobal.serverLatestVersion.value;
+        final versionText = serverLatestVersion.isNotEmpty
+            ? serverLatestVersion
+            : bind.mainGetNewVersion();
+        
+        final isToUpdate = (isWindows || isMacOS) && bind.mainIsInstalled();
+        String btnText = isToUpdate ? 'Update' : 'Download';
+
+        return Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                '${translate("new-version-of-{${bind.mainGetAppNameSync()}}-tip")} ($versionText).',
+                style: const TextStyle(fontSize: 16),
+              ),
+              const SizedBox(height: 20),
+              ElevatedButton(
+                onPressed: () async {
+                  final url = serverDownloadUrl.isNotEmpty
+                      ? serverDownloadUrl
+                      : updateUrl;
+                  if (isToUpdate) {
+                    handleUpdate(updateUrl, directDownloadUrl: serverDownloadUrl);
+                  } else if (url.isNotEmpty) {
+                    await launchUrl(Uri.parse(url),
+                        mode: LaunchMode.externalApplication);
+                  }
+                },
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                  child: Text(translate(btnText), style: const TextStyle(fontSize: 16)),
+                ),
+              )
+            ],
+          ),
+        );
+      } else {
+        return Center(
+          child: Text(
+            '当前已是最新版本！',
+            style: const TextStyle(fontSize: 18),
+          ),
+        );
+      }
+    });
   }
 }
 

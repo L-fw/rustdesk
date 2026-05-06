@@ -523,39 +523,6 @@ class _HomeUserInfoCard extends StatelessWidget {
   }
 
   Widget buildHelpCards(String updateUrl) {
-    if (updateUrl.isNotEmpty &&
-        !isCardClosed) {
-      final isToUpdate = (isWindows || isMacOS) && bind.mainIsInstalled();
-      String btnText = isToUpdate ? 'Update' : 'Download';
-      final serverDownloadUrl = stateGlobal.serverDownloadUrl.value;
-      final serverForceUpdate = stateGlobal.serverForceUpdate.value;
-      final serverLatestVersion = stateGlobal.serverLatestVersion.value;
-      final versionText = serverLatestVersion.isNotEmpty
-          ? serverLatestVersion
-          : bind.mainGetNewVersion();
-      GestureTapCallback onPressed = () async {
-        final url = serverDownloadUrl.isNotEmpty
-            ? serverDownloadUrl
-            : updateUrl;
-        if (url.isNotEmpty) {
-          await launchUrl(Uri.parse(url),
-              mode: LaunchMode.externalApplication);
-        }
-      };
-      if (isToUpdate) {
-        onPressed = () {
-          handleUpdate(updateUrl, directDownloadUrl: serverDownloadUrl);
-        };
-      }
-      String contentText =
-          "${translate("new-version-of-{${bind.mainGetAppNameSync()}}-tip")} ($versionText).";
-      return buildInstallCard(
-          "Status",
-          contentText,
-          btnText,
-          onPressed,
-          closeButton: !serverForceUpdate);
-    }
     if (systemError.isNotEmpty) {
       return buildInstallCard("", systemError, "", () {});
     }
