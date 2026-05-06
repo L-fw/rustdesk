@@ -394,6 +394,100 @@ class _DesktopHomePageState extends State<DesktopHomePage>
     );
   }
 
+class _HomeUserInfoCard extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Obx(() {
+      final currentUserName = AppAuthService().currentUserName.value;
+      if (currentUserName.isEmpty) {
+        return Align(
+          alignment: Alignment.centerLeft,
+          child: Text(
+            translate("Your Desktop"),
+            style: Theme.of(context).textTheme.titleLarge,
+          ),
+        );
+      }
+      return FutureBuilder<Map<String, dynamic>?>(
+        future: AppAuthService().getUserInfo(),
+        builder: (context, snapshot) {
+          final userInfo = snapshot.data;
+          final username = userInfo?['username']?.toString() ?? currentUserName;
+          final phone = userInfo?['phone']?.toString() ?? '';
+          
+          final maskedPhone = phone.length >= 7
+              ? '${phone.substring(0, 3)}****${phone.substring(phone.length - 4)}'
+              : phone;
+          
+          final infoColor = Theme.of(context)
+              .textTheme
+              .bodySmall
+              ?.color
+              ?.withOpacity(0.6) ??
+              Colors.grey;
+              
+          return Row(
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: LinearGradient(
+                    colors: [
+                      MyTheme.accent,
+                      MyTheme.accent.withOpacity(0.7),
+                    ],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                ),
+                child: Center(
+                  child: Text(
+                    username.isNotEmpty ? username.substring(0, 1).toUpperCase() : '?',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      username,
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(fontSize: 16),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    if (maskedPhone.isNotEmpty) ...[
+                      const SizedBox(height: 2),
+                      Row(
+                        children: [
+                          Icon(Icons.phone_outlined, size: 12, color: infoColor),
+                          const SizedBox(width: 4),
+                          Text(
+                            maskedPhone,
+                            style: TextStyle(fontSize: 12, color: infoColor),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ],
+          );
+        },
+      );
+    });
+  }
+}
+
   buildTip(BuildContext context) {
     final isOutgoingOnly = bind.isOutgoingOnly();
     return Padding(
@@ -405,14 +499,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
         children: [
           Column(
             children: [
-              if (!isOutgoingOnly)
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: Text(
-                    translate("Your Desktop"),
-                    style: Theme.of(context).textTheme.titleLarge,
-                  ),
-                ),
+              if (!isOutgoingOnly) _HomeUserInfoCard(),
             ],
           ),
           SizedBox(
