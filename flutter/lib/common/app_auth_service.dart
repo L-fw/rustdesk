@@ -44,6 +44,20 @@ class AppAuthService {
     return await _getSecureLocalOption(_tokenKey);
   }
 
+  /// 获取已保存的用户信息
+  Future<Map<String, dynamic>?> getUserInfo() async {
+    await _ensureSecureStorageMigrated();
+    final raw = await _getSecureLocalOption(_userInfoKey);
+    if (raw.isEmpty) return null;
+    try {
+      final decoded = jsonDecode(raw);
+      if (decoded is Map<String, dynamic>) {
+        return decoded;
+      }
+    } catch (_) {}
+    return null;
+  }
+
   /// 保存登录信息
   Future<void> _saveLoginInfo(String token, Map<String, dynamic> user) async {
     await _setSecureLocalOption(_tokenKey, token);

@@ -1837,6 +1837,25 @@ class _Account extends StatefulWidget {
 }
 
 class _AccountState extends State<_Account> {
+  Map<String, dynamic>? _userInfo;
+  bool _loadingUserInfo = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserInfo();
+  }
+
+  Future<void> _loadUserInfo() async {
+    final info = await AppAuthService().getUserInfo();
+    if (mounted) {
+      setState(() {
+        _userInfo = info;
+        _loadingUserInfo = false;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final scrollController = ScrollController();
@@ -1857,11 +1876,125 @@ class _AccountState extends State<_Account> {
           ),
         ),
         if (!kAppModeShareOnly) ...[
+          _userInfoCard(context),
           _accountActionsCard(context),
           _accountDangerCard(context),
         ],
       ],
     ).marginOnly(bottom: _kListViewBottomMargin);
+  }
+
+  /// 用户信息卡片（仅显示用户名与手机号）
+  Widget _userInfoCard(BuildContext context) {
+    if (_loadingUserInfo) {
+      return _Card(
+        title: '',
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(
+                horizontal: _kContentHMargin, vertical: 20),
+            child: Center(
+              child: SizedBox(
+                width: 24,
+                height: 24,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+            ),
+          ),
+        ],
+      );
+    }
+
+    final username = _userInfo?['username']?.toString() ?? '';
+    final phone = _userInfo?['phone']?.toString() ?? '';
+    // 手机号脱敏: 138****1234
+    final maskedPhone = phone.length >= 7
+        ? '${phone.substring(0, 3)}****${phone.substring(phone.length - 4)}'
+        : phone;
+
+    final infoColor = Theme.of(context)
+        .textTheme
+        .bodySmall
+        ?.color
+        ?.withOpacity(0.6) ??
+        Colors.grey;
+
+    return _Card(
+      title: '',
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(
+              horizontal: _kContentHMargin, vertical: 14),
+          child: Row(
+            children: [
+              // 头像圆圈
+              Container(
+                width: 56,
+                height: 56,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: LinearGradient(
+                    colors: [
+                      _accentColor,
+                      _accentColor.withOpacity(0.7),
+                    ],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                ),
+                child: Center(
+                  child: Text(
+                    username.isNotEmpty
+                        ? username.substring(0, 1).toUpperCase()
+                        : '?',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 16),
+              // 用户名 + 手机号
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (username.isNotEmpty)
+                      Text(
+                        username,
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    if (maskedPhone.isNotEmpty) ...[
+                      const SizedBox(height: 6),
+                      Row(
+                        children: [
+                          Icon(Icons.phone_outlined, size: 14, color: infoColor),
+                          const SizedBox(width: 6),
+                          Text(
+                            '手机号: $maskedPhone',
+                            style: TextStyle(fontSize: 13, color: infoColor),
+                          ),
+                        ],
+                      ),
+                    ],
+                    if (username.isEmpty && maskedPhone.isEmpty)
+                      Text(
+                        '暂无用户信息',
+                        style: TextStyle(fontSize: 13, color: infoColor),
+                      ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
   }
 
 
