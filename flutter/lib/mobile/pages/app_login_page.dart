@@ -1056,6 +1056,7 @@ class _ForgotPasswordDialogState extends State<_ForgotPasswordDialog> {
   bool _isSendingSms = false;
   String? _errorMsg;
   String? _passwordFormatError;
+  String? _confirmPasswordError;
 
   int _countdown = 0;
   Timer? _countdownTimer;
@@ -1280,6 +1281,14 @@ class _ForgotPasswordDialogState extends State<_ForgotPasswordDialog> {
               TextField(
                 controller: _confirmPasswordController,
                 obscureText: _obscureConfirmPassword,
+                onChanged: (value) {
+                  final error = (value.isNotEmpty && value != _passwordController.text)
+                      ? '两次密码输入不一致'
+                      : null;
+                  if (error != _confirmPasswordError) {
+                    setState(() => _confirmPasswordError = error);
+                  }
+                },
                 decoration: InputDecoration(
                   labelText: '确认新密码',
                   prefixIcon: const Icon(Icons.lock_outline, size: 20),
@@ -1298,6 +1307,16 @@ class _ForgotPasswordDialogState extends State<_ForgotPasswordDialog> {
                   ),
                 ),
               ),
+              if (_confirmPasswordError != null) ...[
+                const SizedBox(height: 6),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    _confirmPasswordError!,
+                    style: const TextStyle(color: Colors.red, fontSize: 12),
+                  ),
+                ),
+              ],
               if (_errorMsg != null) ...[
                 const SizedBox(height: 12),
                 Align(
