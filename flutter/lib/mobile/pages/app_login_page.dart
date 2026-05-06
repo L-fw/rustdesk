@@ -556,14 +556,6 @@ class _AppLoginPageState extends State<AppLoginPage>
                     letterSpacing: 1.2,
                   ),
                 ),
-                const SizedBox(height: 8),
-                Text(
-                  '远程协助管理平台',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: isDark ? Colors.white54 : Colors.black45,
-                  ),
-                ),
                 const SizedBox(height: 36),
 
                 // Tab Bar

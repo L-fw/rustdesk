@@ -569,18 +569,12 @@ class _AppLoginPageState extends State<AppLoginPage>
             padding: const EdgeInsets.symmetric(vertical: 32),
           child: SizedBox(
             width: 420, // 桌面固定宽度
-            child: Card(
-              elevation: isDark ? 4 : 2,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
-              color: isDark ? const Color(0xFF252830) : Colors.white,
-              child: Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 40, vertical: 36),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
+            child: Padding(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 40, vertical: 36),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
                     // Logo & App Name
                     Icon(
                       Icons.connected_tv_rounded,
@@ -594,14 +588,6 @@ class _AppLoginPageState extends State<AppLoginPage>
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
                         letterSpacing: 1.2,
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      '远程协助管理平台',
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: isDark ? Colors.white54 : Colors.black45,
                       ),
                     ),
                     const SizedBox(height: 28),
@@ -711,7 +697,7 @@ class _AppLoginPageState extends State<AppLoginPage>
           ),
         ),
       ),
-    ))));
+    )));
   }
 
   // ─────────────────────── 密码登录 Tab ───────────────────────
