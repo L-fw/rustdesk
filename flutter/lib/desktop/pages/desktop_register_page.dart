@@ -130,6 +130,7 @@ class _DesktopRegisterPageState extends State<DesktopRegisterPage>
   }
 
   bool _isUsernameValid(String value) {
+    if (value.length < 1 || value.length > 20) return false;
     return RegExp(r'^[A-Za-z0-9\u4e00-\u9fff]+$').hasMatch(value);
   }
 
@@ -186,7 +187,7 @@ class _DesktopRegisterPageState extends State<DesktopRegisterPage>
       return;
     }
     if (!_isUsernameValid(username)) {
-      _setFieldError('username', _usernameFocus, '用户名只能包含中文、英文和数字');
+      _setFieldError('username', _usernameFocus, '用户名需为1-20位字符，只能包含中文、英文和数字');
       return;
     }
     if (password.isEmpty) {
@@ -330,6 +331,7 @@ class _DesktopRegisterPageState extends State<DesktopRegisterPage>
                     icon: Icons.person_outline,
                     inputFormatters: [
                       _UsernameInputFormatter(),
+                      LengthLimitingTextInputFormatter(20),
                     ],
                   ),
                   const SizedBox(height: 14),

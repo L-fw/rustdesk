@@ -17,62 +17,117 @@ const {
   initSQLiteDatabase,
   dbGetUser, dbGetUserByPhone, dbGetUserByToken, dbSaveUser, dbDeleteUser, dbListUsers,
   dbGetDevice, dbGetAllDevices, dbUpsertDevice, dbGetDevicesByUser, dbSetDeviceBanned, dbDeleteDevice,
-  dbAddSession, dbUpdateSessionHeartbeat, dbEndSession, dbGetDeviceSessions,
+  dbAddSession, dbUpdateSessionHeartbeat, dbEndSession, dbGetDeviceSessions, dbGetUserSessions,
   dbGetActivationCode, dbGetAllActivationCodes, dbSaveActivationCode, dbDeleteActivationCode,
   dbAddVersionHistory, dbGetVersionHistory,
+  dbSetUserLock, dbClearUserLock,
+  dbGetLockSettings, dbSaveLockSettings,
+  dbGetVersionConfig, dbSaveVersionConfig,
 } = require('./sqlite_db');
 
 const app = express();
 app.use(express.json());
+app.set('trust proxy', 1); // 信任一层反向代理（Nginx 等），使 express-rate-limit 能正确识别真实 IP
 
 // ───────────────────────────────────────────────────────
 // IP 限流：同一 IP 15 分钟内最多 20 次
 // ───────────────────────────────────────────────────────
-const loginRateLimit = rateLimit({ windowMs: 15 * 60 * 1000, max: 20, standardHeaders: true, legacyHeaders: false });
+const loginRateLimit = rateLimit({ windowMs: 15 * 60 * 1000, max: 20, standardHeaders: true, legacyHeaders: false, message: { code: 429, msg: '该IP请求过于频繁，请 15 分钟后再试' } });
 app.use('/api/user/login', loginRateLimit);
 app.use('/api/user/sms/login', loginRateLimit);
 app.use('/api/user/sms/send', rateLimit({ windowMs: 60 * 1000, max: 3, standardHeaders: true, legacyHeaders: false }));
 app.use('/api/user/register', rateLimit({ windowMs: 60 * 60 * 1000, max: 5, standardHeaders: true, legacyHeaders: false }));
 
 // ───────────────────────────────────────────────────────
-// 账号锁定：连续错误 5 次锁定 5 分钟
-// key = username 或 phone，value = { count, lockedUntil }
+// 账号锁定：阶梯式锁定 1分钟→5分钟→30分钟→1小时
+// 失败计数在内存中；锁定时间持久化到 DB（重启后仍有效）
 // ───────────────────────────────────────────────────────
-const loginFailStore = new Map();
-const LOGIN_FAIL_MAX = 5;
-const LOGIN_LOCK_MS = 5 * 60 * 1000;
+const loginFailCount = new Map(); // key → 当前连续失败次数
 
-function checkLoginLock(key) {
-  const rec = loginFailStore.get(key);
-  if (!rec) return null;
-  if (rec.lockedUntil && Date.now() < rec.lockedUntil) {
-    const remainSec = Math.ceil((rec.lockedUntil - Date.now()) / 1000);
-    return `登录失败次数过多，请 ${remainSec} 秒后再试`;
-  }
-  return null;
+function getLockDurationMs(lockLevel) {
+  const mins = getLockSettings().lockDurationsMin;
+  const min = mins[Math.min(lockLevel, mins.length - 1)] ?? 1;
+  return min * 60 * 1000;
 }
 
-function recordLoginFail(key) {
-  const rec = loginFailStore.get(key) || { count: 0, lockedUntil: null };
-  rec.count += 1;
-  if (rec.count >= LOGIN_FAIL_MAX) {
-    rec.lockedUntil = Date.now() + LOGIN_LOCK_MS;
-    rec.count = 0;
-  }
-  loginFailStore.set(key, rec);
+function fmtLockRemain(ms) {
+  const sec = Math.ceil(ms / 1000);
+  if (sec >= 3600) return `${Math.ceil(sec / 3600)} 小时`;
+  if (sec >= 60)   return `${Math.ceil(sec / 60)} 分钟`;
+  return `${sec} 秒`;
 }
 
-function clearLoginFail(key) {
-  loginFailStore.delete(key);
+async function checkLoginLock(key) {
+  try {
+    const user = await dbGetUser(key) || await dbGetUserByPhone(key);
+    if (!user || !user.lock_until) return null;
+    const lockMs = Date.parse(user.lock_until);
+    if (isNaN(lockMs) || Date.now() > lockMs) {
+      // 锁已过期，顺手清理
+      await dbClearUserLock(user.username).catch(() => {});
+      return null;
+    }
+    return `登录失败次数过多，请 ${fmtLockRemain(lockMs - Date.now())} 后再试`;
+  } catch { return null; }
 }
 
-// 定期清理过期锁定记录
-setInterval(() => {
-  const now = Date.now();
-  for (const [key, rec] of loginFailStore) {
-    if (!rec.lockedUntil || now > rec.lockedUntil) loginFailStore.delete(key);
-  }
-}, 60_000);
+// ───────────────────────────────────────────────────────
+// 企业微信 Webhook 推送（fire-and-forget，失败不影响主流程）
+// ───────────────────────────────────────────────────────
+const WXWORK_WEBHOOK = 'https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=5c877eb8-52bf-48ab-9cf3-69377aba83d3';
+
+function notifyWxWorkLock({ username, phone, level, lockUntil, duration }) {
+  const durationText = fmtLockRemain(duration);
+  const lockUntilLocal = new Date(lockUntil).toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' });
+  const content = [
+    `🔒 **账号锁定通知**`,
+    `> 用户名：${username}`,
+    `> 手机号：${phone || '未绑定'}`,
+    `> 锁定等级：第 ${level} 次`,
+    `> 锁定时长：${durationText}`,
+    `> 解锁时间：${lockUntilLocal}`,
+  ].join('\n');
+
+  fetch(WXWORK_WEBHOOK, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ msgtype: 'markdown', markdown: { content } }),
+  })
+    .then(r => r.json())
+    .then(r => { if (r.errcode !== 0) console.warn('[WXWORK] 推送失败:', r.errmsg); })
+    .catch(e => console.warn('[WXWORK] 推送异常:', e.message));
+}
+
+async function recordLoginFail(key) {
+  try {
+    const { failThreshold } = getLockSettings();
+    const count = (loginFailCount.get(key) || 0) + 1;
+    if (count < failThreshold) {
+      loginFailCount.set(key, count);
+      return;
+    }
+    // 达到阈值 → 触发阶梯锁
+    loginFailCount.delete(key);
+    const user = await dbGetUser(key) || await dbGetUserByPhone(key);
+    if (!user) return;
+    const level = user.lock_level ?? 0;
+    const duration = getLockDurationMs(level);
+    const lockUntil = new Date(Date.now() + duration).toISOString();
+    await dbSetUserLock(user.username, lockUntil, level + 1);
+    console.log(`[LOCK] ${user.username} locked level=${level + 1} until=${lockUntil}`);
+    if (getLockSettings().wxworkEnabled) {
+      notifyWxWorkLock({ username: user.username, phone: user.phone, level: level + 1, lockUntil, duration });
+    }
+  } catch (e) { console.error('[recordLoginFail]', e); }
+}
+
+async function clearLoginFail(key) {
+  try {
+    loginFailCount.delete(key);
+    const user = await dbGetUser(key) || await dbGetUserByPhone(key);
+    if (user) await dbClearUserLock(user.username);
+  } catch (e) { console.error('[clearLoginFail]', e); }
+}
 
 // ───────────────────────────────────────────────────────
 // WebSocket 连接管理
@@ -109,8 +164,27 @@ function decryptPassword(encrypted) {
 const SESSION_TOKEN = 'rustdesk-admin-session-' + Date.now();
 const TOKEN_VERSION_MAX = 1000000;
 
-const VERSION_FILE = path.join(__dirname, 'version.json');
 const LEGACY_ACTIVATION_CODES_FILE = path.join(__dirname, 'version-check', 'activation_codes.json');
+
+// ───────────────────────────────────────────────────────
+// 锁定策略配置（持久化到 DB settings 表，可通过管理后台修改）
+// ───────────────────────────────────────────────────────
+const DEFAULT_LOCK_SETTINGS = {
+  failThreshold: 3,
+  lockDurationsMin: [1, 5, 30, 60],
+  wxworkEnabled: true,
+};
+
+// 运行时缓存，服务启动后由 initLockSettings() 从 DB 填充
+let _lockSettings = { ...DEFAULT_LOCK_SETTINGS, lockDurationsMin: [...DEFAULT_LOCK_SETTINGS.lockDurationsMin] };
+function getLockSettings() { return _lockSettings; }
+
+async function initLockSettings() {
+  try {
+    const saved = await dbGetLockSettings();
+    if (saved) _lockSettings = saved;
+  } catch (e) { console.error('[LOCK_SETTINGS] 初始化失败，使用默认值:', e.message); }
+}
 
 const APK_ROOT_RELATIVE_PATH = './apk';
 const APK_FULL_RELATIVE_PATH = './apk/full';
@@ -120,12 +194,13 @@ const APK_ROOT_DIR = path.join(__dirname, APK_ROOT_RELATIVE_PATH);
 const APK_DIR_FULL = path.join(__dirname, APK_FULL_RELATIVE_PATH);
 const APK_DIR_SHARE_ONLY = path.join(__dirname, APK_SHARE_ONLY_RELATIVE_PATH);
 const APK_DIR_DESKTOP = path.join(__dirname, APK_DESKTOP_RELATIVE_PATH);
+const QR_CODE_DIR = path.join(__dirname, 'QR_code');
 
 // 心跳超时：超过此时间没有心跳视为会话已断开（毫秒）
 const SESSION_TIMEOUT_MS = 90 * 1000; // 90秒
 
-// 确保 APK 目录存在
-[APK_ROOT_DIR, APK_DIR_FULL, APK_DIR_SHARE_ONLY, APK_DIR_DESKTOP].forEach(dir => {
+// 确保 APK 目录和二维码目录存在
+[APK_ROOT_DIR, APK_DIR_FULL, APK_DIR_SHARE_ONLY, APK_DIR_DESKTOP, QR_CODE_DIR].forEach(dir => {
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
 });
 
@@ -248,21 +323,36 @@ function normalizeVersionConfig(rawConfig) {
   return normalized;
 }
 
-function loadVersionConfig() {
-  if (!fs.existsSync(VERSION_FILE)) {
-    saveVersionConfig(DEFAULT_VERSION_CONFIG);
-    return cloneDefaultVersionConfig();
-  }
-  try {
-    const parsed = JSON.parse(fs.readFileSync(VERSION_FILE, 'utf8'));
-    const normalized = normalizeVersionConfig(parsed);
-    if (JSON.stringify(parsed) !== JSON.stringify(normalized)) saveVersionConfig(normalized);
-    return normalized;
-  } catch { return cloneDefaultVersionConfig(); }
+// ───────────────────────────────────────────────────────
+// 版本配置管理（持久化到 DB settings 表）
+// ───────────────────────────────────────────────────────
+let _versionConfig = cloneDefaultVersionConfig();
+function loadVersionConfig() { return _versionConfig; }
+
+async function saveVersionConfig(config) {
+  _versionConfig = config;
+  await dbSaveVersionConfig(config);
 }
 
-function saveVersionConfig(config) {
-  fs.writeFileSync(VERSION_FILE, JSON.stringify(config, null, 2));
+async function initVersionConfig() {
+  try {
+    const saved = await dbGetVersionConfig();
+    if (saved) {
+      _versionConfig = normalizeVersionConfig(saved);
+    } else {
+      // 首次启动：若 version.json 仍存在则迁移，否则用默认值写入 DB
+      const fs_mod = require('fs');
+      const versionFilePath = path.join(__dirname, 'version.json');
+      if (fs_mod.existsSync(versionFilePath)) {
+        try {
+          const parsed = JSON.parse(fs_mod.readFileSync(versionFilePath, 'utf8'));
+          _versionConfig = normalizeVersionConfig(parsed);
+          console.log('[VERSION] 已从 version.json 迁移配置到数据库');
+        } catch { _versionConfig = cloneDefaultVersionConfig(); }
+      }
+      await dbSaveVersionConfig(_versionConfig);
+    }
+  } catch (e) { console.error('[VERSION] 初始化失败，使用默认值:', e.message); }
 }
 
 // multer 配置：APK 上传
@@ -295,7 +385,55 @@ const uploadApk = multer({
 app.use('/download/full', express.static(APK_DIR_FULL));
 app.use('/download/share_only', express.static(APK_DIR_SHARE_ONLY));
 app.use('/download/desktop', express.static(APK_DIR_DESKTOP));
+app.use('/download/qrcode', express.static(QR_CODE_DIR));
 app.use('/download', express.static(APK_DIR_FULL));
+
+// multer 配置：二维码图片上传
+const QR_IMAGE_EXTS = ['.png', '.jpg', '.jpeg', '.gif', '.webp'];
+const QR_CONFIG_FILE = path.join(QR_CODE_DIR, 'config.json');
+
+const qrImageStorage = multer.diskStorage({
+  destination: (_req, _file, cb) => cb(null, QR_CODE_DIR),
+  filename: (_req, file, cb) => {
+    const filename = Buffer.from(file.originalname, 'latin1').toString('utf8');
+    cb(null, filename);
+  },
+});
+const uploadQrImage = multer({
+  storage: qrImageStorage,
+  limits: { fileSize: 10 * 1024 * 1024 },
+  fileFilter: (_req, file, cb) => {
+    const name = file.originalname.toLowerCase();
+    if (QR_IMAGE_EXTS.some(ext => name.endsWith(ext))) cb(null, true);
+    else cb(new Error('只允许上传图片文件 (png/jpg/jpeg/gif/webp)'));
+  },
+});
+
+function loadQrConfig() {
+  try {
+    if (fs.existsSync(QR_CONFIG_FILE)) return JSON.parse(fs.readFileSync(QR_CONFIG_FILE, 'utf8'));
+  } catch {}
+  return { dayFile: '', nightFile: '' };
+}
+
+function saveQrConfigToFile(config) {
+  fs.writeFileSync(QR_CONFIG_FILE, JSON.stringify(config, null, 2));
+}
+
+// ───────────────────────────────────────────────────────
+// 公开二维码路由（固定 URL，内容由后台配置决定）
+// ───────────────────────────────────────────────────────
+function serveQrImage(shift, req, res) {
+  const config = loadQrConfig();
+  const filename = shift === 'day' ? config.dayFile : config.nightFile;
+  if (!filename) return res.status(404).json({ code: 404, msg: `${shift === 'day' ? '白班' : '晚班'}二维码尚未配置` });
+  const filePath = path.join(QR_CODE_DIR, path.basename(filename));
+  if (!fs.existsSync(filePath)) return res.status(404).json({ code: 404, msg: '图片文件不存在，请重新上传' });
+  res.sendFile(filePath);
+}
+
+app.get('/qrcode/day',   (req, res) => serveQrImage('day',   req, res));
+app.get('/qrcode/night', (req, res) => serveQrImage('night', req, res));
 
 // ───────────────────────────────────────────────────────
 // 会话状态辅助函数（操作 session 行数组）
@@ -559,18 +697,18 @@ app.post('/api/user/login', async (req, res) => {
     if (!isValidUsername(normalizedUsername))
       return res.status(400).json({ code: 400, msg: '用户名只能包含中文、英文和数字' });
 
-    const lockMsg = checkLoginLock(normalizedUsername);
+    const lockMsg = await checkLoginLock(normalizedUsername);
     if (lockMsg) return res.status(429).json({ code: 429, msg: lockMsg });
 
     const user = await dbGetUser(normalizedUsername);
-    if (!user) return res.status(401).json({ code: 401, msg: '用户名或密码错误' });
+    if (!user) return res.status(401).json({ code: 401, msg: '用户名不存在，请输入正确的用户名' });
 
     const passwordMatch = await bcrypt.compare(password, user.password_hash);
     if (!passwordMatch) {
-      recordLoginFail(normalizedUsername);
+      await recordLoginFail(normalizedUsername);
       return res.status(401).json({ code: 401, msg: '用户名或密码错误' });
     }
-    clearLoginFail(normalizedUsername);
+    await clearLoginFail(normalizedUsername);
 
     if (user.activation_code_hash) {
       const entry = await dbGetActivationCode(user.activation_code_hash);
@@ -645,19 +783,53 @@ app.post('/api/user/login', async (req, res) => {
 });
 
 // ───────────────────────────────────────────────────────
-// 发送短信验证码（模拟）
+// 发送短信验证码（阿里云短信服务）
 // POST /api/user/sms/send
 // ───────────────────────────────────────────────────────
-app.post('/api/user/sms/send', (req, res) => {
+const Dysmsapi = require('@alicloud/dysmsapi20170525');
+const OpenApi  = require('@alicloud/openapi-client');
+
+function createSmsClient() {
+  const Credential = require('@alicloud/credentials');
+  const credConfig = new Credential.Config({
+    type:     'ecs_ram_role',
+    roleName: 'jyyxt.cloud',
+  });
+  const credClient = new Credential.default(credConfig);
+  const config = new OpenApi.Config({});
+  config.credential = credClient;
+  config.endpoint = 'dysmsapi.aliyuncs.com';
+  return new Dysmsapi.default(config);
+}
+
+app.post('/api/user/sms/send', async (req, res) => {
   const { phone } = req.body || {};
   if (!phone) return res.status(400).json({ code: 400, msg: '手机号不能为空' });
   const normalizedPhone = String(phone).trim();
   if (!normalizedPhone) return res.status(400).json({ code: 400, msg: '手机号不能为空' });
 
-  const code = '123456'; // 模拟验证码
-  smsCodeStore.set(normalizedPhone, { code, expireAt: Date.now() + SMS_CODE_EXPIRE_MS });
-  console.log(`[SMS] Sent code to ${normalizedPhone}: ${code} (mock)`);
-  res.json({ code: 200, msg: '验证码已发送' });
+  const code = String(Math.floor(100000 + Math.random() * 900000));
+
+  try {
+    const client = createSmsClient();
+    const sendReq = new Dysmsapi.SendSmsRequest({
+      phoneNumbers:  normalizedPhone,
+      signName:      '深圳市佳影寰球科技',
+      templateCode:  'SMS_504750157',
+      templateParam: JSON.stringify({ code }),
+    });
+    const resp = await client.sendSms(sendReq);
+    if (resp.body?.code !== 'OK') {
+      console.error('[SMS] 发送失败:', resp.body);
+      return res.status(500).json({ code: 500, msg: `短信发送失败: ${resp.body?.message}` });
+    }
+    smsCodeStore.set(normalizedPhone, { code, expireAt: Date.now() + SMS_CODE_EXPIRE_MS });
+    console.log(`[SMS] Sent to ${normalizedPhone} (aliyun)`);
+    res.json({ code: 200, msg: '验证码已发送' });
+  } catch (e) {
+    console.error('[SMS] 异常:', e.message);
+    res.status(500).json({ code: 500, msg: '短信服务异常，请稍后重试' });
+  }
 });
 
 // ───────────────────────────────────────────────────────
@@ -675,12 +847,12 @@ app.post('/api/user/sms/login', async (req, res) => {
     if (!normalizedPhone || !normalizedCode)
       return res.status(400).json({ code: 400, msg: '手机号和验证码不能为空' });
 
-    const lockMsg = checkLoginLock(normalizedPhone);
+    const lockMsg = await checkLoginLock(normalizedPhone);
     if (lockMsg) return res.status(429).json({ code: 429, msg: lockMsg });
 
     const stored = smsCodeStore.get(normalizedPhone);
     if (!stored || stored.code !== normalizedCode) {
-      recordLoginFail(normalizedPhone);
+      await recordLoginFail(normalizedPhone);
       return res.status(401).json({ code: 401, msg: '验证码错误' });
     }
     if (Date.now() > stored.expireAt) {
@@ -688,7 +860,7 @@ app.post('/api/user/sms/login', async (req, res) => {
       return res.status(401).json({ code: 401, msg: '验证码已过期' });
     }
     smsCodeStore.delete(normalizedPhone);
-    clearLoginFail(normalizedPhone);
+    await clearLoginFail(normalizedPhone);
 
     const user = await dbGetUserByPhone(normalizedPhone);
     if (!user) return res.status(401).json({ code: 401, msg: '该手机号未注册' });
@@ -1084,6 +1256,22 @@ app.delete('/admin/devices/:id', authMiddleware, async (req, res) => {
   }
 });
 
+app.get('/admin/users/:username/sessions', authMiddleware, async (req, res) => {
+  try {
+    const username = normalizeUsername(req.params.username);
+    if (!username) return res.status(400).json({ code: 400, msg: '缺少用户名' });
+    const user = await dbGetUser(username);
+    if (!user) return res.status(404).json({ code: 404, msg: '用户不存在' });
+    const devices = await dbGetDevicesByUser(username, user.phone);
+    const deviceIds = devices.map(d => d.id);
+    const sessions = await dbGetUserSessions(deviceIds);
+    res.json({ code: 200, data: sessions.map(mapSession) });
+  } catch (e) {
+    console.error('[admin/users sessions]', e);
+    res.status(500).json({ code: 500, msg: '服务器内部错误' });
+  }
+});
+
 app.post('/admin/users/reset-password', authMiddleware, async (req, res) => {
   try {
     const { username, phone, password, random } = req.body || {};
@@ -1125,6 +1313,25 @@ app.post('/admin/users/reset-password', authMiddleware, async (req, res) => {
 // ───────────────────────────────────────────────────────
 // 版本管理 API
 // ───────────────────────────────────────────────────────
+app.post('/admin/users/unlock', authMiddleware, async (req, res) => {
+  try {
+    const { username, phone } = req.body || {};
+    const normalizedUsername = normalizeUsername(username);
+    let user = null;
+    if (normalizedUsername) user = await dbGetUser(normalizedUsername);
+    if (!user && phone) user = await dbGetUserByPhone(String(phone).trim());
+    if (!user) return res.status(404).json({ code: 404, msg: '用户不存在' });
+    await dbClearUserLock(user.username);
+    loginFailCount.delete(user.username);
+    loginFailCount.delete(user.phone || '');
+    console.log(`[UNLOCK] Admin unlocked: ${user.username}`);
+    res.json({ code: 200, msg: '账号已解锁' });
+  } catch (e) {
+    console.error('[admin/users/unlock]', e);
+    res.status(500).json({ code: 500, msg: '服务器内部错误' });
+  }
+});
+
 app.get('/admin/version', authMiddleware, (req, res) => {
   const clientType = normalizeVersionClientType(req.query.client_type);
   const config = loadVersionConfig();
@@ -1136,7 +1343,7 @@ app.post('/admin/version', authMiddleware, async (req, res) => {
   const clientType = normalizeVersionClientType(body.clientType);
   const config = loadVersionConfig();
   mergeVersionFields(config.android[clientType], body);
-  saveVersionConfig(config);
+  await saveVersionConfig(config);
   const cfg = config.android[clientType];
   // 自动写入历史版本
   try {
@@ -1188,6 +1395,73 @@ app.delete('/admin/version/files/:filename', authMiddleware, (req, res) => {
   if (!filename || filename !== raw || !filename.toLowerCase().endsWith(ext))
     return res.status(400).json({ code: 400, msg: '文件名不合法' });
   const filePath = path.join(apkDir, filename);
+  if (!fs.existsSync(filePath)) return res.status(404).json({ code: 404, msg: '文件不存在' });
+  try {
+    fs.unlinkSync(filePath);
+    res.json({ code: 200, msg: '已删除' });
+  } catch (e) {
+    res.status(500).json({ code: 500, msg: e.message || '删除失败' });
+  }
+});
+
+// ───────────────────────────────────────────────────────
+// 二维码管理 API
+// ───────────────────────────────────────────────────────
+app.get('/admin/qrcode/config', authMiddleware, (req, res) => {
+  res.json({ code: 200, data: loadQrConfig() });
+});
+
+app.post('/admin/qrcode/config', authMiddleware, (req, res) => {
+  try {
+    const current = loadQrConfig();
+    const { dayFile, nightFile } = req.body || {};
+    const config = {
+      dayFile:   dayFile   !== undefined ? path.basename(String(dayFile).trim())   : current.dayFile,
+      nightFile: nightFile !== undefined ? path.basename(String(nightFile).trim()) : current.nightFile,
+    };
+    saveQrConfigToFile(config);
+    console.log('[QR] Config saved:', config);
+    res.json({ code: 200, msg: '二维码配置已保存', data: config });
+  } catch (e) {
+    console.error('[admin/qrcode/config POST]', e);
+    res.status(500).json({ code: 500, msg: '服务器内部错误' });
+  }
+});
+
+app.get('/admin/qrcode/files', authMiddleware, (req, res) => {
+  try {
+    const files = fs.readdirSync(QR_CODE_DIR)
+      .filter(f => QR_IMAGE_EXTS.some(ext => f.toLowerCase().endsWith(ext)))
+      .map(f => {
+        const stat = fs.statSync(path.join(QR_CODE_DIR, f));
+        return { filename: f, size: stat.size, modified: stat.mtime.toISOString() };
+      })
+      .sort((a, b) => new Date(b.modified) - new Date(a.modified));
+    res.json({ code: 200, data: files });
+  } catch { res.json({ code: 200, data: [] }); }
+});
+
+app.post('/admin/qrcode/upload', authMiddleware, (req, res) => {
+  uploadQrImage.single('image')(req, res, (err) => {
+    if (err) {
+      console.error('[QR UPLOAD] Error:', err.message);
+      return res.status(400).json({ code: 400, msg: err.message });
+    }
+    if (!req.file) return res.status(400).json({ code: 400, msg: '未选择文件' });
+    const filename = req.file.filename;
+    const downloadPath = `/download/qrcode/${encodeURIComponent(filename)}`;
+    console.log(`[QR UPLOAD] Image uploaded: ${filename} (${(req.file.size / 1024).toFixed(1)}KB)`);
+    res.json({ code: 200, msg: '上传成功', data: { filename, size: req.file.size, downloadPath } });
+  });
+});
+
+app.delete('/admin/qrcode/files/:filename', authMiddleware, (req, res) => {
+  const raw = String(req.params.filename || '');
+  const filename = path.basename(raw);
+  const lname = filename.toLowerCase();
+  if (!filename || filename !== raw || !QR_IMAGE_EXTS.some(ext => lname.endsWith(ext)))
+    return res.status(400).json({ code: 400, msg: '文件名不合法' });
+  const filePath = path.join(QR_CODE_DIR, filename);
   if (!fs.existsSync(filePath)) return res.status(404).json({ code: 404, msg: '文件不存在' });
   try {
     fs.unlinkSync(filePath);
@@ -1298,10 +1572,93 @@ app.post('/admin/activation-codes/revoke', authMiddleware, async (req, res) => {
   }
 });
 
+app.post('/admin/activation-codes/revoke-batch', authMiddleware, async (req, res) => {
+  try {
+    const { hashes } = req.body || {};
+    if (!Array.isArray(hashes) || !hashes.length)
+      return res.status(400).json({ code: 400, msg: '缺少 hashes 数组' });
+    const results = await Promise.allSettled(
+      hashes.map(async hash => {
+        const entry = await dbGetActivationCode(hash);
+        if (!entry) throw new Error('not_found');
+        await dbDeleteActivationCode(hash);
+        return hash;
+      })
+    );
+    const deleted = results.filter(r => r.status === 'fulfilled').length;
+    const failed  = results.length - deleted;
+    console.log(`[admin/activation-codes/revoke-batch] deleted=${deleted} failed=${failed}`);
+    res.json({ code: 200, msg: `已删除 ${deleted} 个激活码${failed ? `，${failed} 个失败` : ''}`, deleted, failed });
+  } catch (e) {
+    console.error('[admin/activation-codes/revoke-batch]', e);
+    res.status(500).json({ code: 500, msg: '服务器内部错误' });
+  }
+});
+
+app.get('/admin/lock-settings', authMiddleware, (_req, res) => {
+  res.json({ code: 200, data: getLockSettings() });
+});
+
+app.post('/admin/lock-settings', authMiddleware, async (req, res) => {
+  try {
+    const { failThreshold, lockDurationsMin, wxworkEnabled } = req.body || {};
+    if (
+      !Number.isFinite(failThreshold) || failThreshold < 1 ||
+      !Array.isArray(lockDurationsMin) || lockDurationsMin.length !== 4 ||
+      lockDurationsMin.some(v => !Number.isFinite(v) || v < 1)
+    ) return res.status(400).json({ code: 400, msg: '参数无效' });
+
+    const settings = {
+      failThreshold: Math.floor(failThreshold),
+      lockDurationsMin: lockDurationsMin.map(v => Math.floor(v)),
+      wxworkEnabled: !!wxworkEnabled,
+    };
+    await dbSaveLockSettings(settings);
+    _lockSettings = settings;
+    loginFailCount.clear(); // 重置内存计数，避免旧阈值残留
+    console.log('[LOCK_SETTINGS] 已更新:', settings);
+    res.json({ code: 200, msg: '保存成功' });
+  } catch (e) {
+    console.error('[lock-settings POST]', e);
+    res.status(500).json({ code: 500, msg: '服务器内部错误' });
+  }
+});
+
 app.get('/health', (_req, res) => res.json({ status: 'ok', time: new Date().toISOString() }));
-app.get('/admin', (_req, res) => res.sendFile(path.join(__dirname, 'admin.html')));
+
+// ───────────────────────────────────────────────────────
+// 微信团队域名验证文件（部署校验，无需鉴权）
+// 将微信提供的验证内容保存为 603cf1d9b7ec7e82427fb424a73c8fc0.txt
+// 放置在 WeChat_Verify/ 目录下（与 index.js 同级）
+// ───────────────────────────────────────────────────────
+app.get('/603cf1d9b7ec7e82427fb424a73c8fc0.txt', (_req, res) => {
+  const filePath = path.join(__dirname, 'WeChat_Verify', '603cf1d9b7ec7e82427fb424a73c8fc0.txt');
+  res.sendFile(filePath, (err) => {
+    if (err) {
+      console.error('[WX_VERIFY] 验证文件未找到:', filePath);
+      res.status(404).send('Not found');
+    }
+  });
+});
+
+// ───────────────────────────────────────────────────────
+// 后台路径（通过环境变量隐藏，避免被扫描发现）
+// 在 compose.yaml 中设置 ADMIN_PATH 为你自己的随机路径
+// 例如：ADMIN_PATH=/panel-3a7f9c1b2e
+// ───────────────────────────────────────────────────────
+const ADMIN_PATH = process.env.ADMIN_PATH ? process.env.ADMIN_PATH.trim() : null;
+if (!ADMIN_PATH) {
+  console.warn('[WARN] ADMIN_PATH 未设置，后台入口已禁用。请在环境变量中配置 ADMIN_PATH。');
+} else {
+  app.get(ADMIN_PATH, (_req, res) => res.sendFile(path.join(__dirname, 'admin.html')));
+  console.log(`[AUTH] 后台入口已挂载到: ${ADMIN_PATH}`);
+}
 app.get('/releases/tech', (_req, res) => res.sendFile(path.join(__dirname, 'releases.html')));
 app.get('/releases/share', (_req, res) => res.sendFile(path.join(__dirname, 'releases_share.html')));
+
+// 技术文档页
+app.use('/docs/tech/assets', express.static(path.join(__dirname, 'assets')));
+app.get('/docs/tech', (_req, res) => res.sendFile(path.join(__dirname, 'tech_docs.html')));
 
 // 公开版本信息接口（供发布页动态读取，无需鉴权）
 app.get('/api/public/version', (req, res) => {
@@ -1425,6 +1782,8 @@ wss.on('close', () => clearInterval(wsHeartbeat));
 (async () => {
   try {
     await initSQLiteDatabase(__dirname);
+    await initLockSettings();
+    await initVersionConfig();
     server.listen(PORT, () => {
       console.log(`✅ 服务运行在 :${PORT}`);
       console.log(`   管理界面   : http://localhost:${PORT}/admin`);
