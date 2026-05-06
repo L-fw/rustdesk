@@ -86,75 +86,11 @@ class _DesktopHomePageState extends State<DesktopHomePage>
         block: _block, mask: true, use: canBeBlocked, child: child);
   }
 
-  /// 公司品牌头部 —— 方案A：左侧面板顶部
-  /// Logo 图片路径：assets/brand.jpg（pubspec.yaml 已有 assets/ 通配，无需额外声明）
-  Widget _buildCompanyHeader() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(14, 14, 14, 12),
-      decoration: const BoxDecoration(
-        border: Border(
-          bottom: BorderSide(
-            color: Color(0x1A000000), // 12% 黑，亮/暗主题均柔和可见
-            width: 0.8,
-          ),
-        ),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          // Logo 图标（28×28）
-          ClipRRect(
-            borderRadius: BorderRadius.circular(6),
-            child: Image.asset(
-              'assets/brand.jpg',
-              width: 28,
-              height: 28,
-              fit: BoxFit.contain,
-              errorBuilder: (_, __, ___) => Container(
-                width: 28,
-                height: 28,
-                decoration: BoxDecoration(
-                  color: const Color(0xFF5260FF),
-                  borderRadius: BorderRadius.circular(6),
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(width: 8),
-          // 公司名称（可点击，跳转官网）
-          Expanded(
-            child: InkWell(
-              onTap: () => launchUrl(
-                Uri.parse('https://jygamwing.com/'),
-                mode: LaunchMode.externalApplication,
-              ),
-              borderRadius: BorderRadius.circular(4),
-              child: const Text(
-                '佳影寰球科技有限公司',
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                  color: Color(0xFF506BF6),
-                  letterSpacing: 0.2,
-                  height: 1.2,
-                ),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 
   Widget buildLeftPane(BuildContext context) {
     final isIncomingOnly = bind.isIncomingOnly();
     final isOutgoingOnly = bind.isOutgoingOnly();
     final children = <Widget>[
-      // ── 佳影寰球科技有限公司 品牌头部 ──
-      _buildCompanyHeader(),
       if (!isOutgoingOnly) buildPresetPasswordWarning(),
       Align(
         alignment: Alignment.center,
@@ -215,14 +151,6 @@ class _DesktopHomePageState extends State<DesktopHomePage>
                   ),
                 ),
                 Expanded(child: Container()),
-                if (bind.isCustomClient())
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 20),
-                    child: Align(
-                      alignment: Alignment.center,
-                      child: loadPowered(context),
-                    ),
-                  ),
               ],
             ),
             if (isOutgoingOnly)
