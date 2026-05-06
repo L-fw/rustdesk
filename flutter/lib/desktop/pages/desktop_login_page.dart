@@ -1115,6 +1115,7 @@ class _ForgotPasswordDialogState extends State<DesktopChangePasswordDialog> {
   bool _isLoading = false;
   bool _isSendingSms = false;
   String? _errorMsg;
+  String? _passwordFormatError;
 
   int _countdown = 0;
   Timer? _countdownTimer;
@@ -1164,6 +1165,19 @@ class _ForgotPasswordDialogState extends State<DesktopChangePasswordDialog> {
       return;
     }
     _startCountdown();
+  }
+
+  String? _validatePasswordFormat(String value) {
+    if (value.isEmpty) return null;
+    if (value.length < 6 || value.length > 20) {
+      return '密码需为6-20位字符';
+    }
+    final hasLetter = value.contains(RegExp(r'[A-Za-z]'));
+    final hasDigit = value.contains(RegExp(r'\d'));
+    if (!hasLetter || !hasDigit) {
+      return '密码需包含字母和数字';
+    }
+    return null;
   }
 
   Future<void> _submit() async {
@@ -1293,6 +1307,12 @@ class _ForgotPasswordDialogState extends State<DesktopChangePasswordDialog> {
                 controller: _passwordController,
                 obscureText: _obscurePassword,
                 textInputAction: TextInputAction.next,
+                onChanged: (value) {
+                  final error = _validatePasswordFormat(value);
+                  if (error != _passwordFormatError) {
+                    setState(() => _passwordFormatError = error);
+                  }
+                },
                 decoration: InputDecoration(
                   labelText: '新密码',
                   prefixIcon: const Icon(Icons.lock_outline, size: 20),
@@ -1309,6 +1329,16 @@ class _ForgotPasswordDialogState extends State<DesktopChangePasswordDialog> {
                   ),
                 ),
               ),
+              if (_passwordFormatError != null) ...[
+                const SizedBox(height: 6),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    _passwordFormatError!,
+                    style: const TextStyle(color: Colors.red, fontSize: 12),
+                  ),
+                ),
+              ],
               const SizedBox(height: 12),
               TextField(
                 controller: _confirmPasswordController,
