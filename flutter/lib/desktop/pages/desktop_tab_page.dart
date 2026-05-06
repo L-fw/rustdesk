@@ -85,6 +85,12 @@ class _DesktopTabPageState extends State<DesktopTabPage> {
   void initState() {
     super.initState();
     // HardwareKeyboard.instance.addHandler(_handleKeyEvent);
+    if (!bind.isIncomingOnly()) {
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        const minSize = Size(600, 480);
+        await windowManager.setMinimumSize(minSize);
+      });
+    }
   }
 
   /*
