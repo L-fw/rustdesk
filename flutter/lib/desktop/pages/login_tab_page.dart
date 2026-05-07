@@ -28,15 +28,10 @@ class _LoginTabPageState extends State<LoginTabPage> with WindowListener {
     windowManager.addListener(this);
     if (isDesktop) {
       WidgetsBinding.instance.addPostFrameCallback((_) async {
-        const minSize = Size(460, 720); // Minimum size to fit login & register pages
-        await windowManager.setMinimumSize(minSize);
-        final size = await windowManager.getSize();
-        if (size.width < minSize.width || size.height < minSize.height) {
-          await windowManager.setSize(Size(
-            size.width < minSize.width ? minSize.width : size.width,
-            size.height < minSize.height ? minSize.height : size.height,
-          ));
-        }
+        const windowSize = Size(460, 560); // Fixed smaller size for login page
+        await windowManager.setMinimumSize(windowSize);
+        await windowManager.setResizable(false);
+        await windowManager.setSize(windowSize);
       });
     }
   }
@@ -88,7 +83,7 @@ class _LoginTabPageState extends State<LoginTabPage> with WindowListener {
             tabController: tabController,
             invisibleTabKeys: invisibleTabKeys,
             showMinimize: true,
-            showMaximize: true,
+            showMaximize: false,
             showClose: true,
             onClose: widget.showBackButton
                 ? () async {

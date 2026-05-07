@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_hbb/common/app_auth_service.dart';
 import 'package:flutter_hbb/desktop/pages/desktop_register_page.dart';
+import 'package:window_manager/window_manager.dart';
 
 import '../../common.dart';
 import '../../models/platform_model.dart';
@@ -502,6 +503,9 @@ class _AppLoginPageState extends State<AppLoginPage>
   }
 
   void _goToHome() {
+    // 成功登录后设置更适合主界面的窗口大小并居中
+    windowManager.setSize(const Size(1000, 700));
+    windowManager.center();
     Navigator.of(context).pushAndRemoveUntil(
       PageRouteBuilder(
         pageBuilder: (context, animation, secondaryAnimation) =>
@@ -561,7 +565,7 @@ class _AppLoginPageState extends State<AppLoginPage>
         autofocus: true,
         child: Scaffold(
       backgroundColor:
-          isDark ? const Color(0xFF1A1D23) : const Color(0xFFF0F2F5),
+          isDark ? const Color(0xFF1A1D23) : Colors.white,
       body: Center(
         child: ScrollConfiguration(
           behavior: ScrollConfiguration.of(context).copyWith(scrollbars: false),

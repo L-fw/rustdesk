@@ -87,6 +87,7 @@ class _DesktopTabPageState extends State<DesktopTabPage> {
     // HardwareKeyboard.instance.addHandler(_handleKeyEvent);
     if (!bind.isIncomingOnly()) {
       WidgetsBinding.instance.addPostFrameCallback((_) async {
+        await windowManager.setResizable(true);
         const minSize = Size(600, 480);
         await windowManager.setMinimumSize(minSize);
       });
