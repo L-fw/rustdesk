@@ -131,7 +131,7 @@ class _DesktopRegisterPageState extends State<DesktopRegisterPage>
 
   bool _isUsernameValid(String value) {
     if (value.length < 1 || value.length > 20) return false;
-    return RegExp(r'^[A-Za-z0-9\u4e00-\u9fff]+$').hasMatch(value);
+    return RegExp(r'^[A-Za-z0-9_]+$').hasMatch(value);
   }
 
   String? _validatePasswordFormat(String value) {
@@ -187,7 +187,7 @@ class _DesktopRegisterPageState extends State<DesktopRegisterPage>
       return;
     }
     if (!_isUsernameValid(username)) {
-      _setFieldError('username', _usernameFocus, '用户名需为1-20位字符，只能包含中文、英文和数字');
+      _setFieldError('username', _usernameFocus, '用户名需为1-20位字符，只能包含英文、数字和下划线');
       return;
     }
     if (password.isEmpty) {
@@ -344,6 +344,9 @@ class _DesktopRegisterPageState extends State<DesktopRegisterPage>
                     label: '密码',
                     icon: Icons.lock_outline,
                     obscure: _obscurePassword,
+                    inputFormatters: [
+                      FilteringTextInputFormatter.deny(RegExp(r'[\u4e00-\u9fff]')),
+                    ],
                     onChanged: (value) {
                       final error = _validatePasswordFormat(value);
                       if (error != _passwordFormatError) {
@@ -387,6 +390,9 @@ class _DesktopRegisterPageState extends State<DesktopRegisterPage>
                     label: '确认密码',
                     icon: Icons.lock_outline,
                     obscure: _obscureConfirm,
+                    inputFormatters: [
+                      FilteringTextInputFormatter.deny(RegExp(r'[\u4e00-\u9fff]')),
+                    ],
                     onChanged: (value) {
                       if (value == _passwordController.text &&
                           _invalidFields['confirmPassword'] == true) {
@@ -775,10 +781,10 @@ class _DesktopRegisterPageState extends State<DesktopRegisterPage>
     );
   }
 }
-/// 用户名输入过滤器：只允许中文、英文、数字。
-/// IME 组字期间不干预，避免中文输入法叠字问题。
+/// 用户名输入过滤器：只允许英文、数字和下划线，不允许中文。
+/// IME 组字期间不干预，避免输入法叠字问题。
 class _UsernameInputFormatter extends TextInputFormatter {
-  static final _allowedPattern = RegExp(r'[^A-Za-z0-9\u4e00-\u9fff]');
+  static final _allowedPattern = RegExp(r'[^A-Za-z0-9_]');
 
   @override
   TextEditingValue formatEditUpdate(

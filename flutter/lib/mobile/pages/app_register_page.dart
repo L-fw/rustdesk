@@ -130,7 +130,7 @@ class _AppRegisterPageState extends State<AppRegisterPage>
 
   bool _isUsernameValid(String value) {
     if (value.length < 1 || value.length > 20) return false;
-    return RegExp(r'^[A-Za-z0-9\u4e00-\u9fff]+$').hasMatch(value);
+    return RegExp(r'^[A-Za-z0-9_]+$').hasMatch(value);
   }
 
   String? _validatePasswordFormat(String value) {
@@ -186,7 +186,7 @@ class _AppRegisterPageState extends State<AppRegisterPage>
       return;
     }
     if (!_isUsernameValid(username)) {
-      _setFieldError('username', _usernameFocus, '用户名需为1-20位字符，只能包含中文、英文和数字');
+      _setFieldError('username', _usernameFocus, '用户名需为1-20位字符，只能包含英文、数字和下划线');
       return;
     }
     if (password.isEmpty) {
@@ -285,7 +285,7 @@ class _AppRegisterPageState extends State<AppRegisterPage>
                   icon: Icons.person_outline,
                   inputFormatters: [
                     FilteringTextInputFormatter.allow(
-                        RegExp(r'[A-Za-z0-9\u4e00-\u9fff]')),
+                        RegExp(r'[A-Za-z0-9_]')),
                     LengthLimitingTextInputFormatter(20),
                   ],
                 ),
@@ -298,6 +298,9 @@ class _AppRegisterPageState extends State<AppRegisterPage>
                   label: '密码',
                   icon: Icons.lock_outline,
                   obscure: _obscurePassword,
+                  inputFormatters: [
+                    FilteringTextInputFormatter.deny(RegExp(r'[\u4e00-\u9fff]')),
+                  ],
                   onChanged: (value) {
                     final error = _validatePasswordFormat(value);
                     if (error != _passwordFormatError) {
@@ -339,6 +342,9 @@ class _AppRegisterPageState extends State<AppRegisterPage>
                   label: '确认密码',
                   icon: Icons.lock_outline,
                   obscure: _obscureConfirm,
+                  inputFormatters: [
+                    FilteringTextInputFormatter.deny(RegExp(r'[\u4e00-\u9fff]')),
+                  ],
                   onChanged: (value) {
                     if (value == _passwordController.text &&
                         _invalidFields['confirmPassword'] == true) {
