@@ -168,7 +168,7 @@ void runMainApp(bool startService) async {
   windowManager.waitUntilReadyToShow(windowOptions, () async {
     // Restore the location of the main window before window hide or show.
     if (isDesktop && !(kAppModeShareOnly || _isAppLoggedIn)) {
-      const windowSize = Size(460, 560);
+      const windowSize = Size(460, 700);
       await windowManager.setMinimumSize(windowSize);
       await windowManager.setResizable(false);
       await windowManager.setSize(windowSize);
@@ -190,7 +190,11 @@ void runMainApp(bool startService) async {
     windowManager.setOpacity(1);
     windowManager.setTitle(getWindowName());
     // Do not use `windowManager.setResizable()` here.
-    setResizable(!bind.isIncomingOnly());
+    if (isDesktop && !(kAppModeShareOnly || _isAppLoggedIn)) {
+      setResizable(false);
+    } else {
+      setResizable(!bind.isIncomingOnly());
+    }
   });
 }
 
