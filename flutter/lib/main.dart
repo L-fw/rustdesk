@@ -167,7 +167,15 @@ void runMainApp(bool startService) async {
       isMainWindow: true, alwaysOnTop: alwaysOnTop);
   windowManager.waitUntilReadyToShow(windowOptions, () async {
     // Restore the location of the main window before window hide or show.
-    await restoreWindowPosition(WindowType.Main);
+    if (isDesktop && !(kAppModeShareOnly || _isAppLoggedIn)) {
+      const windowSize = Size(460, 560);
+      await windowManager.setMinimumSize(windowSize);
+      await windowManager.setResizable(false);
+      await windowManager.setSize(windowSize);
+      await windowManager.center();
+    } else {
+      await restoreWindowPosition(WindowType.Main);
+    }
     // Check the startup argument, if we successfully handle the argument, we keep the main window hidden.
     final handledByUniLinks = await initUniLinks();
     debugPrint("handled by uni links: $handledByUniLinks");

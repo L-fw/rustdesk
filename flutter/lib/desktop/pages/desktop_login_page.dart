@@ -7,6 +7,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_hbb/common/app_auth_service.dart';
 import 'package:flutter_hbb/desktop/pages/desktop_register_page.dart';
 import 'package:window_manager/window_manager.dart';
+import 'package:flutter_hbb/utils/multi_window_manager.dart';
 
 import '../../common.dart';
 import '../../models/platform_model.dart';
@@ -502,10 +503,9 @@ class _AppLoginPageState extends State<AppLoginPage>
     }
   }
 
-  void _goToHome() {
-    // 成功登录后设置更适合主界面的窗口大小并居中
-    windowManager.setSize(const Size(1000, 700));
-    windowManager.center();
+  void _goToHome() async {
+    // 成功登录后，恢复用户之前保存的主窗口大小和位置
+    await restoreWindowPosition(WindowType.Main);
     Navigator.of(context).pushAndRemoveUntil(
       PageRouteBuilder(
         pageBuilder: (context, animation, secondaryAnimation) =>
