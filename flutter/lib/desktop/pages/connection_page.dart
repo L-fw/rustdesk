@@ -516,14 +516,6 @@ class _ConnectionPageState extends State<ConnectionPage>
                                       'Transfer file',
                                       () => onConnect(isFileTransfer: true)
                                     ),
-                                    (
-                                      'View camera',
-                                      () => onConnect(isViewCamera: true)
-                                    ),
-                                    (
-                                      '${translate('Terminal')} (beta)',
-                                      () => onConnect(isTerminal: true)
-                                    ),
                                   ]
                                       .map((e) => MenuEntryButton<String>(
                                             childBuilder: (TextStyle? style) =>
