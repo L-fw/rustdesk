@@ -2824,13 +2824,6 @@ class _AboutState extends State<_About> {
                             icon: Icons.calendar_today_outlined,
                             label: translate('Build Date'),
                             value: buildDate),
-                        if (!isWeb) ...[
-                          Divider(height: 0.5, thickness: 0.5, color: borderColor),
-                          _infoRow(context,
-                              icon: Icons.fingerprint,
-                              label: translate('Fingerprint'),
-                              value: fingerprint),
-                        ],
                       ],
                     ),
                   ),
