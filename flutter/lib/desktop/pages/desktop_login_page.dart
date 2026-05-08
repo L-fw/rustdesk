@@ -304,7 +304,7 @@ class _AppLoginPageState extends State<AppLoginPage>
                     Navigator.of(context).pop(value);
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: MyTheme.accent,
+                    backgroundColor: const Color(0xFF7C3AED),
                     foregroundColor: Colors.white,
                   ),
                   child: const Text('确认'),
@@ -556,7 +556,6 @@ class _AppLoginPageState extends State<AppLoginPage>
     }
 
     // Desktop：全屏背景 + 居中固定宽度登录卡片
-    final cardBg = isDark ? const Color(0xFF23262E) : Colors.white;
     final scaffoldBg = isDark ? const Color(0xFF1A1D23) : const Color(0xFFF0F2F5);
 
     return CallbackShortcuts(
@@ -576,17 +575,6 @@ class _AppLoginPageState extends State<AppLoginPage>
           child: SizedBox(
             width: 380, // 桌面固定宽度，稍微收窄让输入框不那么宽
             child: Container(
-              decoration: BoxDecoration(
-                color: cardBg,
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(isDark ? 0.3 : 0.08),
-                    blurRadius: 24,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
               child: Padding(
               padding:
                   const EdgeInsets.symmetric(horizontal: 32, vertical: 28),
@@ -598,13 +586,13 @@ class _AppLoginPageState extends State<AppLoginPage>
                       width: 52,
                       height: 52,
                       decoration: BoxDecoration(
-                        color: MyTheme.accent.withOpacity(0.1),
+                        color: const Color(0xFF7C3AED).withOpacity(0.12),
                         borderRadius: BorderRadius.circular(14),
                       ),
                       child: Icon(
                         Icons.connected_tv_rounded,
                         size: 28,
-                        color: MyTheme.accent,
+                        color: const Color(0xFF7C3AED),
                       ),
                     ),
                     const SizedBox(height: 10),
@@ -629,7 +617,7 @@ class _AppLoginPageState extends State<AppLoginPage>
                       child: TabBar(
                         controller: _tabController,
                         indicator: BoxDecoration(
-                          color: MyTheme.accent,
+                          color: const Color(0xFF7C3AED),
                           borderRadius: BorderRadius.circular(10),
                         ),
                         labelColor: Colors.white,
@@ -708,7 +696,7 @@ class _AppLoginPageState extends State<AppLoginPage>
                             child: Text(
                               '立即注册',
                               style: TextStyle(
-                                color: MyTheme.accent,
+                                color: const Color(0xFF7C3AED),
                                 fontSize: 13,
                                 fontWeight: FontWeight.w600,
                               ),
@@ -783,7 +771,7 @@ class _AppLoginPageState extends State<AppLoginPage>
               height: 20,
               child: Checkbox(
                 value: _rememberPassword,
-                activeColor: MyTheme.accent,
+                activeColor: const Color(0xFF7C3AED),
                 onChanged: (val) {
                   final next = val ?? false;
                   setState(() => _rememberPassword = next);
@@ -821,7 +809,7 @@ class _AppLoginPageState extends State<AppLoginPage>
               child: Text(
                 '忘记密码？',
                 style: TextStyle(
-                  color: MyTheme.accent,
+                  color: const Color(0xFF7C3AED),
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
                 ),
@@ -876,7 +864,7 @@ class _AppLoginPageState extends State<AppLoginPage>
                 onPressed:
                     (_countdown > 0 || _isLoading) ? null : _sendSmsCode,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: MyTheme.accent,
+                  backgroundColor: const Color(0xFF7C3AED),
                   foregroundColor: Colors.white,
                   disabledBackgroundColor: Colors.grey.shade300,
                   shape: RoundedRectangleBorder(
@@ -921,7 +909,7 @@ class _AppLoginPageState extends State<AppLoginPage>
             height: 20,
             child: Checkbox(
               value: _agreedToTerms,
-              activeColor: MyTheme.accent,
+              activeColor: const Color(0xFF7C3AED),
               onChanged: (val) =>
                   setState(() => _agreedToTerms = val ?? false),
             ),
@@ -948,7 +936,7 @@ class _AppLoginPageState extends State<AppLoginPage>
                           reverseTransitionDuration: Duration.zero)),
                       child: Text('《用户协议》',
                           style:
-                              TextStyle(fontSize: 12, color: MyTheme.accent)),
+                              TextStyle(fontSize: 12, color: const Color(0xFF7C3AED))),
                     ),
                   ),
                   Text(
@@ -967,7 +955,7 @@ class _AppLoginPageState extends State<AppLoginPage>
                           reverseTransitionDuration: Duration.zero)),
                       child: Text('《隐私政策》',
                           style:
-                              TextStyle(fontSize: 12, color: MyTheme.accent)),
+                              TextStyle(fontSize: 12, color: const Color(0xFF7C3AED))),
                     ),
                   ),
                 ],
@@ -1035,7 +1023,7 @@ class _AppLoginPageState extends State<AppLoginPage>
               hintStyle:
                   TextStyle(color: Colors.grey.shade600, fontSize: 15),
               floatingLabelStyle: TextStyle(
-                color: MyTheme.accent,
+                color: const Color(0xFF7C3AED),
                 fontSize: 13,
                 fontWeight: FontWeight.w500,
                 backgroundColor:
@@ -1057,7 +1045,7 @@ class _AppLoginPageState extends State<AppLoginPage>
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(10),
                 borderSide: BorderSide(
-                  color: isInvalid ? Colors.red : MyTheme.accent,
+                  color: isInvalid ? Colors.red : const Color(0xFF7C3AED),
                   width: 1.5,
                 ),
               ),
@@ -1074,11 +1062,11 @@ class _AppLoginPageState extends State<AppLoginPage>
   Widget _buildLoginButton({required VoidCallback onPressed}) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     // 深色模式：按钮用更柔和的色调，避免高饱和度紫色在深底下显得突兀
-    final bgColor = isDark ? const Color(0xFF5153CC) : MyTheme.accent;
+    final bgColor = isDark ? const Color(0xFF6D28D9) : const Color(0xFF7C3AED);
     final textColor = Colors.white;
     final overlayColor = isDark
-        ? const Color(0xFF6365D4) // 悬停时略微提亮，而非加白透明叠层
-        : MyTheme.accent.withOpacity(0.85);
+        ? const Color(0xFF7C3AED) // 悬停时略微提亮，而非加白透明叠层
+        : const Color(0xFF6D28D9);
 
     return SizedBox(
       width: double.infinity,
@@ -1317,7 +1305,7 @@ class _ForgotPasswordDialogState extends State<DesktopChangePasswordDialog> {
                               ? null
                               : _sendSmsCode,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: MyTheme.accent,
+                        backgroundColor: const Color(0xFF7C3AED),
                         foregroundColor: Colors.white,
                         disabledBackgroundColor: Colors.grey.shade300,
                         shape: RoundedRectangleBorder(
@@ -1452,7 +1440,7 @@ class _ForgotPasswordDialogState extends State<DesktopChangePasswordDialog> {
         ElevatedButton(
           onPressed: _isLoading ? null : _submit,
           style: ElevatedButton.styleFrom(
-            backgroundColor: MyTheme.accent,
+            backgroundColor: const Color(0xFF7C3AED),
             foregroundColor: Colors.white,
             elevation: 0,
           ),
