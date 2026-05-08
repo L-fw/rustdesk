@@ -584,7 +584,7 @@ class _DesktopRegisterPageState extends State<DesktopRegisterPage>
           ),
         ),
       ),
-    )));
+    ))));
   }
 
   Widget _buildTermsCheckbox(bool isDark) {
