@@ -556,6 +556,9 @@ class _AppLoginPageState extends State<AppLoginPage>
     }
 
     // Desktop：全屏背景 + 居中固定宽度登录卡片
+    final cardBg = isDark ? const Color(0xFF23262E) : Colors.white;
+    final scaffoldBg = isDark ? const Color(0xFF1A1D23) : const Color(0xFFF0F2F5);
+
     return CallbackShortcuts(
       bindings: {
         const SingleActivator(LogicalKeyboardKey.enter): handleEnter,
@@ -564,37 +567,56 @@ class _AppLoginPageState extends State<AppLoginPage>
       child: Focus(
         autofocus: true,
         child: Scaffold(
-      backgroundColor:
-          isDark ? const Color(0xFF1A1D23) : Colors.white,
+      backgroundColor: scaffoldBg,
       body: Center(
         child: ScrollConfiguration(
           behavior: ScrollConfiguration.of(context).copyWith(scrollbars: false),
           child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(vertical: 32),
+            padding: const EdgeInsets.symmetric(vertical: 20),
           child: SizedBox(
-            width: 420, // 桌面固定宽度
-            child: Padding(
+            width: 380, // 桌面固定宽度，稍微收窄让输入框不那么宽
+            child: Container(
+              decoration: BoxDecoration(
+                color: cardBg,
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(isDark ? 0.3 : 0.08),
+                    blurRadius: 24,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Padding(
               padding:
-                  const EdgeInsets.symmetric(horizontal: 40, vertical: 36),
+                  const EdgeInsets.symmetric(horizontal: 32, vertical: 28),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                     // Logo & App Name
-                    Icon(
-                      Icons.connected_tv_rounded,
-                      size: 56,
-                      color: MyTheme.accent,
+                    Container(
+                      width: 52,
+                      height: 52,
+                      decoration: BoxDecoration(
+                        color: MyTheme.accent.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      child: Icon(
+                        Icons.connected_tv_rounded,
+                        size: 28,
+                        color: MyTheme.accent,
+                      ),
                     ),
                     const SizedBox(height: 10),
                     Text(
                       bind.mainGetAppNameSync(),
                       style: const TextStyle(
-                        fontSize: 24,
+                        fontSize: 20,
                         fontWeight: FontWeight.bold,
-                        letterSpacing: 1.2,
+                        letterSpacing: 0.5,
                       ),
                     ),
-                    const SizedBox(height: 28),
+                    const SizedBox(height: 20),
 
                     // Tab Bar
                     Container(
@@ -602,20 +624,20 @@ class _AppLoginPageState extends State<AppLoginPage>
                         color: isDark
                             ? Colors.white.withOpacity(0.08)
                             : Colors.grey.shade100,
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(10),
                       ),
                       child: TabBar(
                         controller: _tabController,
                         indicator: BoxDecoration(
                           color: MyTheme.accent,
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(10),
                         ),
                         labelColor: Colors.white,
                         unselectedLabelColor:
                             isDark ? Colors.white60 : Colors.black54,
                         labelStyle: const TextStyle(
-                            fontSize: 14, fontWeight: FontWeight.w600),
-                        unselectedLabelStyle: const TextStyle(fontSize: 14),
+                            fontSize: 13, fontWeight: FontWeight.w600),
+                        unselectedLabelStyle: const TextStyle(fontSize: 13),
                         indicatorSize: TabBarIndicatorSize.tab,
                         dividerColor: Colors.transparent,
                         tabs: const [
@@ -624,11 +646,11 @@ class _AppLoginPageState extends State<AppLoginPage>
                         ],
                       ),
                     ),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 20),
 
-                    // Tab Content —— 桌面不限死高度，让内容自适应
+                    // Tab Content —— 固定高度，内容自适应
                     SizedBox(
-                      height: 268,
+                      height: 252,
                       child: TabBarView(
                         controller: _tabController,
                         children: [
@@ -643,21 +665,22 @@ class _AppLoginPageState extends State<AppLoginPage>
                       const SizedBox(height: 8),
                       Container(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 16, vertical: 10),
+                            horizontal: 12, vertical: 8),
                         decoration: BoxDecoration(
-                          color: Colors.red.withOpacity(0.1),
+                          color: Colors.red.withOpacity(0.08),
                           borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: Colors.red.withOpacity(0.2)),
                         ),
                         child: Row(
                           children: [
                             const Icon(Icons.error_outline,
-                                color: Colors.red, size: 18),
-                            const SizedBox(width: 8),
+                                color: Colors.red, size: 16),
+                            const SizedBox(width: 6),
                             Expanded(
                               child: Text(
                                 _errorMsg!,
                                 style: const TextStyle(
-                                    color: Colors.red, fontSize: 13),
+                                    color: Colors.red, fontSize: 12),
                               ),
                             ),
                           ],
@@ -665,7 +688,7 @@ class _AppLoginPageState extends State<AppLoginPage>
                       ),
                     ],
 
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 16),
 
                     // Register Link
                     Row(
@@ -698,6 +721,7 @@ class _AppLoginPageState extends State<AppLoginPage>
                 ),
               ),
             ),
+            ),
           ),
         ),
       ),
@@ -725,7 +749,7 @@ class _AppLoginPageState extends State<AppLoginPage>
           // 桌面：Tab 键切换焦点
           onSubmitted: (_) => _passwordFocus.requestFocus(),
         ),
-        const SizedBox(height: 14),
+        const SizedBox(height: 10),
         _buildTextField(
           fieldKey: 'password',
           controller: _passwordController,
@@ -751,7 +775,7 @@ class _AppLoginPageState extends State<AppLoginPage>
           // 桌面：Enter 键直接登录
           onSubmitted: (_) => _loginWithPassword(),
         ),
-        const SizedBox(height: 10),
+        const SizedBox(height: 8),
         Row(
           children: [
             SizedBox(
@@ -783,11 +807,11 @@ class _AppLoginPageState extends State<AppLoginPage>
             ),
           ],
         ),
-        const SizedBox(height: 14),
+        const SizedBox(height: 10),
         _buildTermsCheckbox(isDark),
-        const SizedBox(height: 16),
+        const SizedBox(height: 12),
         _buildLoginButton(onPressed: _loginWithPassword),
-        const SizedBox(height: 8),
+        const SizedBox(height: 6),
         Align(
           alignment: Alignment.centerRight,
           child: MouseRegion(
@@ -829,7 +853,7 @@ class _AppLoginPageState extends State<AppLoginPage>
           textInputAction: TextInputAction.next,
           onSubmitted: (_) => _smsCodeFocus.requestFocus(),
         ),
-        const SizedBox(height: 14),
+        const SizedBox(height: 10),
         Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -869,9 +893,9 @@ class _AppLoginPageState extends State<AppLoginPage>
             ),
           ],
         ),
-        const SizedBox(height: 28),
+        const SizedBox(height: 20),
         _buildTermsCheckbox(isDark),
-        const SizedBox(height: 16),
+        const SizedBox(height: 12),
         _buildLoginButton(onPressed: _loginWithSms),
       ],
     );
@@ -1038,7 +1062,7 @@ class _AppLoginPageState extends State<AppLoginPage>
                 ),
               ),
               contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 16, vertical: 14),
+                  horizontal: 14, vertical: 12),
               isDense: false,
             ),
           ),
@@ -1048,29 +1072,41 @@ class _AppLoginPageState extends State<AppLoginPage>
   }
 
   Widget _buildLoginButton({required VoidCallback onPressed}) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    // 深色模式：按钮用更柔和的色调，避免高饱和度紫色在深底下显得突兀
+    final bgColor = isDark ? const Color(0xFF5153CC) : MyTheme.accent;
+    final textColor = Colors.white;
+    final overlayColor = isDark
+        ? const Color(0xFF6365D4) // 悬停时略微提亮，而非加白透明叠层
+        : MyTheme.accent.withOpacity(0.85);
+
     return SizedBox(
       width: double.infinity,
       height: 44,
       child: ElevatedButton(
         onPressed: _isLoading ? null : onPressed,
         style: ElevatedButton.styleFrom(
-          backgroundColor: MyTheme.accent,
-          foregroundColor: Colors.white,
+          backgroundColor: bgColor,
+          foregroundColor: textColor,
+          overlayColor: overlayColor,
           shape:
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
           elevation: 0,
         ),
         child: _isLoading
-            ? const SizedBox(
+            ? SizedBox(
                 width: 20,
                 height: 20,
                 child: CircularProgressIndicator(
-                    strokeWidth: 2.5, color: Colors.white),
+                    strokeWidth: 2.5, color: textColor),
               )
-            : const Text(
+            : Text(
                 '登 录',
-                style:
-                    TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: textColor,
+                ),
               ),
       ),
     );
