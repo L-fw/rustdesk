@@ -4087,6 +4087,12 @@ void _showVersionUpdateDialog() async {
               onPressed: () => Navigator.of(context).pop(),
               child: const Text('暂不更新'),
             ),
+          if (isBelowMinimum)
+            TextButton(
+              onPressed: () => SystemNavigator.pop(),
+              child: const Text('退出应用',
+                  style: TextStyle(color: Colors.red)),
+            ),
           ElevatedButton(
             onPressed: () async {
               final url = downloadUrl.isNotEmpty
