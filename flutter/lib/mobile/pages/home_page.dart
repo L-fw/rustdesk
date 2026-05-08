@@ -298,21 +298,20 @@ class HomePageState extends State<HomePage> with WidgetsBindingObserver {
         final udpLabel = udpEnabled ? 'UDP' : 'TCP';
         // ignore: unused_local_variable
         final _ = stateGlobal.svcStatus.value;
-        return Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Flexible(
-              child: Text(
-                bind.mainGetAppNameSync(),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
+        return Tooltip(
+          message: '$ipLabel / $udpLabel',
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Flexible(
+                child: Text(
+                  bind.mainGetAppNameSync(),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
-            ),
-            const SizedBox(width: 8),
-            Text(ipLabel),
-            const SizedBox(width: 8),
-            Text(udpLabel),
-          ],
+            ],
+          ),
         );
       });
     }
@@ -324,21 +323,20 @@ class HomePageState extends State<HomePage> with WidgetsBindingObserver {
       final udpEnabled = bind.mainGetOptionSync(key: kOptionDisableUdp) != 'Y';
       final udpLabel = udpEnabled ? 'UDP' : 'TCP';
       final name = AppAuthService().currentUserName.value;
-      return Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Flexible(
-            child: Text(
-              name,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
+      return Tooltip(
+        message: '$ipLabel / $udpLabel',
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Flexible(
+              child: Text(
+                name,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
-          ),
-          const SizedBox(width: 8),
-          Text(ipLabel),
-          const SizedBox(width: 8),
-          Text(udpLabel),
-        ],
+          ],
+        ),
       );
     });
   }
