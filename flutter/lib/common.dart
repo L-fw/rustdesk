@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io' show exit;
 import 'dart:convert';
 import 'dart:math';
 
@@ -4055,7 +4056,11 @@ void _showVersionUpdateDialog() async {
       onWillPop: () async {
         if (isBelowMinimum) {
           // 低于最低版本，按返回键直接退出 APP
-          SystemNavigator.pop();
+          if (isDesktop) {
+            exit(0);
+          } else {
+            SystemNavigator.pop();
+          }
           return false;
         }
         return true; // 允许关闭
@@ -4089,7 +4094,13 @@ void _showVersionUpdateDialog() async {
             ),
           if (isBelowMinimum)
             TextButton(
-              onPressed: () => SystemNavigator.pop(),
+              onPressed: () {
+                if (isDesktop) {
+                  exit(0);
+                } else {
+                  SystemNavigator.pop();
+                }
+              },
               child: const Text('退出应用',
                   style: TextStyle(color: Colors.red)),
             ),
@@ -4103,7 +4114,11 @@ void _showVersionUpdateDialog() async {
                     mode: LaunchMode.externalApplication);
               }
               if (isBelowMinimum) {
-                SystemNavigator.pop();
+                if (isDesktop) {
+                  exit(0);
+                } else {
+                  SystemNavigator.pop();
+                }
               }
             },
             child: const Text('立即更新'),
