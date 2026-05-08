@@ -278,22 +278,19 @@ class _DesktopRegisterPageState extends State<DesktopRegisterPage>
       child: Focus(
         autofocus: true,
         child: Scaffold(
-      backgroundColor: isDark ? const Color(0xFF1E1E2E) : const Color(0xFFF5F5F5),
+      backgroundColor: isDark ? const Color(0xFF1A1D23) : Colors.white,
       body: Center(
-        child: ConstrainedBox(
-          // 限制最大宽度，左右留白，让表单在宽屏上不过度拉伸
-          constraints: const BoxConstraints(maxWidth: 480),
-          child: Card(
-            elevation: isDark ? 4 : 2,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-            ),
-            color: isDark ? const Color(0xFF2A2A3E) : Colors.white,
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 36),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
+        child: ScrollConfiguration(
+          behavior: ScrollConfiguration.of(context).copyWith(scrollbars: false),
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(vertical: 32),
+            child: SizedBox(
+              width: 420, // 桌面固定宽度，与登录页一致
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 36),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
                   // ── 标题行：图标 + 文字 + 关闭按钮 ──
                   Row(
                     children: [
