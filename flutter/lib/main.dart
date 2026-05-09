@@ -168,7 +168,7 @@ void runMainApp(bool startService) async {
   windowManager.waitUntilReadyToShow(windowOptions, () async {
     // Restore the location of the main window before window hide or show.
     if (isDesktop && !(kAppModeShareOnly || _isAppLoggedIn)) {
-      const windowSize = Size(460, 700);
+      const windowSize = Size(460, 680);
       await windowManager.setMinimumSize(windowSize);
       await windowManager.setResizable(false);
       await windowManager.setSize(windowSize);
