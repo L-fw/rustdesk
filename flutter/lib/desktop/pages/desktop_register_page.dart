@@ -332,17 +332,7 @@ class _DesktopRegisterPageState extends State<DesktopRegisterPage>
                           ),
                         ],
                       ),
-                      Positioned(
-                        top: 0,
-                        right: 0,
-                        child: IconButton(
-                          icon: Icon(Icons.close,
-                              color: isDark ? Colors.white54 : Colors.black45),
-                          splashRadius: 18,
-                          tooltip: '关闭',
-                          onPressed: () => Navigator.of(context).pop(),
-                        ),
-                      ),
+
                     ],
                   ),
                   const SizedBox(height: 20),
