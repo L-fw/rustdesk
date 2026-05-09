@@ -894,8 +894,9 @@ class _SafetyState extends State<_Safety> with AutomaticKeepAliveClientMixin {
               child: Column(children: [
                 permissions(context),
                 password(context),
-                if (!isChangeIdDisabled())
-                  _Card(title: 'ID', children: [changeId()]),
+                // 隐藏"更改 ID"入口
+                // if (!isChangeIdDisabled())
+                //   _Card(title: 'ID', children: [changeId()]),
                 more(context),
               ]),
             ),
