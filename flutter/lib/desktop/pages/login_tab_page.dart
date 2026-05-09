@@ -11,8 +11,9 @@ import 'package:flutter_hbb/utils/multi_window_manager.dart';
 class LoginTabPage extends StatefulWidget {
   final Widget child;
   final bool showBackButton;
+  final double windowHeight;
 
-  const LoginTabPage({Key? key, required this.child, this.showBackButton = false}) : super(key: key);
+  const LoginTabPage({Key? key, required this.child, this.showBackButton = false, this.windowHeight = 550}) : super(key: key);
 
   @override
   State<LoginTabPage> createState() => _LoginTabPageState();
@@ -28,7 +29,7 @@ class _LoginTabPageState extends State<LoginTabPage> with WindowListener {
     windowManager.addListener(this);
     if (isDesktop) {
       WidgetsBinding.instance.addPostFrameCallback((_) async {
-        const windowSize = Size(460, 700); // Fixed size for login/register page
+        final windowSize = Size(460, widget.windowHeight);
         await windowManager.setMinimumSize(windowSize);
         await windowManager.setResizable(false);
         await windowManager.setSize(windowSize);
@@ -117,4 +118,3 @@ class _LoginTabPageState extends State<LoginTabPage> with WindowListener {
           );
   }
 }
-

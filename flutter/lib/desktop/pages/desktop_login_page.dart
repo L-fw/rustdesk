@@ -88,7 +88,7 @@ class _AppLoginPageState extends State<AppLoginPage>
     // 每次进入登录页都重置窗口为固定尺寸（防止从主页/注册页返回时窗口变宽）
     if (isDesktop) {
       WidgetsBinding.instance.addPostFrameCallback((_) async {
-        const windowSize = Size(460, 700);
+        const windowSize = Size(460, 550);
         await windowManager.setMinimumSize(windowSize);
         await windowManager.setResizable(false);
         await windowManager.setSize(windowSize);
