@@ -67,7 +67,7 @@ class _DesktopRegisterPageState extends State<DesktopRegisterPage>
     _shakeControllers['terms'] = _createShakeController();
     if (isDesktop) {
       WidgetsBinding.instance.addPostFrameCallback((_) async {
-        const windowSize = Size(460, 650);
+        const windowSize = Size(460, 680);
         await windowManager.setMinimumSize(windowSize);
         await windowManager.setResizable(false);
         await windowManager.setSize(windowSize);
