@@ -283,41 +283,59 @@ class _DesktopRegisterPageState extends State<DesktopRegisterPage>
         child: ScrollConfiguration(
           behavior: ScrollConfiguration.of(context).copyWith(scrollbars: false),
           child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(vertical: 32),
+            padding: const EdgeInsets.symmetric(vertical: 20),
             child: SizedBox(
-              width: 420, // 桌面固定宽度，与登录页一致
+              width: 380, // 桌面固定宽度，与登录页一致
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 36),
+                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 28),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                  // ── 标题行：图标 + 文字 + 关闭按钮 ──
-                  Row(
+                  // ── 标题区：居中 Logo + 页面名（与登录页风格一致），关闭按钮叠加右上角 ──
+                  Stack(
+                    alignment: Alignment.center,
                     children: [
-                      Icon(Icons.person_add_alt_1_outlined,
-                          color: MyTheme.accent, size: 26),
-                      const SizedBox(width: 10),
-                      Text(
-                        '注册账号',
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w700,
-                          color: isDark ? Colors.white : Colors.black87,
-                        ),
+                      Column(
+                        children: [
+                          Container(
+                            width: 52,
+                            height: 52,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF7C3AED).withOpacity(0.12),
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                            child: const Icon(
+                              Icons.person_add_alt_1_outlined,
+                              size: 28,
+                              color: Color(0xFF7C3AED),
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+                          Text(
+                            '注册账号',
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                              letterSpacing: 0.5,
+                              color: isDark ? Colors.white : Colors.black87,
+                            ),
+                          ),
+                        ],
                       ),
-                      const Spacer(),
-                      // 关闭按钮（桌面端通常以 X 替代返回箭头）
-                      IconButton(
-                        icon: Icon(Icons.close,
-                            color:
-                                isDark ? Colors.white54 : Colors.black45),
-                        splashRadius: 18,
-                        tooltip: '关闭',
-                        onPressed: () => Navigator.of(context).pop(),
+                      Positioned(
+                        top: 0,
+                        right: 0,
+                        child: IconButton(
+                          icon: Icon(Icons.close,
+                              color: isDark ? Colors.white54 : Colors.black45),
+                          splashRadius: 18,
+                          tooltip: '关闭',
+                          onPressed: () => Navigator.of(context).pop(),
+                        ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 28),
+                  const SizedBox(height: 20),
 
                   // ── 用户名 ──
                   _buildTextField(
@@ -331,7 +349,7 @@ class _DesktopRegisterPageState extends State<DesktopRegisterPage>
                       LengthLimitingTextInputFormatter(20),
                     ],
                   ),
-                  const SizedBox(height: 14),
+                  const SizedBox(height: 10),
 
                   // ── 密码 ──
                   _buildTextField(
@@ -377,7 +395,7 @@ class _DesktopRegisterPageState extends State<DesktopRegisterPage>
                       ),
                     ),
                   ],
-                  const SizedBox(height: 14),
+                  const SizedBox(height: 10),
 
                   // ── 确认密码 ──
                   _buildTextField(
@@ -409,7 +427,7 @@ class _DesktopRegisterPageState extends State<DesktopRegisterPage>
                           setState(() => _obscureConfirm = !_obscureConfirm),
                     ),
                   ),
-                  const SizedBox(height: 14),
+                  const SizedBox(height: 10),
 
                   // ── 手机号 ──
                   _buildTextField(
@@ -424,7 +442,7 @@ class _DesktopRegisterPageState extends State<DesktopRegisterPage>
                     ],
                     // 桌面端不设置 keyboardType，避免弹出虚拟键盘提示
                   ),
-                  const SizedBox(height: 14),
+                  const SizedBox(height: 10),
 
                   // ── 验证码 + 获取按钮 ──
                   Row(
@@ -441,13 +459,13 @@ class _DesktopRegisterPageState extends State<DesktopRegisterPage>
                       ),
                       const SizedBox(width: 12),
                       SizedBox(
-                        height: 50,
+                        height: 48,
                         child: ElevatedButton(
                           onPressed: (_countdown > 0 || _isSendingSms)
                               ? null
                               : _sendSmsCode,
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: MyTheme.accent,
+                            backgroundColor: const Color(0xFF7C3AED),
                             foregroundColor: Colors.white,
                             disabledBackgroundColor: Colors.grey.shade300,
                             shape: RoundedRectangleBorder(
@@ -474,7 +492,7 @@ class _DesktopRegisterPageState extends State<DesktopRegisterPage>
                       ),
                     ],
                   ),
-                  const SizedBox(height: 14),
+                  const SizedBox(height: 10),
 
                   // ── 激活码 ──
                   _buildTextField(
@@ -486,7 +504,7 @@ class _DesktopRegisterPageState extends State<DesktopRegisterPage>
                     textInputAction: TextInputAction.done,
                     onSubmitted: (_) => _register(),
                   ),
-                  const SizedBox(height: 14),
+                  const SizedBox(height: 10),
 
                   // ── 用户协议复选框 ──
                   _buildTermsCheckbox(isDark),
@@ -496,21 +514,22 @@ class _DesktopRegisterPageState extends State<DesktopRegisterPage>
                   if (_errorMsg != null) ...[
                     Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 10),
+                          horizontal: 12, vertical: 8),
                       decoration: BoxDecoration(
-                        color: Colors.red.withOpacity(0.1),
+                        color: Colors.red.withOpacity(0.08),
                         borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.red.withOpacity(0.2)),
                       ),
                       child: Row(
                         children: [
                           const Icon(Icons.error_outline,
-                              color: Colors.red, size: 20),
-                          const SizedBox(width: 8),
+                              color: Colors.red, size: 16),
+                          const SizedBox(width: 6),
                           Expanded(
                             child: Text(
                               _errorMsg!,
                               style: const TextStyle(
-                                  color: Colors.red, fontSize: 13),
+                                  color: Colors.red, fontSize: 12),
                             ),
                           ),
                         ],
@@ -526,8 +545,13 @@ class _DesktopRegisterPageState extends State<DesktopRegisterPage>
                     child: ElevatedButton(
                       onPressed: _isLoading ? null : _register,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: MyTheme.accent,
+                        backgroundColor: isDark
+                            ? const Color(0xFF6D28D9)
+                            : const Color(0xFF7C3AED),
                         foregroundColor: Colors.white,
+                        overlayColor: isDark
+                            ? const Color(0xFF7C3AED)
+                            : const Color(0xFF6D28D9),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(10),
                         ),
@@ -545,11 +569,11 @@ class _DesktopRegisterPageState extends State<DesktopRegisterPage>
                           : const Text(
                               '注 册',
                               style: TextStyle(
-                                  fontSize: 15, fontWeight: FontWeight.w600),
+                                  fontSize: 16, fontWeight: FontWeight.w600),
                             ),
                     ),
                   ),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 16),
 
                   // ── 去登录链接 ──
                   Row(
@@ -568,8 +592,8 @@ class _DesktopRegisterPageState extends State<DesktopRegisterPage>
                           onTap: () => Navigator.of(context).pop(),
                           child: Text(
                             '去登录',
-                            style: TextStyle(
-                              color: MyTheme.accent,
+                            style: const TextStyle(
+                              color: Color(0xFF7C3AED),
                               fontSize: 13,
                               fontWeight: FontWeight.w600,
                             ),
@@ -606,7 +630,7 @@ class _DesktopRegisterPageState extends State<DesktopRegisterPage>
             height: 20,
             child: Checkbox(
               value: _agreedToTerms,
-              activeColor: MyTheme.accent,
+              activeColor: const Color(0xFF7C3AED),
               // 桌面端缩小 checkbox 尺寸以更贴合桌面 UI 密度
               materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
               onChanged: (val) =>
@@ -673,7 +697,7 @@ class _DesktopRegisterPageState extends State<DesktopRegisterPage>
         onTap: onTap,
         child: Text(
           label,
-          style: TextStyle(fontSize: 12, color: MyTheme.accent),
+          style: const TextStyle(fontSize: 12, color: Color(0xFF7C3AED)),
         ),
       ),
     );
@@ -725,8 +749,7 @@ class _DesktopRegisterPageState extends State<DesktopRegisterPage>
               }
               if (onChanged != null) onChanged(value);
             },
-            style: const TextStyle(fontSize: 14),
-            // 桌面端使用更紧凑的视觉密度
+            style: const TextStyle(fontSize: 15),
             decoration: InputDecoration(
               labelText: hasFocus ? label : null,
               hintText: hasFocus ? null : label,
@@ -734,43 +757,42 @@ class _DesktopRegisterPageState extends State<DesktopRegisterPage>
                   ? FloatingLabelBehavior.always
                   : FloatingLabelBehavior.never,
               labelStyle:
-                  TextStyle(color: Colors.grey.shade600, fontSize: 14),
+                  TextStyle(color: Colors.grey.shade600, fontSize: 15),
               hintStyle:
-                  TextStyle(color: Colors.grey.shade500, fontSize: 14),
+                  TextStyle(color: Colors.grey.shade600, fontSize: 15),
               floatingLabelStyle: TextStyle(
-                color: MyTheme.accent,
-                fontSize: 12,
+                color: const Color(0xFF7C3AED),
+                fontSize: 13,
                 fontWeight: FontWeight.w500,
                 backgroundColor:
                     Theme.of(context).scaffoldBackgroundColor,
               ),
               prefixIcon: Icon(
                 icon,
-                size: 18,
-                color: isInvalid ? Colors.red : Colors.grey.shade500,
+                size: 20,
+                color: isInvalid ? Colors.red : null,
               ),
               suffixIcon: suffix,
               border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(10),
                 borderSide: BorderSide(color: Colors.grey.shade300),
               ),
               enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(10),
                 borderSide: BorderSide(
                     color:
                         isInvalid ? Colors.red : Colors.grey.shade300),
               ),
               focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(10),
                 borderSide: BorderSide(
-                  color: isInvalid ? Colors.red : MyTheme.accent,
+                  color: isInvalid ? Colors.red : const Color(0xFF7C3AED),
                   width: 1.5,
                 ),
               ),
-              // 桌面端减小内边距，与桌面 UI 密度保持一致
               contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 14, vertical: 13),
-              isDense: true,
+                  horizontal: 14, vertical: 12),
+              isDense: false,
             ),
           ),
         );
