@@ -62,13 +62,14 @@ class _DropDownAction extends StatelessWidget {
           final isAllowNumericOneTimePassword =
               gFFI.serverModel.allowNumericOneTimePassword;
           return [
-            if (!isChangeIdDisabled())
-              PopupMenuItem(
-                enabled: gFFI.serverModel.connectStatus > 0,
-                value: "changeID",
-                child: Text(translate("Change ID")),
-              ),
-            if (!isChangeIdDisabled()) const PopupMenuDivider(),
+            // 隐藏"更改 ID"入口
+            // if (!isChangeIdDisabled())
+            //   PopupMenuItem(
+            //     enabled: gFFI.serverModel.connectStatus > 0,
+            //     value: "changeID",
+            //     child: Text(translate("Change ID")),
+            //   ),
+            // if (!isChangeIdDisabled()) const PopupMenuDivider(),
             PopupMenuItem(
               value: 'AcceptSessionsViaPassword',
               child: listTile(
