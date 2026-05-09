@@ -85,6 +85,16 @@ class _AppLoginPageState extends State<AppLoginPage>
     _loadAccountHistory();
     _loadPhoneHistory();
     _loadRememberedPasswordForUser(_usernameController.text.trim());
+    // 每次进入登录页都重置窗口为固定尺寸（防止从主页/注册页返回时窗口变宽）
+    if (isDesktop) {
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        const windowSize = Size(460, 700);
+        await windowManager.setMinimumSize(windowSize);
+        await windowManager.setResizable(false);
+        await windowManager.setSize(windowSize);
+        await windowManager.center();
+      });
+    }
   }
 
   @override
@@ -556,7 +566,7 @@ class _AppLoginPageState extends State<AppLoginPage>
     }
 
     // Desktop：全屏背景 + 居中固定宽度登录卡片
-    final scaffoldBg = isDark ? const Color(0xFF1A1D23) : const Color(0xFFF0F2F5);
+    final scaffoldBg = isDark ? const Color(0xFF1A1D23) : Colors.white;
 
     return CallbackShortcuts(
       bindings: {

@@ -28,7 +28,7 @@ class _LoginTabPageState extends State<LoginTabPage> with WindowListener {
     windowManager.addListener(this);
     if (isDesktop) {
       WidgetsBinding.instance.addPostFrameCallback((_) async {
-        const windowSize = Size(700, 700); // Fixed size for login/register page
+        const windowSize = Size(460, 700); // Fixed size for login/register page
         await windowManager.setMinimumSize(windowSize);
         await windowManager.setResizable(false);
         await windowManager.setSize(windowSize);
