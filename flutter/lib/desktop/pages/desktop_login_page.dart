@@ -1023,22 +1023,10 @@ class _AppLoginPageState extends State<AppLoginPage>
             },
             style: const TextStyle(fontSize: 15),
             decoration: InputDecoration(
-              labelText: hasFocus ? label : null,
-              hintText: hasFocus ? null : label,
-              floatingLabelBehavior: hasFocus
-                  ? FloatingLabelBehavior.always
-                  : FloatingLabelBehavior.never,
-              labelStyle:
-                  TextStyle(color: Colors.grey.shade600, fontSize: 15),
+              hintText: label,
+              floatingLabelBehavior: FloatingLabelBehavior.never,
               hintStyle:
-                  TextStyle(color: Colors.grey.shade600, fontSize: 15),
-              floatingLabelStyle: TextStyle(
-                color: const Color(0xFF7C3AED),
-                fontSize: 13,
-                fontWeight: FontWeight.w500,
-                backgroundColor:
-                    Theme.of(context).scaffoldBackgroundColor,
-              ),
+                  TextStyle(color: Colors.grey.shade500, fontSize: 15),
               prefixIcon: Icon(icon,
                   size: 20, color: isInvalid ? Colors.red : null),
               suffixIcon: suffix,
