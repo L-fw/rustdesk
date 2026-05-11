@@ -133,7 +133,6 @@ class _DesktopHomePageState extends State<DesktopHomePage>
         ).marginOnly(bottom: 6, right: 6)
       ]);
     }
-    final textColor = Theme.of(context).textTheme.titleLarge?.color;
     return ChangeNotifierProvider.value(
       value: gFFI.serverModel,
       child: Container(
@@ -153,37 +152,76 @@ class _DesktopHomePageState extends State<DesktopHomePage>
                 Expanded(child: Container()),
               ],
             ),
-            if (isOutgoingOnly)
+            if (!bind.isDisableSettings())
               Positioned(
-                bottom: 6,
-                left: 12,
-                child: Align(
-                  alignment: Alignment.centerLeft,
-                  child: InkWell(
-                    child: Obx(
-                      () => Icon(
-                        Icons.settings,
-                        color: _editHover.value
-                            ? textColor
-                            : Colors.grey.withOpacity(0.5),
-                        size: 22,
-                      ),
-                    ),
-                    onTap: () => {
-                      if (DesktopSettingPage.tabKeys.isNotEmpty)
-                        {
-                          DesktopSettingPage.switch2page(
-                              DesktopSettingPage.tabKeys[0])
-                        }
-                    },
-                    onHover: (value) => _editHover.value = value,
-                  ),
-                ),
+                bottom: 0,
+                left: 0,
+                right: 0,
+                child: _buildSettingsButton(context),
               )
           ],
         ),
       ),
     );
+  }
+
+  Widget _buildSettingsButton(BuildContext context) {
+    final RxBool hover = false.obs;
+    return Obx(() => InkWell(
+          onTap: () {
+            if (DesktopSettingPage.tabKeys.isNotEmpty) {
+              DesktopSettingPage.switch2page(DesktopSettingPage.tabKeys[0]);
+            }
+          },
+          onHover: (v) => hover.value = v,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 150),
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(vertical: 14),
+            decoration: BoxDecoration(
+              color: hover.value
+                  ? Theme.of(context).colorScheme.primary.withOpacity(0.12)
+                  : Colors.transparent,
+              border: Border(
+                top: BorderSide(
+                  color: Theme.of(context).dividerColor,
+                  width: 1,
+                ),
+              ),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.settings_outlined,
+                  size: 20,
+                  color: hover.value
+                      ? Theme.of(context).colorScheme.primary
+                      : Theme.of(context)
+                          .textTheme
+                          .bodyMedium
+                          ?.color
+                          ?.withOpacity(0.6),
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  translate('Settings'),
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                    color: hover.value
+                        ? Theme.of(context).colorScheme.primary
+                        : Theme.of(context)
+                            .textTheme
+                            .bodyMedium
+                            ?.color
+                            ?.withOpacity(0.6),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ));
   }
 
   buildRightPane(BuildContext context) {

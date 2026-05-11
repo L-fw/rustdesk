@@ -11,6 +11,7 @@ import 'package:flutter_hbb/common/widgets/setting_widgets.dart';
 import 'package:flutter_hbb/consts.dart';
 import 'package:flutter_hbb/desktop/pages/desktop_home_page.dart';
 import 'package:flutter_hbb/desktop/pages/desktop_tab_page.dart';
+import 'package:flutter_hbb/desktop/widgets/tabbar_widget.dart';
 import 'package:flutter_hbb/desktop/widgets/remote_toolbar.dart';
 import 'package:flutter_hbb/desktop/widgets/update_progress.dart';
 import 'package:flutter_hbb/mobile/widgets/dialog.dart';
@@ -324,10 +325,22 @@ class _DesktopSettingPageState extends State<DesktopSettingPage>
           children: <Widget>[
             SizedBox(
               width: _kTabWidth,
-              child: Column(
+              child: Stack(
                 children: [
-                  _header(context),
-                  Flexible(child: _listView(tabs: _settingTabs())),
+                  Column(
+                    children: [
+                      _header(context),
+                      Flexible(child: _listView(tabs: _settingTabs())),
+                      // 为底部返回按钮留出空间
+                      const SizedBox(height: 57),
+                    ],
+                  ),
+                  Positioned(
+                    bottom: 0,
+                    left: 0,
+                    right: 0,
+                    child: _buildHomeButton(context),
+                  ),
                 ],
               ),
             ),
@@ -346,6 +359,69 @@ class _DesktopSettingPageState extends State<DesktopSettingPage>
         ),
       ),
     );
+  }
+
+  Widget _buildHomeButton(BuildContext context) {
+    final RxBool hover = false.obs;
+    return Obx(() => InkWell(
+          onTap: () {
+            try {
+              DesktopTabController tabController =
+                  Get.find<DesktopTabController>();
+              tabController.jumpTo(0);
+            } catch (e) {
+              debugPrintStack(label: '$e');
+            }
+          },
+          onHover: (v) => hover.value = v,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 150),
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(vertical: 14),
+            decoration: BoxDecoration(
+              color: hover.value
+                  ? Theme.of(context).colorScheme.primary.withOpacity(0.12)
+                  : Theme.of(context).colorScheme.background,
+              border: Border(
+                top: BorderSide(
+                  color: Theme.of(context).dividerColor,
+                  width: 1,
+                ),
+              ),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.home_outlined,
+                  size: 20,
+                  color: hover.value
+                      ? Theme.of(context).colorScheme.primary
+                      : Theme.of(context)
+                          .textTheme
+                          .bodyMedium
+                          ?.color
+                          ?.withOpacity(0.6),
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  translate('Home'),
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                    color: hover.value
+                        ? Theme.of(context).colorScheme.primary
+                        : Theme.of(context)
+                            .textTheme
+                            .bodyMedium
+                            ?.color
+                            ?.withOpacity(0.6),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ));
   }
 
   Widget _header(BuildContext context) {
