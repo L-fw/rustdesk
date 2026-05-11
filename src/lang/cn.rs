@@ -750,6 +750,7 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
         ("Sign out of your account", "退出登录"),
         ("Online", "在线"),
         ("Offline", "离线"),
-        
+        ("Releases", "发布页"),
+        ("Common", "通用"),
     ].iter().cloned().collect();
 }

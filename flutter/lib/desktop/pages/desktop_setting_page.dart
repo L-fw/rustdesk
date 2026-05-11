@@ -196,52 +196,52 @@ class _DesktopSettingPageState extends State<DesktopSettingPage>
         case SettingsTabKey.general:
           settingTabs.add(_TabInfo(
               tab, 'General', Icons.settings_outlined, Icons.settings,
-              category: '通用'));
+              category: 'Common'));
           break;
         case SettingsTabKey.safety:
           settingTabs.add(_TabInfo(tab, 'Security',
               Icons.enhanced_encryption_outlined, Icons.enhanced_encryption,
-              category: '通用'));
+              category: 'Common'));
           break;
         case SettingsTabKey.network:
           settingTabs
               .add(_TabInfo(tab, 'Network', Icons.link_outlined, Icons.link,
-              category: '通用'));
+              category: 'Common'));
           break;
         case SettingsTabKey.display:
           settingTabs.add(_TabInfo(tab, 'Display',
               Icons.desktop_windows_outlined, Icons.desktop_windows,
-              category: '通用'));
+              category: 'Common'));
           break;
         case SettingsTabKey.plugin:
           settingTabs.add(_TabInfo(
               tab, 'Plugin', Icons.extension_outlined, Icons.extension,
-              category: '通用'));
+              category: 'Common'));
           break;
         case SettingsTabKey.account:
           settingTabs.add(
               _TabInfo(tab, 'Account', Icons.person_outline, Icons.person,
-              category: '通用'));
+              category: 'Common'));
           break;
         case SettingsTabKey.update:
           settingTabs.add(
-              _TabInfo(tab, '更新', Icons.system_update_outlined, Icons.system_update,
-              category: '通用'));
+              _TabInfo(tab, 'Update', Icons.system_update_outlined, Icons.system_update,
+              category: 'Common'));
           break;
         case SettingsTabKey.printer:
           settingTabs
               .add(_TabInfo(tab, 'Printer', Icons.print_outlined, Icons.print,
-              category: '通用'));
+              category: 'Common'));
           break;
         case SettingsTabKey.releases:
-          settingTabs.add(_TabInfo(tab, '发布页',
+          settingTabs.add(_TabInfo(tab, 'Releases',
               Icons.download_outlined, Icons.download,
-              category: '更多'));
+              category: 'More'));
           break;
         case SettingsTabKey.about:
           settingTabs
               .add(_TabInfo(tab, 'About', Icons.info_outline, Icons.info,
-              category: '更多'));
+              category: 'More'));
           break;
       }
     }
@@ -389,7 +389,7 @@ class _DesktopSettingPageState extends State<DesktopSettingPage>
     return Padding(
       padding: const EdgeInsets.only(left: 20, top: 16, bottom: 6),
       child: Text(
-        category,
+        translate(category),
         style: TextStyle(
           fontSize: 12,
           fontWeight: FontWeight.w500,
