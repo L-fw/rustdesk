@@ -440,14 +440,11 @@ class _DesktopHomePageState extends State<DesktopHomePage>
                     end: Alignment.bottomRight,
                   ),
                 ),
-                child: Center(
-                  child: Text(
-                    username.isNotEmpty ? username.substring(0, 1).toUpperCase() : '?',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
+                child: const Center(
+                  child: Icon(
+                    Icons.person,
+                    color: Colors.white,
+                    size: 24,
                   ),
                 ),
               ),
