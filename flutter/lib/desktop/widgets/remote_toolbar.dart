@@ -2200,7 +2200,15 @@ class _RecordMenu extends StatelessWidget {
       tooltip: recordingModel.start
           ? 'Stop session recording'
           : 'Start session recording',
-      onPressed: () => recordingModel.toggle(),
+      onPressed: () {
+        final wasRecording = recordingModel.start;
+        recordingModel.toggle();
+        if (!wasRecording) {
+          showToast(translate('Start session recording'));
+        } else {
+          showToast(translate('Stop session recording'));
+        }
+      },
       color: recordingModel.start
           ? _ToolbarTheme.redColor
           : _ToolbarTheme.blueColor,

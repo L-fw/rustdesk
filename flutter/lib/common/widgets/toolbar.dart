@@ -271,7 +271,13 @@ List<TTextMenu> toolbarControls(BuildContext context, String id, FFI ffi) {
             )
           ],
         ),
-        onPressed: () => ffi.recordingModel.toggle()));
+        onPressed: () {
+          final wasRecording = ffi.recordingModel.start;
+          ffi.recordingModel.toggle();
+          showToast(translate(wasRecording
+              ? 'Stop session recording'
+              : 'Start session recording'));
+        }));
   }
 
   // to-do:
