@@ -748,5 +748,8 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
         ("Ready to start", "我准备好了"),
         ("Update your account password", "修改账号密码"),
         ("Sign out of your account", "退出登录"),
+        ("Online", "在线"),
+        ("Offline", "离线"),
+        
     ].iter().cloned().collect();
 }
