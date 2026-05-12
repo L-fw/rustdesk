@@ -261,7 +261,7 @@ class _DesktopRegisterPageState extends State<DesktopRegisterPage>
             key: _agreedPrivacyVersionKey, value: _currentPrivacyVersion);
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text(translate('register_success'))
+            content: Text(translate('register_success')),
             backgroundColor: Colors.green,
           ),
         );
@@ -669,7 +669,7 @@ class _DesktopRegisterPageState extends State<DesktopRegisterPage>
                     ),
                   ),
                   _buildLinkText(
-                    label: translate('privacy_link_label')
+                    label: translate('privacy_link_label'),
                     onTap: () => Navigator.of(context).push(
                       PageRouteBuilder(
                         pageBuilder: (_, __, ___) =>
