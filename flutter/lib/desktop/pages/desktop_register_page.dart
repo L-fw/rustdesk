@@ -180,7 +180,7 @@ class _DesktopRegisterPageState extends State<DesktopRegisterPage>
     }
     _startCountdown();
     ScaffoldMessenger.of(context).showSnackBar(
-       SnackBar(content: translate('sms_code_sent')),
+       SnackBar(content: Text(translate('sms_code_sent'))),
     );
   }
 
@@ -260,7 +260,7 @@ class _DesktopRegisterPageState extends State<DesktopRegisterPage>
         bind.mainSetLocalOption(
             key: _agreedPrivacyVersionKey, value: _currentPrivacyVersion);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
+          SnackBar(
             content: Text(translate('register_success')),
             backgroundColor: Colors.green,
           ),
