@@ -1031,7 +1031,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
         : translate('account_kicked_message');
     gFFI.dialogManager.show((setState, close, context) {
       return CustomAlertDialog(
-        title: const Text(translate('account_abnormal_title')),
+        title: Text(translate('account_abnormal_title')),
         content: Text(msg),
         actions: [
           dialogButton(
