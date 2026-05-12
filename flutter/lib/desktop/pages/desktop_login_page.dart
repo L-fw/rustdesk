@@ -247,11 +247,11 @@ class _AppLoginPageState extends State<AppLoginPage>
   Future<void> _sendSmsCode() async {
     final phone = _phoneController.text.trim();
     if (phone.isEmpty) {
-      _setFieldError('phone', _phoneFocus, '请输入手机号');
+      _setFieldError('phone', _phoneFocus, translate('please_enter_phone'));
       return;
     }
     if (phone.length != 11) {
-      _setFieldError('phone', _phoneFocus, '手机号必须为11位数字');
+      _setFieldError('phone', _phoneFocus, translate('phone_must_be_11_digits'));
       return;
     }
     setState(() {
@@ -266,7 +266,7 @@ class _AppLoginPageState extends State<AppLoginPage>
       } else {
         _startCountdown();
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('验证码已发送')),
+           SnackBar(content: Text(translate('sms_code_sent'))),
         );
       }
     }
@@ -282,17 +282,17 @@ class _AppLoginPageState extends State<AppLoginPage>
         return StatefulBuilder(
           builder: (context, setStateDialog) {
             return AlertDialog(
-              title: const Text('激活码已失效'),
+              title: Text(translate('activation_code_expired_title')),
               content: SingleChildScrollView(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Text('请输入新的激活码继续使用'),
+                    Text(translate('please_enter_new_activation_code')),  
                     const SizedBox(height: 12),
                     TextField(
                       controller: controller,
                       decoration: InputDecoration(
-                        labelText: '新激活码',
+                        labelText: translate('new_activation_code_label'),  
                         errorText: errorText,
                       ),
                     ),
@@ -302,13 +302,13 @@ class _AppLoginPageState extends State<AppLoginPage>
               actions: [
                 TextButton(
                   onPressed: () => Navigator.of(context).pop(),
-                  child: const Text('取消'),
+                  child: Text(translate('Cancel')),  
                 ),
                 ElevatedButton(
                   onPressed: () {
                     final value = controller.text.trim();
                     if (value.isEmpty) {
-                      setStateDialog(() => errorText = '请输入激活码');
+                      setStateDialog(() => errorText = translate('please_enter_activation_code'));
                       return;
                     }
                     Navigator.of(context).pop(value);
@@ -317,7 +317,7 @@ class _AppLoginPageState extends State<AppLoginPage>
                     backgroundColor: const Color(0xFF7C3AED),
                     foregroundColor: Colors.white,
                   ),
-                  child: const Text('确认'),
+                  child: Text(translate('OK')),
                 ),
               ],
             );
@@ -354,19 +354,19 @@ class _AppLoginPageState extends State<AppLoginPage>
     final password = _passwordController.text;
 
     if (username.isEmpty) {
-      _setFieldError('username', _usernameFocus, '请输入用户名');
+      _setFieldError('username', _usernameFocus, translate('please_enter_username'));
       return;
     }
     if (!_isUsernameValid(username)) {
-      _setFieldError('username', _usernameFocus, '用户名需为1-20位字符，只能包含英文、数字和下划线');
+      _setFieldError('username', _usernameFocus, translate('username_format_tip'));
       return;
     }
     if (password.isEmpty) {
-      _setFieldError('password', _passwordFocus, '请输入密码');
+      _setFieldError('password', _passwordFocus, translate('Please enter your password'));
       return;
     }
     if (!_agreedToTerms) {
-      setState(() => _errorMsg = '请先阅读并同意《用户协议》与《隐私政策》');
+      setState(() => _errorMsg = translate('please_agree_terms'));
       _shakeControllers['terms']?.forward(from: 0);
       return;
     }
@@ -387,7 +387,7 @@ class _AppLoginPageState extends State<AppLoginPage>
     if (mounted) {
       setState(() => _isLoading = false);
       if (error != null) {
-        if (error == '激活码已过期') {
+        if (error == translate('activation_code_expired_error')) {
           final newCode = await _showActivationCodeDialog();
           if (!mounted) return;
           if (newCode == null) {
@@ -435,19 +435,19 @@ class _AppLoginPageState extends State<AppLoginPage>
     final code = _smsCodeController.text.trim();
 
     if (phone.isEmpty) {
-      _setFieldError('phone', _phoneFocus, '请输入手机号');
+      _setFieldError('phone', _phoneFocus, translate('please_enter_phone'));
       return;
     }
     if (phone.length != 11) {
-      _setFieldError('phone', _phoneFocus, '手机号必须为11位数字');
+      _setFieldError('phone', _phoneFocus, translate('phone_must_be_11_digits'));
       return;
     }
     if (code.isEmpty) {
-      _setFieldError('sms', _smsCodeFocus, '请输入验证码');
+      _setFieldError('sms', _smsCodeFocus, translate('please_enter_sms_code'));
       return;
     }
     if (!_agreedToTerms) {
-      setState(() => _errorMsg = '请先阅读并同意《用户协议》与《隐私政策》');
+      setState(() => _errorMsg = translate('please_agree_terms'));
       _shakeControllers['terms']?.forward(from: 0);
       return;
     }
@@ -468,7 +468,7 @@ class _AppLoginPageState extends State<AppLoginPage>
     if (mounted) {
       setState(() => _isLoading = false);
       if (error != null) {
-        if (error == '激活码已过期') {
+        if (error == translate('activation_code_expired_error')) {
           final newCode = await _showActivationCodeDialog();
           if (!mounted) return;
           if (newCode == null) {
@@ -545,7 +545,7 @@ class _AppLoginPageState extends State<AppLoginPage>
     if (!mounted) return;
     if (ok == true) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('密码已重置，请使用新密码登录')),
+        const SnackBar(content: Text(translate('password_reset_success'))),
       );
     }
   }
@@ -639,8 +639,8 @@ class _AppLoginPageState extends State<AppLoginPage>
                         indicatorSize: TabBarIndicatorSize.tab,
                         dividerColor: Colors.transparent,
                         tabs: const [
-                          Tab(text: '账号登录'),
-                          Tab(text: '手机登录'),
+                          Tab(text: translate('tab_account_login')),
+                          Tab(text: translate('tab_phone_login')),
                         ],
                       ),
                     ),
@@ -693,7 +693,7 @@ class _AppLoginPageState extends State<AppLoginPage>
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Text(
-                          '没有账号？',
+                          translate('no_account_prompt'),
                           style: TextStyle(
                             color: isDark ? Colors.white54 : Colors.black45,
                             fontSize: 13,
@@ -704,7 +704,7 @@ class _AppLoginPageState extends State<AppLoginPage>
                           child: GestureDetector(
                             onTap: _goToRegister,
                             child: Text(
-                              '立即注册',
+                              translate('register_now'),
                               style: TextStyle(
                                 color: const Color(0xFF7C3AED),
                                 fontSize: 13,
@@ -736,7 +736,7 @@ class _AppLoginPageState extends State<AppLoginPage>
           fieldKey: 'username',
           controller: _usernameController,
           focusNode: _usernameFocus,
-          label: '用户名',
+          label: translate('Username'),
           icon: Icons.person_outline,
           suffix: _buildAccountSwitcher(),
           inputFormatters: [
@@ -752,7 +752,7 @@ class _AppLoginPageState extends State<AppLoginPage>
           fieldKey: 'password',
           controller: _passwordController,
           focusNode: _passwordFocus,
-          label: '密码',
+          label: translate('Password'),
           icon: Icons.lock_outline,
           obscure: _obscurePassword,
           inputFormatters: [
@@ -797,7 +797,7 @@ class _AppLoginPageState extends State<AppLoginPage>
             ),
             const SizedBox(width: 8),
             Text(
-              '记住密码（7天）',
+              translate('remember_password'),
               style: TextStyle(
                 fontSize: 12,
                 color: isDark ? Colors.white54 : Colors.black54,
@@ -817,7 +817,7 @@ class _AppLoginPageState extends State<AppLoginPage>
             child: GestureDetector(
               onTap: _showForgotPassword,
               child: Text(
-                '忘记密码？',
+                translate('Forget Password'),
                 style: TextStyle(
                   color: const Color(0xFF7C3AED),
                   fontSize: 13,
@@ -841,7 +841,7 @@ class _AppLoginPageState extends State<AppLoginPage>
           fieldKey: 'phone',
           controller: _phoneController,
           focusNode: _phoneFocus,
-          label: '手机号',
+          label: translate('Phone Number'),
           icon: Icons.phone_android,
           keyboardType: TextInputType.phone,
           inputFormatters: [
@@ -860,7 +860,7 @@ class _AppLoginPageState extends State<AppLoginPage>
                 fieldKey: 'sms',
                 controller: _smsCodeController,
                 focusNode: _smsCodeFocus,
-                label: '验证码',
+                label: translate('Verification code'),
                 icon: Icons.sms_outlined,
                 keyboardType: TextInputType.number,
                 textInputAction: TextInputAction.done,
@@ -884,7 +884,7 @@ class _AppLoginPageState extends State<AppLoginPage>
                   elevation: 0,
                 ),
                 child: Text(
-                  _countdown > 0 ? '${_countdown}s' : '获取验证码',
+                  _countdown > 0 ? '${_countdown}s' : translate('get_sms_code'),
                   style: const TextStyle(fontSize: 13),
                 ),
               ),
@@ -931,7 +931,7 @@ class _AppLoginPageState extends State<AppLoginPage>
               child: Wrap(
                 children: [
                   Text(
-                    '我已阅读并同意',
+                    translate('terms_agreed_prefix'),
                     style: TextStyle(
                         fontSize: 12,
                         color: isDark ? Colors.white54 : Colors.black54),
@@ -944,13 +944,13 @@ class _AppLoginPageState extends State<AppLoginPage>
                               const terms_pages.TermsOfServicePage(),
                           transitionDuration: Duration.zero,
                           reverseTransitionDuration: Duration.zero)),
-                      child: Text('《用户协议》',
+                      child: Text(translate('terms_link_label'),
                           style:
                               TextStyle(fontSize: 12, color: const Color(0xFF7C3AED))),
                     ),
                   ),
                   Text(
-                    '与',
+                    translate('and_connector'),
                     style: TextStyle(
                         fontSize: 12,
                         color: isDark ? Colors.white54 : Colors.black54),
@@ -963,7 +963,7 @@ class _AppLoginPageState extends State<AppLoginPage>
                               const privacy_pages.PrivacyPolicyPage(),
                           transitionDuration: Duration.zero,
                           reverseTransitionDuration: Duration.zero)),
-                      child: Text('《隐私政策》',
+                      child: Text(translate('privacy_link_label'),
                           style:
                               TextStyle(fontSize: 12, color: const Color(0xFF7C3AED))),
                     ),
@@ -1087,7 +1087,7 @@ class _AppLoginPageState extends State<AppLoginPage>
                     strokeWidth: 2.5, color: textColor),
               )
             : Text(
-                '登 录',
+                translate('login_btn'),
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
@@ -1106,8 +1106,9 @@ class _AppLoginPageState extends State<AppLoginPage>
 /// Public widget – can be used from other pages (e.g. Settings > Account).
 class DesktopChangePasswordDialog extends StatefulWidget {
   final String title;
-  const DesktopChangePasswordDialog({Key? key, this.title = '忘记密码'})
+  DesktopChangePasswordDialog({Key? key, this.title = ''})
       : super(key: key);
+  DesktopChangePasswordDialog(title: translate('Forget Password'))
 
   @override
   State<DesktopChangePasswordDialog> createState() =>
@@ -1116,7 +1117,8 @@ class DesktopChangePasswordDialog extends StatefulWidget {
 
 /// Private alias kept for the login-page call-site.
 class _ForgotPasswordDialog extends DesktopChangePasswordDialog {
-  const _ForgotPasswordDialog() : super(title: '忘记密码');
+   _ForgotPasswordDialog() : super(title: '');
+   _ForgotPasswordDialog(title: translate('Forget Password'))
 }
 
 class _ForgotPasswordDialogState extends State<DesktopChangePasswordDialog> {
@@ -1164,11 +1166,11 @@ class _ForgotPasswordDialogState extends State<DesktopChangePasswordDialog> {
   Future<void> _sendSmsCode() async {
     final phone = _phoneController.text.trim();
     if (phone.isEmpty) {
-      setState(() => _errorMsg = '请输入手机号');
+      setState(() => _errorMsg = translate('please_enter_phone'));
       return;
     }
     if (phone.length != 11) {
-      setState(() => _errorMsg = '手机号必须为11位数字');
+      setState(() => _errorMsg = translate('phone_must_be_11_digits'));
       return;
     }
     setState(() {
@@ -1188,12 +1190,12 @@ class _ForgotPasswordDialogState extends State<DesktopChangePasswordDialog> {
   String? _validatePasswordFormat(String value) {
     if (value.isEmpty) return null;
     if (value.length < 6 || value.length > 20) {
-      return '密码需为6-20位字符';
+      return translate('password_length_tip');
     }
     final hasLetter = value.contains(RegExp(r'[A-Za-z]'));
     final hasDigit = value.contains(RegExp(r'\d'));
     if (!hasLetter || !hasDigit) {
-      return '密码需包含字母和数字';
+      return translate('password_letter_digit_tip');
     }
     return null;
   }
@@ -1205,33 +1207,33 @@ class _ForgotPasswordDialogState extends State<DesktopChangePasswordDialog> {
     final confirmPassword = _confirmPasswordController.text;
 
     if (phone.isEmpty) {
-      setState(() => _errorMsg = '请输入手机号');
+      setState(() => _errorMsg = translate('please_enter_phone'));
       return;
     }
     if (phone.length != 11) {
-      setState(() => _errorMsg = '手机号必须为11位数字');
+      setState(() => _errorMsg = translate('phone_must_be_11_digits'));
       return;
     }
     if (smsCode.isEmpty) {
-      setState(() => _errorMsg = '请输入验证码');
+      setState(() => _errorMsg = translate('please_enter_sms_code'));
       return;
     }
     if (password.isEmpty) {
-      setState(() => _errorMsg = '请输入新密码');
+      setState(() => _errorMsg = translate('please_enter_new_password'));
       return;
     }
     if (password.length < 6 || password.length > 20) {
-      setState(() => _errorMsg = '密码需为6-20位字符');
+      setState(() => _errorMsg = translate('password_length_tip'));
       return;
     }
     final hasLetter = password.contains(RegExp(r'[A-Za-z]'));
     final hasDigit = password.contains(RegExp(r'\d'));
     if (!hasLetter || !hasDigit) {
-      setState(() => _errorMsg = '密码需包含字母和数字');
+      setState(() => _errorMsg = translate('password_letter_digit_tip');
       return;
     }
     if (password != confirmPassword) {
-      setState(() => _errorMsg = '两次密码输入不一致');
+      setState(() => _errorMsg = translate('password_letter_digit_tip');
       return;
     }
 
@@ -1275,7 +1277,7 @@ class _ForgotPasswordDialogState extends State<DesktopChangePasswordDialog> {
                   LengthLimitingTextInputFormatter(11),
                 ],
                 decoration: const InputDecoration(
-                  labelText: '手机号',
+                  labelText: translate('Phone Number'),
                   prefixIcon: Icon(Icons.phone_android, size: 20),
                 ),
               ),
@@ -1289,7 +1291,7 @@ class _ForgotPasswordDialogState extends State<DesktopChangePasswordDialog> {
                       keyboardType: TextInputType.number,
                       textInputAction: TextInputAction.next,
                       decoration: const InputDecoration(
-                        labelText: '验证码',
+                        labelText: translate('Verification code'),
                         prefixIcon: Icon(Icons.sms_outlined, size: 20),
                       ),
                     ),
@@ -1313,7 +1315,7 @@ class _ForgotPasswordDialogState extends State<DesktopChangePasswordDialog> {
                         elevation: 0,
                       ),
                       child: Text(
-                        _countdown > 0 ? '${_countdown}s' : '获取验证码',
+                        _countdown > 0 ? '${_countdown}s' : translate('get_sms_code'),
                         style: const TextStyle(fontSize: 13),
                       ),
                     ),
@@ -1335,7 +1337,7 @@ class _ForgotPasswordDialogState extends State<DesktopChangePasswordDialog> {
                   }
                 },
                 decoration: InputDecoration(
-                  labelText: '新密码',
+                  labelText: translate('new_password_label'),
                   prefixIcon: const Icon(Icons.lock_outline, size: 20),
                   suffixIcon: IconButton(
                     icon: Icon(
@@ -1371,14 +1373,14 @@ class _ForgotPasswordDialogState extends State<DesktopChangePasswordDialog> {
                 ],
                 onChanged: (value) {
                   final error = (value.isNotEmpty && value != _passwordController.text)
-                      ? '两次密码输入不一致'
+                      ? translate('password_not_match')  
                       : null;
                   if (error != _confirmPasswordError) {
                     setState(() => _confirmPasswordError = error);
                   }
                 },
                 decoration: InputDecoration(
-                  labelText: '确认新密码',
+                  labelText: translate('confirm_new_password_label'),
                   prefixIcon: const Icon(Icons.lock_outline, size: 20),
                   suffixIcon: IconButton(
                     icon: Icon(
@@ -1418,7 +1420,7 @@ class _ForgotPasswordDialogState extends State<DesktopChangePasswordDialog> {
               Align(
                 alignment: Alignment.centerLeft,
                 child: Text(
-                  '验证码会发送到你填写的手机号',
+                  translate('sms_hint'),
                   style: TextStyle(
                     fontSize: 12,
                     color: isDark ? Colors.white54 : Colors.black45,
@@ -1433,7 +1435,7 @@ class _ForgotPasswordDialogState extends State<DesktopChangePasswordDialog> {
         TextButton(
           onPressed:
               _isLoading ? null : () => Navigator.of(context).pop(false),
-          child: const Text('取消'),
+          child: Text(translate('Cancel')),
         ),
         ElevatedButton(
           onPressed: _isLoading ? null : _submit,
@@ -1449,7 +1451,7 @@ class _ForgotPasswordDialogState extends State<DesktopChangePasswordDialog> {
                   child: CircularProgressIndicator(
                       strokeWidth: 2.5, color: Colors.white),
                 )
-              : const Text('确认重置'),
+              : const Text(translate('confirm_reset_btn')),
         ),
       ],
     );
