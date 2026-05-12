@@ -2796,7 +2796,7 @@ class _AboutState extends State<_About> {
   }
 
   @override
-Widget build(BuildContext context) {
+  Widget build(BuildContext context) {
   return futureBuilder(future: () async {
     final license = await bind.mainGetLicense();
     final version = await bind.mainGetVersion();
@@ -2992,6 +2992,7 @@ Widget build(BuildContext context) {
       ),
     );
   });
+}
 }
 
 //#endregion
