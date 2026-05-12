@@ -592,17 +592,13 @@ class _AppLoginPageState extends State<AppLoginPage>
                 mainAxisSize: MainAxisSize.min,
                 children: [
                     // Logo & App Name
-                    Container(
-                      width: 52,
-                      height: 52,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF7C3AED).withOpacity(0.12),
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                      child: Icon(
-                        Icons.connected_tv_rounded,
-                        size: 28,
-                        color: const Color(0xFF7C3AED),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: Image.asset(
+                        'assets/about_logo.png',
+                        width: 52,
+                        height: 52,
+                        fit: BoxFit.cover,
                       ),
                     ),
                     const SizedBox(height: 10),
