@@ -2160,8 +2160,8 @@ class _AccountState extends State<_Account> {
   Future<void> _doChangePassword() async {
     final ok = await showDialog<bool>(
       context: context,
-      builder: (_) => const desktop_login.DesktopChangePasswordDialog(
-        title: '修改密码',
+      builder: (_) => desktop_login.DesktopChangePasswordDialog(
+        title: translate('Change Password'),
       ),
     );
     if (!mounted) return;

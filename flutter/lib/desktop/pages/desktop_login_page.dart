@@ -638,7 +638,7 @@ class _AppLoginPageState extends State<AppLoginPage>
                         unselectedLabelStyle: const TextStyle(fontSize: 13),
                         indicatorSize: TabBarIndicatorSize.tab,
                         dividerColor: Colors.transparent,
-                        tabs: const [
+                        tabs: [
                           Tab(text: translate('tab_account_login')),
                           Tab(text: translate('tab_phone_login')),
                         ],
