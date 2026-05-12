@@ -456,12 +456,14 @@ class _DesktopHomePageState extends State<DesktopHomePage>
               ?.withOpacity(0.6) ??
               Colors.grey;
               
-          return Row(
+          return Padding(
+            padding: const EdgeInsets.symmetric(vertical: 6),
+            child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Container(
-                width: 40,
-                height: 40,
+                width: 48,
+                height: 48,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   gradient: LinearGradient(
@@ -477,22 +479,22 @@ class _DesktopHomePageState extends State<DesktopHomePage>
                   child: Icon(
                     Icons.person,
                     color: Colors.white,
-                    size: 24,
+                    size: 28,
                   ),
                 ),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 16),
               Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       username,
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(fontSize: 16),
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(fontSize: 17),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
                     if (maskedPhone.isNotEmpty) ...[
-                      const SizedBox(height: 2),
+                      const SizedBox(height: 6),
                       Row(
                         children: [
                           Icon(Icons.phone_outlined, size: 12, color: infoColor),
@@ -507,6 +509,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
                   ],
                 ),
             ],
+          ),
           );
         },
       );
