@@ -34,7 +34,7 @@ import 'privacy_policy.dart' as privacy_pages;
 import 'terms_of_service.dart' as terms_pages;
 import 'login_tab_page.dart';
 
-const double _kTabWidth = 200;
+const double _kTabWidth = 220;
 const double _kTabHeight = 42;
 const double _kCardFixedWidth = 540;
 const double _kCardLeftMargin = 15;
@@ -382,12 +382,6 @@ class _DesktopSettingPageState extends State<DesktopSettingPage>
               color: hover.value
                   ? Theme.of(context).colorScheme.primary.withOpacity(0.12)
                   : Theme.of(context).colorScheme.background,
-              border: Border(
-                top: BorderSide(
-                  color: Theme.of(context).dividerColor,
-                  width: 1,
-                ),
-              ),
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -426,36 +420,46 @@ class _DesktopSettingPageState extends State<DesktopSettingPage>
 
   Widget _header(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.only(left: 20, top: 20, bottom: 12),
-      child: Row(
+      padding: const EdgeInsets.only(top: 20, bottom: 16),
+      child: Column(
         children: [
           if (isWeb)
-            IconButton(
-              onPressed: () {
-                if (Navigator.canPop(context)) {
-                  Navigator.pop(context);
-                }
-              },
-              icon: Icon(Icons.arrow_back),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Padding(
+                padding: const EdgeInsets.only(left: 12, bottom: 8),
+                child: IconButton(
+                  onPressed: () {
+                    if (Navigator.canPop(context)) {
+                      Navigator.pop(context);
+                    }
+                  },
+                  icon: Icon(Icons.arrow_back),
+                ),
+              ),
             ),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(8),
-            child: Image.asset(
-              'assets/about_logo.png',
-              width: 36,
-              height: 36,
-              fit: BoxFit.cover,
-            ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: Image.asset(
+                  'assets/about_logo.png',
+                  width: 36,
+                  height: 36,
+                  fit: BoxFit.cover,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Text(
+                bind.mainGetAppNameSync(),
+                style: const TextStyle(
+                  fontSize: _kTitleFontSize,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
           ),
-          const SizedBox(width: 10),
-          Text(
-            bind.mainGetAppNameSync(),
-            style: const TextStyle(
-              fontSize: _kTitleFontSize,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          const Spacer(),
         ],
       ),
     );

@@ -431,7 +431,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
       final currentUserName = AppAuthService().currentUserName.value;
       if (currentUserName.isEmpty) {
         return Align(
-          alignment: Alignment.centerLeft,
+          alignment: Alignment.center,
           child: Text(
             translate("Your Desktop"),
             style: Theme.of(context).textTheme.titleLarge,
@@ -457,6 +457,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
               Colors.grey;
               
           return Row(
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Container(
                 width: 40,
@@ -481,8 +482,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
                 ),
               ),
               const SizedBox(width: 12),
-              Expanded(
-                child: Column(
+              Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
@@ -506,7 +506,6 @@ class _DesktopHomePageState extends State<DesktopHomePage>
                     ],
                   ],
                 ),
-              ),
             ],
           );
         },
@@ -521,7 +520,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
           const EdgeInsets.only(left: 20.0, right: 16, top: 20.0, bottom: 12),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.start,
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Column(
             children: [
@@ -529,7 +528,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
             ],
           ),
           SizedBox(
-            height: 14.0,
+            height: 20.0,
           ),
           if (!isOutgoingOnly)
             Text(
