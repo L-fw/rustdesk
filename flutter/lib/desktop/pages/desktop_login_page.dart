@@ -540,12 +540,12 @@ class _AppLoginPageState extends State<AppLoginPage>
   Future<void> _showForgotPassword() async {
     final ok = await showDialog<bool>(
       context: context,
-      builder: (_) => const _ForgotPasswordDialog(),
+      builder: (_) => _ForgotPasswordDialog(),
     );
     if (!mounted) return;
     if (ok == true) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text(translate('password_reset_success'))),
+        SnackBar(content: Text(translate('password_reset_success'))),
       );
     }
   }
@@ -1108,7 +1108,6 @@ class DesktopChangePasswordDialog extends StatefulWidget {
   final String title;
   DesktopChangePasswordDialog({Key? key, this.title = ''})
       : super(key: key);
-  DesktopChangePasswordDialog(title: translate('Forget Password'))
 
   @override
   State<DesktopChangePasswordDialog> createState() =>
@@ -1117,8 +1116,7 @@ class DesktopChangePasswordDialog extends StatefulWidget {
 
 /// Private alias kept for the login-page call-site.
 class _ForgotPasswordDialog extends DesktopChangePasswordDialog {
-   _ForgotPasswordDialog() : super(title: '');
-   _ForgotPasswordDialog(title: translate('Forget Password'))
+   _ForgotPasswordDialog() : super(title: translate('Forget Password'));
 }
 
 class _ForgotPasswordDialogState extends State<DesktopChangePasswordDialog> {
@@ -1229,11 +1227,11 @@ class _ForgotPasswordDialogState extends State<DesktopChangePasswordDialog> {
     final hasLetter = password.contains(RegExp(r'[A-Za-z]'));
     final hasDigit = password.contains(RegExp(r'\d'));
     if (!hasLetter || !hasDigit) {
-      setState(() => _errorMsg = translate('password_letter_digit_tip');
+      setState(() => _errorMsg = translate('password_letter_digit_tip'));
       return;
     }
     if (password != confirmPassword) {
-      setState(() => _errorMsg = translate('password_letter_digit_tip');
+      setState(() => _errorMsg = translate('password_not_match'));
       return;
     }
 
@@ -1276,7 +1274,7 @@ class _ForgotPasswordDialogState extends State<DesktopChangePasswordDialog> {
                   FilteringTextInputFormatter.digitsOnly,
                   LengthLimitingTextInputFormatter(11),
                 ],
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   labelText: translate('Phone Number'),
                   prefixIcon: Icon(Icons.phone_android, size: 20),
                 ),
@@ -1290,7 +1288,7 @@ class _ForgotPasswordDialogState extends State<DesktopChangePasswordDialog> {
                       controller: _smsCodeController,
                       keyboardType: TextInputType.number,
                       textInputAction: TextInputAction.next,
-                      decoration: const InputDecoration(
+                      decoration: InputDecoration(
                         labelText: translate('Verification code'),
                         prefixIcon: Icon(Icons.sms_outlined, size: 20),
                       ),
@@ -1451,7 +1449,7 @@ class _ForgotPasswordDialogState extends State<DesktopChangePasswordDialog> {
                   child: CircularProgressIndicator(
                       strokeWidth: 2.5, color: Colors.white),
                 )
-              : const Text(translate('confirm_reset_btn')),
+              : Text(translate('confirm_reset_btn')),
         ),
       ],
     );
