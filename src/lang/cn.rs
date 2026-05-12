@@ -752,5 +752,17 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
         ("Offline", "离线"),
         ("Releases", "发布页"),
         ("Common", "通用"),
+        ("Phone Number", "手机号"),
+        ("No user info", "暂无用户信息"),
+        ("Go to Download", "前往下载"),
+        ("Releases", "发布页"),
+        ("Download different versions of Gamwing", "下载不同版本的 Gamwing 工具"),
+        ("User Edition", "用户版 Gamwing 工具"),
+        ("Tools for regular users", "面向普通用户的工具"),
+        ("Support Edition", "客服版 Gamwing 工具"),
+        ("Dedicated tools for support staff", "面向客服人员的专属工具"),
+        ("Remote Control Tagline", "Remote Control · 远程控制工具"),
+        ("Terms of Service", "用户服务协议"),
+        ("Copyright Notice", "© 2026 佳影寰球科技有限公司 版权所有\n基于Rustdesk开源项目构建，详见用户服务协议"),
     ].iter().cloned().collect();
 }
