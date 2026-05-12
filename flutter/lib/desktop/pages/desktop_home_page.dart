@@ -971,12 +971,12 @@ class _DesktopHomePageState extends State<DesktopHomePage>
         title: Row(children: [
           const Icon(Icons.block, color: Colors.redAccent, size: 28),
           const SizedBox(width: 10),
-          Text('远程功能已禁用'),
+          Text(translate('remote_disabled_title')),
         ]),
         content: Obx(() => Text(
           stateGlobal.remoteDisabledMessage.value.isNotEmpty
               ? stateGlobal.remoteDisabledMessage.value
-              : '远程功能已被管理员禁用，远程连接已断开。\n管理员恢复权限后将自动恢复。',
+              : translate('remote_disabled_message'),
         )),
         actions: [],
       );
@@ -1028,14 +1028,14 @@ class _DesktopHomePageState extends State<DesktopHomePage>
     _loginStatusDialogShowing = true;
     final msg = stateGlobal.appLoginInvalidatedMessage.value.isNotEmpty
         ? stateGlobal.appLoginInvalidatedMessage.value
-        : '账号已在其他设备登录';
+        : translate('account_kicked_message');
     gFFI.dialogManager.show((setState, close, context) {
       return CustomAlertDialog(
-        title: const Text('账号异常'),
+        title: const Text(translate('account_abnormal_title')),
         content: Text(msg),
         actions: [
           dialogButton(
-            '直接退出',
+            translate('btn_exit_directly'),
             onPressed: () {
               close();
               _loginStatusDialogShowing = false;
@@ -1045,7 +1045,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
             },
           ),
           dialogButton(
-            '重新登录',
+            translate('btn_relogin'),
             onPressed: () {
               close();
               _loginStatusDialogShowing = false;

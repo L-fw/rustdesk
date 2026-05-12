@@ -147,12 +147,12 @@ class _DesktopRegisterPageState extends State<DesktopRegisterPage>
   String? _validatePasswordFormat(String value) {
     if (value.isEmpty) return null;
     if (value.length < 6 || value.length > 20) {
-      return '密码需为6-20位字符';
+      return translate('password_length_tip');
     }
     final hasLetter = value.contains(RegExp(r'[A-Za-z]'));
     final hasDigit = value.contains(RegExp(r'\d'));
     if (!hasLetter || !hasDigit) {
-      return '密码需包含字母和数字';
+      return translate('password_letter_digit_tip');
     }
     return null;
   }
@@ -160,11 +160,11 @@ class _DesktopRegisterPageState extends State<DesktopRegisterPage>
   Future<void> _sendSmsCode() async {
     final phone = _phoneController.text.trim();
     if (phone.isEmpty) {
-      _setFieldError('phone', _phoneFocus, '请输入手机号');
+      _setFieldError('phone', _phoneFocus, translate('please_enter_phone'));
       return;
     }
     if (phone.length != 11) {
-      _setFieldError('phone', _phoneFocus, '手机号必须为11位数字');
+      _setFieldError('phone', _phoneFocus, translate('phone_must_be_11_digits'));
       return;
     }
     setState(() {
@@ -180,7 +180,7 @@ class _DesktopRegisterPageState extends State<DesktopRegisterPage>
     }
     _startCountdown();
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('验证码已发送')),
+       SnackBar(content: translate('sms_code_sent')),
     );
   }
 
@@ -193,43 +193,43 @@ class _DesktopRegisterPageState extends State<DesktopRegisterPage>
     final activationCode = _activationCodeController.text.trim();
 
     if (username.isEmpty) {
-      _setFieldError('username', _usernameFocus, '请输入用户名');
+      _setFieldError('username', _usernameFocus, translate('please_enter_username'));
       return;
     }
     if (!_isUsernameValid(username)) {
-      _setFieldError('username', _usernameFocus, '用户名需为1-20位字符，只能包含英文、数字和下划线');
+      _setFieldError('username', _usernameFocus, translate('username_format_tip'));
       return;
     }
     if (password.isEmpty) {
-      _setFieldError('password', _passwordFocus, '请输入密码');
+      _setFieldError('password', _passwordFocus, translate('please_enter_password'));
       return;
     }
     if (!_isPasswordValid(password)) {
-      _setFieldError('password', _passwordFocus, '密码需为6-20位字符，且包含字母和数字');
+      _setFieldError('password', _passwordFocus, translate('password_format_tip'));
       return;
     }
     if (password != confirmPassword) {
-      _setFieldError('confirmPassword', _confirmPasswordFocus, '两次密码输入不一致');
+      _setFieldError('confirmPassword', _confirmPasswordFocus, translate('password_not_match'));
       return;
     }
     if (phone.isEmpty) {
-      _setFieldError('phone', _phoneFocus, '请输入手机号');
+      _setFieldError('phone', _phoneFocus, translate('please_enter_phone'));
       return;
     }
     if (phone.length != 11) {
-      _setFieldError('phone', _phoneFocus, '手机号必须为11位数字');
+      _setFieldError('phone', _phoneFocus, translate('phone_must_be_11_digits'));
       return;
     }
     if (smsCode.isEmpty) {
-      _setFieldError('sms', _smsCodeFocus, '请输入验证码');
+      _setFieldError('sms', _smsCodeFocus, translate('please_enter_sms_code'));
       return;
     }
     if (activationCode.isEmpty) {
-      _setFieldError('activation', _activationCodeFocus, '请输入激活码');
+      _setFieldError('activation', _activationCodeFocus, translate('please_enter_activation_code'));
       return;
     }
     if (!_agreedToTerms) {
-      setState(() => _errorMsg = '请先阅读并同意《用户协议》与《隐私政策》');
+      setState(() => _errorMsg = translate('please_agree_terms'));
       _shakeControllers['terms']?.forward(from: 0);
       return;
     }
@@ -261,7 +261,7 @@ class _DesktopRegisterPageState extends State<DesktopRegisterPage>
             key: _agreedPrivacyVersionKey, value: _currentPrivacyVersion);
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('注册成功，请登录'),
+            content: Text(translate('register_success'))
             backgroundColor: Colors.green,
           ),
         );
@@ -322,7 +322,7 @@ class _DesktopRegisterPageState extends State<DesktopRegisterPage>
                           ),
                           const SizedBox(height: 10),
                           Text(
-                            '注册账号',
+                            translate('register_title'),
                             style: TextStyle(
                               fontSize: 20,
                               fontWeight: FontWeight.bold,
@@ -342,7 +342,7 @@ class _DesktopRegisterPageState extends State<DesktopRegisterPage>
                     fieldKey: 'username',
                     controller: _usernameController,
                     focusNode: _usernameFocus,
-                    label: '用户名',
+                    label: translate('Username'),
                     icon: Icons.person_outline,
                     inputFormatters: [
                       _UsernameInputFormatter(),
@@ -356,7 +356,7 @@ class _DesktopRegisterPageState extends State<DesktopRegisterPage>
                     fieldKey: 'password',
                     controller: _passwordController,
                     focusNode: _passwordFocus,
-                    label: '密码',
+                    label: translate('Password'),
                     icon: Icons.lock_outline,
                     obscure: _obscurePassword,
                     inputFormatters: [
@@ -402,7 +402,7 @@ class _DesktopRegisterPageState extends State<DesktopRegisterPage>
                     fieldKey: 'confirmPassword',
                     controller: _confirmPasswordController,
                     focusNode: _confirmPasswordFocus,
-                    label: '确认密码',
+                    label: translate('field_confirm_password'),
                     icon: Icons.lock_outline,
                     obscure: _obscureConfirm,
                     inputFormatters: [
@@ -434,7 +434,7 @@ class _DesktopRegisterPageState extends State<DesktopRegisterPage>
                     fieldKey: 'phone',
                     controller: _phoneController,
                     focusNode: _phoneFocus,
-                    label: '手机号',
+                    label: translate('Phone Number'),
                     icon: Icons.phone_android,
                     inputFormatters: [
                       FilteringTextInputFormatter.digitsOnly,
@@ -453,7 +453,7 @@ class _DesktopRegisterPageState extends State<DesktopRegisterPage>
                           fieldKey: 'sms',
                           controller: _smsCodeController,
                           focusNode: _smsCodeFocus,
-                          label: '验证码',
+                          label: translate('Verification code'),
                           icon: Icons.sms_outlined,
                         ),
                       ),
@@ -485,7 +485,7 @@ class _DesktopRegisterPageState extends State<DesktopRegisterPage>
                               : Text(
                                   _countdown > 0
                                       ? '${_countdown}s'
-                                      : '获取验证码',
+                                      : translate('get_sms_code') ,
                                   style: const TextStyle(fontSize: 13),
                                 ),
                         ),
@@ -499,7 +499,7 @@ class _DesktopRegisterPageState extends State<DesktopRegisterPage>
                     fieldKey: 'activation',
                     controller: _activationCodeController,
                     focusNode: _activationCodeFocus,
-                    label: '激活码',
+                    label: translate('field_activation_code'),
                     icon: Icons.vpn_key_outlined,
                     textInputAction: TextInputAction.done,
                     onSubmitted: (_) => _register(),
@@ -566,8 +566,8 @@ class _DesktopRegisterPageState extends State<DesktopRegisterPage>
                                 color: Colors.white,
                               ),
                             )
-                          : const Text(
-                              '注 册',
+                          : Text(
+                              translate('register_btn'),
                               style: TextStyle(
                                   fontSize: 16, fontWeight: FontWeight.w600),
                             ),
@@ -580,7 +580,7 @@ class _DesktopRegisterPageState extends State<DesktopRegisterPage>
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Text(
-                        '已有账号？',
+                        translate('already_have_account'),
                         style: TextStyle(
                           color: isDark ? Colors.white54 : Colors.black45,
                           fontSize: 13,
@@ -591,7 +591,7 @@ class _DesktopRegisterPageState extends State<DesktopRegisterPage>
                         child: GestureDetector(
                           onTap: () => Navigator.of(context).pop(),
                           child: Text(
-                            '去登录',
+                            translate('go_to_login'),
                             style: const TextStyle(
                               color: Color(0xFF7C3AED),
                               fontSize: 13,
@@ -644,14 +644,14 @@ class _DesktopRegisterPageState extends State<DesktopRegisterPage>
               child: Wrap(
                 children: [
                   Text(
-                    '我已阅读并同意',
+                    translate('terms_agreed_prefix'),
                     style: TextStyle(
                       fontSize: 12,
                       color: isDark ? Colors.white54 : Colors.black54,
                     ),
                   ),
                   _buildLinkText(
-                    label: '《用户协议》',
+                    label: translate('terms_link_label'),
                     onTap: () => Navigator.of(context).push(
                       PageRouteBuilder(
                         pageBuilder: (_, __, ___) =>
@@ -662,14 +662,14 @@ class _DesktopRegisterPageState extends State<DesktopRegisterPage>
                     ),
                   ),
                   Text(
-                    '与',
+                    translate('and_connector'),
                     style: TextStyle(
                       fontSize: 12,
                       color: isDark ? Colors.white54 : Colors.black54,
                     ),
                   ),
                   _buildLinkText(
-                    label: '《隐私政策》',
+                    label: translate('privacy_link_label')
                     onTap: () => Navigator.of(context).push(
                       PageRouteBuilder(
                         pageBuilder: (_, __, ___) =>
