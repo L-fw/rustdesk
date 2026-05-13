@@ -240,6 +240,7 @@ class DesktopTab extends StatefulWidget {
   final bool showMinimize;
   final bool showMaximize;
   final bool showClose;
+  final bool showTabBar;
   final Widget Function(Widget pageView)? pageViewBuilder;
   // Right click tab menu
   final TabMenuBuilder? tabMenuBuilder;
@@ -266,6 +267,7 @@ class DesktopTab extends StatefulWidget {
     this.showMinimize = true,
     this.showMaximize = true,
     this.showClose = true,
+    this.showTabBar = true,
     this.pageViewBuilder,
     this.tabMenuBuilder,
     this.tail,
@@ -511,7 +513,8 @@ class _DesktopTabState extends State<DesktopTab>
   Widget build(BuildContext context) {
     return Column(children: [
       Obx(() {
-        if (stateGlobal.showTabBar.isTrue &&
+        if (widget.showTabBar &&
+            stateGlobal.showTabBar.isTrue &&
             !(kUseCompatibleUiMode && isHideSingleItem())) {
           final showBottomDivider = _showTabBarBottomDivider(tabType);
           return SizedBox(
