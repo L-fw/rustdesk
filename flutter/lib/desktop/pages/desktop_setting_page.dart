@@ -2833,11 +2833,7 @@ class _AboutState extends State<_About> {
                   height: 72,
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(18),
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFF3b82f6), Color(0xFF1d4ed8)],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
+                    color: Colors.transparent,
                   ),
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(18),
