@@ -476,7 +476,7 @@ class ServerModel with ChangeNotifier {
             ? stateGlobal.remoteDisabledMessage.value
             : stateGlobal.bannedMessage.value.isNotEmpty
                 ? stateGlobal.bannedMessage.value
-                : '设备已被禁用，无法启动远程服务',
+                : translate('device_banned_default_msg'),
       );
       return;
     }
@@ -518,7 +518,7 @@ class ServerModel with ChangeNotifier {
       if (resp.statusCode == 200) {
         final data = jsonDecode(resp.body) as Map<String, dynamic>;
         if (data['banned'] == true) {
-          final msg = data['msg'] as String? ?? '设备已被禁用，无法启动远程服务';
+          final msg = data['msg'] as String? ?? translate('device_banned_default_msg');
           stateGlobal.remoteDisabled.value = true;
           stateGlobal.remoteDisabledMessage.value = msg;
           _showBannedDialog(msg);
@@ -544,16 +544,16 @@ class ServerModel with ChangeNotifier {
         context: ctx,
         barrierDismissible: true,
         builder: (context) => AlertDialog(
-          title: Row(children: const [
-            Icon(Icons.block, color: Colors.redAccent, size: 28),
-            SizedBox(width: 10),
-            Text('设备已被禁用'),
+          title: Row(children: [
+            const Icon(Icons.block, color: Colors.redAccent, size: 28),
+            const SizedBox(width: 10),
+            Text(translate('device_banned_title')),
           ]),
           content: Text(msg),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: const Text('确定'),
+              child: Text(translate('btn_confirm')),
             ),
           ],
         ),
@@ -721,7 +721,7 @@ class ServerModel with ChangeNotifier {
         stateGlobal.remoteDisabled.value = true;
         stateGlobal.remoteDisabledMessage.value = msgText.isNotEmpty
             ? msgText
-            : '远程功能已被管理员禁用';
+            : translate('remote_disabled_by_admin');
         // 断开所有被控连接并停止服务
         if (_isStart) {
           closeAll();
@@ -730,7 +730,7 @@ class ServerModel with ChangeNotifier {
         // 先断开主控连接，再弹出提示
         closeConnection();
         _showBannedDialog(
-          msgText.isNotEmpty ? msgText : '远程功能已被管理员禁用，所有连接已断开',
+          msgText.isNotEmpty ? msgText : translate('remote_disabled_all_disconnected'),
         );
       } else if (action == 'unbanned') {
         // 管理员恢复了远程功能
@@ -752,7 +752,7 @@ class ServerModel with ChangeNotifier {
   Future<void> _handleLoginInvalidated(String msgText) async {
     await AppAuthService().logout();
     stateGlobal.appLoginInvalidatedMessage.value =
-        msgText.isNotEmpty ? msgText : '账号已在其他设备登录';
+        msgText.isNotEmpty ? msgText : translate('account_kicked_default_msg');
     stateGlobal.appLoginInvalidated.value = true;
   }
 
@@ -846,7 +846,7 @@ class ServerModel with ChangeNotifier {
         bind.cmLoginRes(connId: client.id, res: false);
         parent.target?.invokeMethod("cancel_notification", client.id);
         debugPrint('[BAN] Rejected incoming connection from ${client.peerId}');
-        _showBannedDialog('设备已被禁用，已拒绝来自 ${client.peerId} 的连接请求');
+        _showBannedDialog(translate('device_banned_reject_connection').replaceAll('{}', client.peerId));
         return;
       }
       if (client.authorized) {

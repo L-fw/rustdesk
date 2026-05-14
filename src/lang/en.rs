@@ -1,4 +1,4 @@
-﻿lazy_static::lazy_static! {
+lazy_static::lazy_static! {
 pub static ref T: std::collections::HashMap<&'static str, &'static str> =
     [
         ("desk_tip", "Your desktop can be accessed with this ID and password."),
@@ -329,8 +329,8 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
         ("new_activation_code_label", "New Activation Code"),
         ("activation_code_expired_error", "Activation code has expired"),
         ("password_reset_success", "Password has been reset. Please sign in with your new password."),
-        ("tab_account_login", "Login"),
-        ("tab_phone_login", "Login"),
+        ("tab_account_login", "Account"),
+        ("tab_phone_login", "Phone"),
         ("no_account_prompt", "Don't have an account?"),
         ("register_now", "Register Now"),
         ("remember_password", "Remember password (7 days)"),
@@ -340,5 +340,13 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
         ("confirm_new_password_label", "Confirm New Password"),
         ("sms_hint", "A verification code will be sent to the phone number you provided"),
         ("confirm_reset_btn", "Confirm Reset"),
+        ("device_banned_title", "Device Disabled"),
+        ("device_banned_default_msg", "Device has been disabled, remote service cannot be started"),
+        ("remote_disabled_by_admin", "Remote feature has been disabled by the administrator"),
+        ("remote_disabled_all_disconnected", "Remote feature has been disabled by the administrator, all connections have been terminated"),
+        ("account_kicked_default_msg", "Your account has been signed in on another device"),
+        ("device_banned_reject_connection", "Device has been disabled, connection request from {} has been rejected"),
+        ("btn_confirm", "OK"),
+        ("app_title", "Gamwing Remote Control"),
     ].iter().cloned().collect();
 }

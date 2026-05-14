@@ -810,5 +810,13 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
         ("confirm_new_password_label", "确认新密码"),
         ("sms_hint", "验证码会发送到你填写的手机号"),
         ("confirm_reset_btn", "确认重置"),
+        ("device_banned_title", "设备已被禁用"),
+        ("device_banned_default_msg", "设备已被禁用，无法启动远程服务"),
+        ("remote_disabled_by_admin", "远程功能已被管理员禁用"),
+        ("remote_disabled_all_disconnected", "远程功能已被管理员禁用，所有连接已断开"),
+        ("account_kicked_default_msg", "账号已在其他设备登录"),
+        ("device_banned_reject_connection", "设备已被禁用，已拒绝来自 {} 的连接请求"),
+        ("btn_confirm", "确定"),
+        ("app_title", "Gamwing远程操控"),
     ].iter().cloned().collect();
 }

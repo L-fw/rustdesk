@@ -642,8 +642,8 @@ class _DesktopTabState extends State<DesktopTab>
                         ),
                         Offstage(
                             offstage: !showTitle,
-                            child: const Text(
-                              "Gamwing远程操控",
+                            child: Text(
+                              translate("app_title"),
                               style: TextStyle(fontSize: 13),
                             ).marginOnly(left: 2))
                       ]).marginOnly(
