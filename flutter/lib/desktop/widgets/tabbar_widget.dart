@@ -240,7 +240,7 @@ class DesktopTab extends StatefulWidget {
   final bool showMinimize;
   final bool showMaximize;
   final bool showClose;
-  final bool showTabBar;
+  final bool showTabItems;
   final Widget Function(Widget pageView)? pageViewBuilder;
   // Right click tab menu
   final TabMenuBuilder? tabMenuBuilder;
@@ -267,7 +267,7 @@ class DesktopTab extends StatefulWidget {
     this.showMinimize = true,
     this.showMaximize = true,
     this.showClose = true,
-    this.showTabBar = true,
+    this.showTabItems = true,
     this.pageViewBuilder,
     this.tabMenuBuilder,
     this.tail,
@@ -513,8 +513,7 @@ class _DesktopTabState extends State<DesktopTab>
   Widget build(BuildContext context) {
     return Column(children: [
       Obx(() {
-        if (widget.showTabBar &&
-            stateGlobal.showTabBar.isTrue &&
+        if (stateGlobal.showTabBar.isTrue &&
             !(kUseCompatibleUiMode && isHideSingleItem())) {
           final showBottomDivider = _showTabBarBottomDivider(tabType);
           return SizedBox(
@@ -668,18 +667,21 @@ class _DesktopTabState extends State<DesktopTab>
                                 });
                               }
                             },
-                            child: _ListView(
-                              controller: controller,
-                              invisibleTabKeys: invisibleTabKeys,
-                              tabBuilder: tabBuilder,
-                              tabMenuBuilder: tabMenuBuilder,
-                              labelGetter: labelGetter,
-                              maxLabelWidth: maxLabelWidth,
-                              selectedTabBackgroundColor:
-                                  selectedTabBackgroundColor,
-                              unSelectedTabBackgroundColor:
-                                  unSelectedTabBackgroundColor,
-                              selectedBorderColor: selectedBorderColor,
+                            child: Offstage(
+                              offstage: !widget.showTabItems,
+                              child: _ListView(
+                                controller: controller,
+                                invisibleTabKeys: invisibleTabKeys,
+                                tabBuilder: tabBuilder,
+                                tabMenuBuilder: tabMenuBuilder,
+                                labelGetter: labelGetter,
+                                maxLabelWidth: maxLabelWidth,
+                                selectedTabBackgroundColor:
+                                    selectedTabBackgroundColor,
+                                unSelectedTabBackgroundColor:
+                                    unSelectedTabBackgroundColor,
+                                selectedBorderColor: selectedBorderColor,
+                              ),
                             ))),
                   ],
                 ))),
