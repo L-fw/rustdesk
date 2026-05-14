@@ -6,6 +6,8 @@ import 'package:flutter_hbb/models/platform_model.dart';
 import 'package:flutter_hbb/models/state_model.dart';
 import 'package:get/get.dart';
 
+import '../common.dart';
+
 /// 应用认证服务 - 处理用户注册、登录、短信验证码等
 class AppAuthService {
   static const String _serverBaseUrl = 'https://jyyxt.cloud';
@@ -24,6 +26,37 @@ class AppAuthService {
   encrypt_lib.IV? _cachedIv;
   bool _storageMigrated = false;
   final RxString currentUserName = ''.obs;
+
+  /// 已知服务器返回的中文消息 → i18n key 映射
+  static const Map<String, String> _serverMsgMap = {
+    '用户名或密码错误': 'server_wrong_credentials',
+    '密码错误': 'server_wrong_password',
+    '用户不存在': 'server_user_not_found',
+    '用户名已存在': 'server_username_exists',
+    '手机号已注册': 'server_phone_registered',
+    '验证码错误': 'server_wrong_sms_code',
+    '验证码已过期': 'server_sms_code_expired',
+    '验证码发送过于频繁': 'server_sms_too_frequent',
+    '激活码无效': 'server_invalid_activation_code',
+    '激活码已过期': 'activation_code_expired_error',
+    '激活码已被使用': 'server_activation_code_used',
+    '账号已被禁用': 'server_account_disabled',
+    '手机号格式错误': 'server_invalid_phone_format',
+    '参数错误': 'server_invalid_params',
+    '服务器内部错误': 'server_internal_error',
+    '请求过于频繁，请稍后再试': 'server_rate_limited',
+  };
+
+  /// 尝试将服务器返回的消息翻译为当前语言
+  /// 如果是已知的中文消息，返回翻译后的文本；否则原样返回
+  String? _translateServerMsg(dynamic msg) {
+    if (msg == null) return null;
+    final text = msg.toString().trim();
+    if (text.isEmpty) return null;
+    final key = _serverMsgMap[text];
+    if (key != null) return translate(key);
+    return text; // 未知消息原样返回
+  }
 
   /// 检查是否已登录
   Future<bool> isLoggedIn() async {
@@ -203,9 +236,9 @@ class AppAuthService {
       if (result['code'] == 200) {
         return null; // 成功
       }
-      return result['msg'] ?? '注册失败';
+      return _translateServerMsg(result['msg']) ?? translate('register_failed');
     } catch (e) {
-      return '网络错误: $e';
+      return '${translate('network_error')}: $e';
     }
   }
 
@@ -235,9 +268,9 @@ class AppAuthService {
             _tokenVersionKey, '${result['token_version'] ?? ''}');
         return null; // 成功
       }
-      return result['msg'] ?? '登录失败';
+      return _translateServerMsg(result['msg']) ?? translate('login_failed');
     } catch (e) {
-      return '网络错误: $e';
+      return '${translate('network_error')}: $e';
     }
   }
 
@@ -250,9 +283,9 @@ class AppAuthService {
       if (result['code'] == 200) {
         return null;
       }
-      return result['msg'] ?? '发送失败';
+      return _translateServerMsg(result['msg']) ?? translate('send_failed');
     } catch (e) {
-      return '网络错误: $e';
+      return '${translate('network_error')}: $e';
     }
   }
 
@@ -283,9 +316,9 @@ class AppAuthService {
             _tokenVersionKey, '${result['token_version'] ?? ''}');
         return null;
       }
-      return result['msg'] ?? '登录失败';
+      return _translateServerMsg(result['msg']) ?? translate('login_failed');
     } catch (e) {
-      return '网络错误: $e';
+      return '${translate('network_error')}: $e';
     }
   }
 
@@ -304,9 +337,9 @@ class AppAuthService {
         await logout();
         return null;
       }
-      return result['msg'] ?? '重置失败';
+      return _translateServerMsg(result['msg']) ?? translate('reset_failed');
     } catch (e) {
-      return '网络错误: $e';
+      return '${translate('network_error')}: $e';
     }
   }
 

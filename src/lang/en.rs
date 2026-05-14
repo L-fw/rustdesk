@@ -1,4 +1,4 @@
-lazy_static::lazy_static! {
+﻿lazy_static::lazy_static! {
 pub static ref T: std::collections::HashMap<&'static str, &'static str> =
     [
         ("desk_tip", "Your desktop can be accessed with this ID and password."),
@@ -348,5 +348,28 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
         ("device_banned_reject_connection", "Device has been disabled, connection request from {} has been rejected"),
         ("btn_confirm", "OK"),
         ("app_title", "Gamwing Remote Control"),
+        ("register_failed", "Registration failed"),
+        ("login_failed", "Login failed"),
+        ("send_failed", "Failed to send"),
+        ("reset_failed", "Reset failed"),
+        ("network_error", "Network error"),
+        ("server_wrong_credentials", "Incorrect username or password"),
+        ("server_wrong_password", "Incorrect password"),
+        ("server_user_not_found", "User does not exist"),
+        ("server_username_exists", "Username already exists"),
+        ("server_phone_registered", "Phone number already registered"),
+        ("server_wrong_sms_code", "Incorrect verification code"),
+        ("server_sms_code_expired", "Verification code has expired"),
+        ("server_sms_too_frequent", "Verification code sent too frequently"),
+        ("server_invalid_activation_code", "Invalid activation code"),
+        ("server_activation_code_used", "Activation code has already been used"),
+        ("server_account_disabled", "Account has been disabled"),
+        ("server_invalid_phone_format", "Invalid phone number format"),
+        ("server_invalid_params", "Invalid parameters"),
+        ("server_internal_error", "Internal server error"),
+        ("server_rate_limited", "Too many requests, please try again later"),
+        ("please_enter_password", "Please enter your password"),
+        ("confirm_to_logout", "确定要退出当前应用账号吗？"),
+        ("Confirm_exit", "确定退出"),
     ].iter().cloned().collect();
 }

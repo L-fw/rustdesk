@@ -2182,11 +2182,11 @@ class _AccountState extends State<_Account> {
     final confirmed = await gFFI.dialogManager.show<bool>(
       (setState, close, context) {
         return CustomAlertDialog(
-          title: const Text('退出登录'),
-          content: const Text('确定要退出当前应用账号吗？'),
+          title: Text(translate('Sign out of your account')),
+          content: Text(translate('confirm_to_logout')),
           actions: [
-            dialogButton('取消', onPressed: () => close(false)),
-            dialogButton('确定退出', onPressed: () => close(true)),
+            dialogButton(translate('Cancel'), onPressed: () => close(false)),
+            dialogButton(translate('Confirm_exit'), onPressed: () => close(true)),
           ],
         );
       },

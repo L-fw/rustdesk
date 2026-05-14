@@ -142,6 +142,15 @@ class _AppLoginPageState extends State<AppLoginPage>
     return RegExp(r'^[A-Za-z0-9_]+$').hasMatch(value);
   }
 
+  /// Check if an error message is password-related (language-agnostic)
+  bool _isPasswordError(String error) {
+    final lower = error.toLowerCase();
+    return error.contains('密码') ||
+        lower.contains('password') ||
+        error == translate('server_wrong_password') ||
+        error == translate('server_wrong_credentials');
+  }
+
   void _startCountdown() {
     setState(() => _countdown = 60);
     _countdownTimer?.cancel();
@@ -409,7 +418,7 @@ class _AppLoginPageState extends State<AppLoginPage>
           if (!mounted) return;
           setState(() => _isLoading = false);
           if (retryError != null) {
-            if (retryError.contains('密码')) {
+            if (_isPasswordError(retryError)) {
               _setFieldError('password', _passwordFocus, retryError);
             } else {
               setState(() => _errorMsg = retryError);
@@ -419,7 +428,7 @@ class _AppLoginPageState extends State<AppLoginPage>
           }
           return;
         }
-        if (error.contains('密码')) {
+        if (_isPasswordError(error)) {
           _setFieldError('password', _passwordFocus, error);
         } else {
           setState(() => _errorMsg = error);
