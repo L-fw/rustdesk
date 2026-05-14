@@ -2186,7 +2186,7 @@ class _AccountState extends State<_Account> {
           content: Text(translate('confirm_to_logout')),
           actions: [
             dialogButton(translate('Cancel'), onPressed: () => close(false)),
-            dialogButton(translate('Confirm_exit'), onPressed: () => close(true)),
+            dialogButton(translate('Confirm_logout'), onPressed: () => close(true)),
           ],
         );
       },

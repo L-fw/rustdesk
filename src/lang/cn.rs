@@ -840,6 +840,7 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
         ("server_rate_limited", "请求过于频繁，请稍后再试"),
         ("please_enter_password", "请输入密码"),
         ("confirm_to_logout", "确定要退出当前应用账号吗？"),
-        ("Confirm_exit", "确定退出"),
+        ("Confirm_logout", "确定退出"),
+        ("confirm_to_logout", "你确定要退出账号吗？"),
     ].iter().cloned().collect();
 }

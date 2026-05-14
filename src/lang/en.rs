@@ -369,7 +369,7 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
         ("server_internal_error", "Internal server error"),
         ("server_rate_limited", "Too many requests, please try again later"),
         ("please_enter_password", "Please enter your password"),
-        ("confirm_to_logout", "确定要退出当前应用账号吗？"),
-        ("Confirm_exit", "确定退出"),
+        ("confirm_to_logout", "Are you sure you want to logout?"),
+        ("Confirm_logout", "Logout"),
     ].iter().cloned().collect();
 }
