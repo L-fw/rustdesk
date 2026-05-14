@@ -598,6 +598,7 @@ class _DesktopTabState extends State<DesktopTab>
       children: [
         Expanded(
             child: GestureDetector(
+                behavior: HitTestBehavior.translucent,
                 // custom double tap handler
                 onTap: !(bind.isIncomingOnly() && isInHomePage()) &&
                         showMaximize
