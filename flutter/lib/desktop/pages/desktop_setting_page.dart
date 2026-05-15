@@ -97,6 +97,8 @@ class DesktopSettingPage extends StatefulWidget {
     SettingsTabKey.about,
   ];
 
+  static SettingsTabKey? pendingTabKey;
+
   DesktopSettingPage({Key? key, required this.initialTabkey}) : super(key: key);
 
   @override
@@ -118,6 +120,7 @@ class DesktopSettingPage extends StatefulWidget {
         selected.value = page;
         controller.jumpToPage(index);
       } else {
+        pendingTabKey = page;
         DesktopTabPage.onAddSetting(initialPage: page);
       }
     } catch (e) {
@@ -142,6 +145,10 @@ class _DesktopSettingPageState extends State<DesktopSettingPage>
   Timer? _videoConnTimer;
 
   _DesktopSettingPageState(SettingsTabKey initialTabkey) {
+    if (DesktopSettingPage.pendingTabKey != null) {
+      initialTabkey = DesktopSettingPage.pendingTabKey!;
+      DesktopSettingPage.pendingTabKey = null;
+    }
     var initialIndex = DesktopSettingPage.tabKeys.indexOf(initialTabkey);
     if (initialIndex == -1) {
       initialIndex = 0;
