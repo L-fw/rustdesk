@@ -443,19 +443,6 @@ class _DesktopHomePageState extends State<DesktopHomePage>
         builder: (context, snapshot) {
           final userInfo = snapshot.data;
           final username = userInfo?['username']?.toString() ?? currentUserName;
-          final phone = userInfo?['phone']?.toString() ?? '';
-          
-          final maskedPhone = phone.length >= 7
-              ? '${phone.substring(0, 3)}****${phone.substring(phone.length - 4)}'
-              : phone;
-          
-          final infoColor = Theme.of(context)
-              .textTheme
-              .bodySmall
-              ?.color
-              ?.withOpacity(0.6) ??
-              Colors.grey;
-              
           return Padding(
             padding: const EdgeInsets.symmetric(vertical: 6),
             child: Row(
@@ -493,19 +480,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    if (maskedPhone.isNotEmpty) ...[
-                      const SizedBox(height: 6),
-                      Row(
-                        children: [
-                          Icon(Icons.phone_outlined, size: 12, color: infoColor),
-                          const SizedBox(width: 4),
-                          Text(
-                            maskedPhone,
-                            style: TextStyle(fontSize: 12, color: infoColor),
-                          ),
-                        ],
-                      ),
-                    ],
+
                   ],
                 ),
             ],
