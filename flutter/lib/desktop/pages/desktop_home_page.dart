@@ -445,46 +445,54 @@ class _DesktopHomePageState extends State<DesktopHomePage>
           final username = userInfo?['username']?.toString() ?? currentUserName;
           return Padding(
             padding: const EdgeInsets.symmetric(vertical: 6),
-            child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                width: 48,
-                height: 48,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  gradient: LinearGradient(
-                    colors: [
-                      MyTheme.accent,
-                      MyTheme.accent.withOpacity(0.7),
-                    ],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                ),
-                child: const Center(
-                  child: Icon(
-                    Icons.person,
-                    color: Colors.white,
-                    size: 28,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 16),
-              Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+            child: GestureDetector(
+              onTap: bind.isDisableAccount() ? null : () {
+                DesktopSettingPage.switch2page(SettingsTabKey.account);
+              },
+              child: MouseRegion(
+                cursor: bind.isDisableAccount() ? MouseCursor.defer : SystemMouseCursors.click,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Text(
-                      username,
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(fontSize: 17),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                    Container(
+                      width: 48,
+                      height: 48,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        gradient: LinearGradient(
+                          colors: [
+                            MyTheme.accent,
+                            MyTheme.accent.withOpacity(0.7),
+                          ],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                      ),
+                      child: const Center(
+                        child: Icon(
+                          Icons.person,
+                          color: Colors.white,
+                          size: 28,
+                        ),
+                      ),
                     ),
+                    const SizedBox(width: 16),
+                    Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            username,
+                            style: Theme.of(context).textTheme.titleLarge?.copyWith(fontSize: 17),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
 
+                        ],
+                      ),
                   ],
                 ),
-            ],
-          ),
+              ),
+            ),
           );
         },
       );
