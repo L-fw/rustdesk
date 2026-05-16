@@ -1047,16 +1047,16 @@ class _SettingsState extends State<SettingsPage> with WidgetsBindingObserver {
     final ok = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text('退出登录'),
-        content: const Text('确认退出当前账号？'),
+        title: Text(translate('Sign out of your account')),
+        content: Text(translate('confirm_to_logout')),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('取消'),
+            child: Text(translate('Cancel')),
           ),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('确定'),
+            child: Text(translate('OK')),
           ),
         ],
       ),
@@ -1087,22 +1087,22 @@ class _SettingsState extends State<SettingsPage> with WidgetsBindingObserver {
       builder: (context) => WillPopScope(
         onWillPop: () async => false,
         child: AlertDialog(
-          title: const Text('账号异常'),
-          content: const Text('账号已在其他设备登录'),
+          title: Text(translate('account_abnormal_title')),
+          content: Text(translate('account_kicked_message')),
           actions: [
             TextButton(
               onPressed: () {
                 Navigator.of(context).pop();
                 SystemNavigator.pop();
               },
-              child: const Text('直接退出'),
+              child: Text(translate('btn_exit_directly')),
             ),
             TextButton(
               onPressed: () {
                 Navigator.of(context).pop();
                 _redirectToLogin();
               },
-              child: const Text('重新登录'),
+              child: Text(translate('btn_relogin')),
             ),
           ],
         ),
