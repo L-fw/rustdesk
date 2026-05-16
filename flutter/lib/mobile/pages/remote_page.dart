@@ -258,12 +258,12 @@ class _RemotePageState extends State<RemotePage> with WidgetsBindingObserver {
           title: Row(children: [
             const Icon(Icons.block, color: Colors.redAccent, size: 28),
             const SizedBox(width: 10),
-            const Text('远程功能已禁用'),
+            Text(translate('remote_disabled_title')),
           ]),
           content: Obx(() => Text(
                 stateGlobal.remoteDisabledMessage.value.isNotEmpty
                     ? stateGlobal.remoteDisabledMessage.value
-                    : '远程功能已被管理员禁用，远程连接已断开。\n请退出当前远程会话。',
+                    : translate('remote_disabled_message'),
               )),
           actions: [
             TextButton(
@@ -271,7 +271,7 @@ class _RemotePageState extends State<RemotePage> with WidgetsBindingObserver {
                 Navigator.of(context).pop();
                 closeConnection();
               },
-              child: const Text('退出远程'),
+              child: Text(translate('btn_exit_directly')),
             ),
           ],
         ),

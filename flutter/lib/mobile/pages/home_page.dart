@@ -108,12 +108,12 @@ class HomePageState extends State<HomePage> with WidgetsBindingObserver {
           title: Row(children: [
             const Icon(Icons.block, color: Colors.redAccent, size: 28),
             const SizedBox(width: 10),
-            const Text('远程功能已禁用'),
+            Text(translate('remote_disabled_title')),
           ]),
           content: Obx(() => Text(
             stateGlobal.remoteDisabledMessage.value.isNotEmpty
                 ? stateGlobal.remoteDisabledMessage.value
-                : '远程功能已被管理员禁用，远程连接已断开。\n管理员恢复权限后将自动恢复。',
+                : translate('remote_disabled_message'),
           )),
           actions: const [],
         ),
@@ -157,14 +157,14 @@ class HomePageState extends State<HomePage> with WidgetsBindingObserver {
     _loginStatusDialogShowing = true;
     final msg = stateGlobal.appLoginInvalidatedMessage.value.isNotEmpty
         ? stateGlobal.appLoginInvalidatedMessage.value
-        : '账号已在其他设备登录';
+        : translate('account_kicked_message');
     await showDialog<void>(
       context: context,
       barrierDismissible: false,
       builder: (context) => WillPopScope(
         onWillPop: () async => false,
         child: AlertDialog(
-          title: const Text('账号异常'),
+          title: Text(translate('account_abnormal_title')),
           content: Text(msg),
           actions: [
             TextButton(
@@ -174,7 +174,7 @@ class HomePageState extends State<HomePage> with WidgetsBindingObserver {
                 stateGlobal.appLoginInvalidatedMessage.value = '';
                 SystemNavigator.pop();
               },
-              child: const Text('直接退出'),
+              child: Text(translate('btn_exit_directly')),
             ),
             TextButton(
               onPressed: () {
@@ -186,7 +186,7 @@ class HomePageState extends State<HomePage> with WidgetsBindingObserver {
                   (route) => false,
                 );
               },
-              child: const Text('重新登录'),
+              child: Text(translate('btn_relogin')),
             ),
           ],
         ),

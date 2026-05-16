@@ -842,5 +842,7 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
         ("confirm_to_logout", "确定要退出当前应用账号吗？"),
         ("Confirm_logout", "确定退出"),
         ("confirm_to_logout", "你确定要退出账号吗？"),
+        ("Memory", "内存"),
+        ("No camera permission", "没有相机权限"),
     ].iter().cloned().collect();
 }

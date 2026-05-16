@@ -675,9 +675,9 @@ class _SettingsState extends State<SettingsPage> with WidgetsBindingObserver {
       sections: [
         customClientSection,
         if (_appLoggedIn)
-          SettingsSection(title: const Text('账号'), tiles: [
+          SettingsSection(title: Text(translate('Account')), tiles: [
             SettingsTile(
-              title: const Text('退出登录'),
+              title: Text(translate('Sign out of your account')),
               leading: const Icon(Icons.logout),
               onPressed: (context) {
                 _confirmLogout();
@@ -998,7 +998,7 @@ class _SettingsState extends State<SettingsPage> with WidgetsBindingObserver {
                         Text(
                           [
                             if (_deviceModel.isNotEmpty) _deviceModel,
-                            if (_memoryUsage.isNotEmpty) '内存 $_memoryUsage',
+                            if (_memoryUsage.isNotEmpty) '${translate("Memory")} $_memoryUsage',
                           ].join(' · '),
                           style: TextStyle(
                             fontSize: 10,
@@ -1007,7 +1007,7 @@ class _SettingsState extends State<SettingsPage> with WidgetsBindingObserver {
                         ),
                       SizedBox(height: 2),
                       Text(
-                        '基于RustDesk开源代码构建 · 详见用户服务协议',
+                        translate('Copyright Notice').split('\n').last.replaceAll('，', ' · '),
                         style: TextStyle(
                           fontSize: 10,
                           color: Colors.grey,

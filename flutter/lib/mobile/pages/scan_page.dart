@@ -28,7 +28,7 @@ class _ScanPageState extends State<ScanPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('摄像头'),
+        title: Text(translate('View camera')),
         actions: [
           _buildFlashToggleButton(),
         ],
@@ -53,7 +53,7 @@ class _ScanPageState extends State<ScanPage> {
 
   void _onPermissionSet(BuildContext context, QRViewController ctrl, bool p) {
     if (!p) {
-      showToast('没有相机权限');
+      showToast(translate('No camera permission'));
     }
   }
 
