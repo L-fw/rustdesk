@@ -136,12 +136,12 @@ class _AppRegisterPageState extends State<AppRegisterPage>
   String? _validatePasswordFormat(String value) {
     if (value.isEmpty) return null;
     if (value.length < 6 || value.length > 20) {
-      return '密码需为6-20位字符';
+      return translate('password_length_tip');
     }
     final hasLetter = value.contains(RegExp(r'[A-Za-z]'));
     final hasDigit = value.contains(RegExp(r'\d'));
     if (!hasLetter || !hasDigit) {
-      return '密码需包含字母和数字';
+      return translate('password_letter_digit_tip');
     }
     return null;
   }
@@ -149,11 +149,11 @@ class _AppRegisterPageState extends State<AppRegisterPage>
   Future<void> _sendSmsCode() async {
     final phone = _phoneController.text.trim();
     if (phone.isEmpty) {
-      _setFieldError('phone', _phoneFocus, '请输入手机号');
+      _setFieldError('phone', _phoneFocus, translate('please_enter_phone'));
       return;
     }
     if (phone.length != 11) {
-      _setFieldError('phone', _phoneFocus, '手机号必须为11位数字');
+      _setFieldError('phone', _phoneFocus, translate('phone_must_be_11_digits'));
       return;
     }
     setState(() {
@@ -169,7 +169,7 @@ class _AppRegisterPageState extends State<AppRegisterPage>
     }
     _startCountdown();
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('验证码已发送')),
+       SnackBar(content: Text(translate('sms_code_sent'))),
     );
   }
 
@@ -182,43 +182,43 @@ class _AppRegisterPageState extends State<AppRegisterPage>
     final activationCode = _activationCodeController.text.trim();
 
     if (username.isEmpty) {
-      _setFieldError('username', _usernameFocus, '请输入用户名');
+      _setFieldError('username', _usernameFocus, translate('please_enter_username'));
       return;
     }
     if (!_isUsernameValid(username)) {
-      _setFieldError('username', _usernameFocus, '用户名需为1-20位字符，只能包含英文、数字和下划线');
+      _setFieldError('username', _usernameFocus, translate('username_format_tip'));
       return;
     }
     if (password.isEmpty) {
-      _setFieldError('password', _passwordFocus, '请输入密码');
+      _setFieldError('password', _passwordFocus, translate('please_enter_password'));
       return;
     }
     if (!_isPasswordValid(password)) {
-      _setFieldError('password', _passwordFocus, '密码需为6-20位字符，且包含字母和数字');
+      _setFieldError('password', _passwordFocus, translate('password_format_tip'));
       return;
     }
     if (password != confirmPassword) {
-      _setFieldError('confirmPassword', _confirmPasswordFocus, '两次密码输入不一致');
+      _setFieldError('confirmPassword', _confirmPasswordFocus, translate('password_not_match'));
       return;
     }
     if (phone.isEmpty) {
-      _setFieldError('phone', _phoneFocus, '请输入手机号');
+      _setFieldError('phone', _phoneFocus, translate('please_enter_phone'));
       return;
     }
     if (phone.length != 11) {
-      _setFieldError('phone', _phoneFocus, '手机号必须为11位数字');
+      _setFieldError('phone', _phoneFocus, translate('phone_must_be_11_digits'));
       return;
     }
     if (smsCode.isEmpty) {
-      _setFieldError('sms', _smsCodeFocus, '请输入验证码');
+      _setFieldError('sms', _smsCodeFocus, translate('please_enter_sms_code'));
       return;
     }
     if (activationCode.isEmpty) {
-      _setFieldError('activation', _activationCodeFocus, '请输入激活码');
+      _setFieldError('activation', _activationCodeFocus, translate('please_enter_activation_code'));
       return;
     }
     if (!_agreedToTerms) {
-      setState(() => _errorMsg = '请先阅读并同意《用户协议》与《隐私政策》');
+      setState(() => _errorMsg = translate('please_agree_terms'));
       _shakeControllers['terms']?.forward(from: 0);
       return;
     }
@@ -244,12 +244,13 @@ class _AppRegisterPageState extends State<AppRegisterPage>
       if (error != null) {
         setState(() => _errorMsg = error);
       } else {
-        bind.mainSetLocalOption(key: _agreedTermsVersionKey, value: _currentTermsVersion);
-        bind.mainSetLocalOption(key: _agreedPrivacyVersionKey, value: _currentPrivacyVersion);
-        // 注册成功，返回登录页
+        bind.mainSetLocalOption(
+            key: _agreedTermsVersionKey, value: _currentTermsVersion);
+        bind.mainSetLocalOption(
+            key: _agreedPrivacyVersionKey, value: _currentPrivacyVersion);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('注册成功，请登录'),
+          SnackBar(
+            content: Text(translate('register_success')),
             backgroundColor: Colors.green,
           ),
         );
@@ -263,9 +264,8 @@ class _AppRegisterPageState extends State<AppRegisterPage>
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
+      backgroundColor: isDark ? const Color(0xFF1A1D23) : Colors.white,
       appBar: AppBar(
-        title: const Text('注册账号'),
-        centerTitle: true,
         elevation: 0,
         backgroundColor: Colors.transparent,
         foregroundColor: isDark ? Colors.white : Colors.black87,
@@ -273,29 +273,60 @@ class _AppRegisterPageState extends State<AppRegisterPage>
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+            padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 0),
             child: Column(
+              mainAxisSize: MainAxisSize.min,
               children: [
+                // ── 标题区：居中 Logo + 页面名 ──
+                Column(
+                  children: [
+                    Container(
+                      width: 52,
+                      height: 52,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF7C3AED).withOpacity(0.12),
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      child: const Icon(
+                        Icons.person_add_alt_1_outlined,
+                        size: 28,
+                        color: Color(0xFF7C3AED),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    Text(
+                      translate('register_title'),
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 0.5,
+                        color: isDark ? Colors.white : Colors.black87,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 20),
+
                 // Username
                 _buildTextField(
                   fieldKey: 'username',
                   controller: _usernameController,
                   focusNode: _usernameFocus,
-                  label: '用户名',
+                  label: translate('Username'),
                   icon: Icons.person_outline,
                   inputFormatters: [
-                    FilteringTextInputFormatter.allow(
-                        RegExp(r'[A-Za-z0-9_]')),
+                    FilteringTextInputFormatter.allow(RegExp(r'[A-Za-z0-9_]')),
                     LengthLimitingTextInputFormatter(20),
                   ],
                 ),
-                const SizedBox(height: 14),
+                const SizedBox(height: 10),
+
                 // Password
                 _buildTextField(
                   fieldKey: 'password',
                   controller: _passwordController,
                   focusNode: _passwordFocus,
-                  label: '密码',
+                  label: translate('Password'),
                   icon: Icons.lock_outline,
                   obscure: _obscurePassword,
                   inputFormatters: [
@@ -318,6 +349,7 @@ class _AppRegisterPageState extends State<AppRegisterPage>
                       size: 20,
                       color: Colors.grey,
                     ),
+                    splashRadius: 16,
                     onPressed: () {
                       setState(() => _obscurePassword = !_obscurePassword);
                     },
@@ -333,13 +365,14 @@ class _AppRegisterPageState extends State<AppRegisterPage>
                     ),
                   ),
                 ],
-                const SizedBox(height: 14),
+                const SizedBox(height: 10),
+
                 // Confirm Password
                 _buildTextField(
                   fieldKey: 'confirmPassword',
                   controller: _confirmPasswordController,
                   focusNode: _confirmPasswordFocus,
-                  label: '确认密码',
+                  label: translate('field_confirm_password'),
                   icon: Icons.lock_outline,
                   obscure: _obscureConfirm,
                   inputFormatters: [
@@ -359,18 +392,20 @@ class _AppRegisterPageState extends State<AppRegisterPage>
                       size: 20,
                       color: Colors.grey,
                     ),
+                    splashRadius: 16,
                     onPressed: () {
                       setState(() => _obscureConfirm = !_obscureConfirm);
                     },
                   ),
                 ),
-                const SizedBox(height: 14),
+                const SizedBox(height: 10),
+
                 // Phone
                 _buildTextField(
                   fieldKey: 'phone',
                   controller: _phoneController,
                   focusNode: _phoneFocus,
-                  label: '手机号',
+                  label: translate('Phone Number'),
                   icon: Icons.phone_android,
                   keyboardType: TextInputType.phone,
                   inputFormatters: [
@@ -378,7 +413,8 @@ class _AppRegisterPageState extends State<AppRegisterPage>
                     LengthLimitingTextInputFormatter(11),
                   ],
                 ),
-                const SizedBox(height: 14),
+                const SizedBox(height: 10),
+
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -387,7 +423,7 @@ class _AppRegisterPageState extends State<AppRegisterPage>
                         fieldKey: 'sms',
                         controller: _smsCodeController,
                         focusNode: _smsCodeFocus,
-                        label: '验证码',
+                        label: translate('Verification code'),
                         icon: Icons.sms_outlined,
                         keyboardType: TextInputType.number,
                       ),
@@ -400,7 +436,7 @@ class _AppRegisterPageState extends State<AppRegisterPage>
                             ? null
                             : _sendSmsCode,
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: MyTheme.accent,
+                          backgroundColor: const Color(0xFF7C3AED),
                           foregroundColor: Colors.white,
                           disabledBackgroundColor: Colors.grey.shade300,
                           shape: RoundedRectangleBorder(
@@ -409,23 +445,37 @@ class _AppRegisterPageState extends State<AppRegisterPage>
                           padding: const EdgeInsets.symmetric(horizontal: 16),
                           elevation: 0,
                         ),
-                        child: Text(
-                          _countdown > 0 ? '${_countdown}s' : '获取验证码',
-                          style: const TextStyle(fontSize: 13),
-                        ),
+                        child: _isSendingSms
+                            ? const SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: CircularProgressIndicator(
+                                    strokeWidth: 2, color: Colors.white),
+                              )
+                            : Text(
+                                _countdown > 0
+                                    ? '${_countdown}s'
+                                    : translate('get_sms_code'),
+                                style: const TextStyle(fontSize: 13),
+                              ),
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 14),
+                const SizedBox(height: 10),
+
                 // Activation Code
                 _buildTextField(
                   fieldKey: 'activation',
                   controller: _activationCodeController,
                   focusNode: _activationCodeFocus,
-                  label: '激活码',
+                  label: translate('field_activation_code'),
                   icon: Icons.vpn_key_outlined,
+                  textInputAction: TextInputAction.done,
+                  onSubmitted: (_) => _register(),
                 ),
+                const SizedBox(height: 10),
+
                 // Terms of Service Checkbox
                 _buildTermsCheckbox(isDark),
 
@@ -435,21 +485,22 @@ class _AppRegisterPageState extends State<AppRegisterPage>
                 if (_errorMsg != null) ...[
                   Container(
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 16, vertical: 10),
+                        horizontal: 12, vertical: 8),
                     decoration: BoxDecoration(
-                      color: Colors.red.withOpacity(0.1),
+                      color: Colors.red.withOpacity(0.08),
                       borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.red.withOpacity(0.2)),
                     ),
                     child: Row(
                       children: [
                         const Icon(Icons.error_outline,
-                            color: Colors.red, size: 20),
-                        const SizedBox(width: 8),
+                            color: Colors.red, size: 16),
+                        const SizedBox(width: 6),
                         Expanded(
                           child: Text(
                             _errorMsg!,
                             style: const TextStyle(
-                                color: Colors.red, fontSize: 13),
+                                color: Colors.red, fontSize: 12),
                           ),
                         ),
                       ],
@@ -461,12 +512,17 @@ class _AppRegisterPageState extends State<AppRegisterPage>
                 // Register Button
                 SizedBox(
                   width: double.infinity,
-                  height: 48,
+                  height: 44,
                   child: ElevatedButton(
                     onPressed: _isLoading ? null : _register,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: MyTheme.accent,
+                      backgroundColor: isDark
+                          ? const Color(0xFF6D28D9)
+                          : const Color(0xFF7C3AED),
                       foregroundColor: Colors.white,
+                      overlayColor: isDark
+                          ? const Color(0xFF7C3AED)
+                          : const Color(0xFF6D28D9),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(10),
                       ),
@@ -474,40 +530,40 @@ class _AppRegisterPageState extends State<AppRegisterPage>
                     ),
                     child: _isLoading
                         ? const SizedBox(
-                            width: 22,
-                            height: 22,
+                            width: 20,
+                            height: 20,
                             child: CircularProgressIndicator(
                               strokeWidth: 2.5,
                               color: Colors.white,
                             ),
                           )
-                        : const Text(
-                            '注 册',
-                            style: TextStyle(
-                                fontSize: 17, fontWeight: FontWeight.w600),
+                        : Text(
+                            translate('register_btn'),
+                            style: const TextStyle(
+                                fontSize: 16, fontWeight: FontWeight.w600),
                           ),
                   ),
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: 16),
 
                 // Login Link
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text(
-                      '已有账号？',
+                      translate('already_have_account'),
                       style: TextStyle(
                         color: isDark ? Colors.white54 : Colors.black45,
-                        fontSize: 14,
+                        fontSize: 13,
                       ),
                     ),
                     GestureDetector(
                       onTap: () => Navigator.of(context).pop(),
                       child: Text(
-                        '去登录',
-                        style: TextStyle(
-                          color: MyTheme.accent,
-                          fontSize: 14,
+                        translate('go_to_login'),
+                        style: const TextStyle(
+                          color: Color(0xFF7C3AED),
+                          fontSize: 13,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
@@ -536,11 +592,12 @@ class _AppRegisterPageState extends State<AppRegisterPage>
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SizedBox(
-            width: 24,
-            height: 24,
+            width: 20,
+            height: 20,
             child: Checkbox(
               value: _agreedToTerms,
-              activeColor: MyTheme.accent,
+              activeColor: const Color(0xFF7C3AED),
+              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
               onChanged: (val) {
                 setState(() => _agreedToTerms = val ?? false);
               },
@@ -549,11 +606,11 @@ class _AppRegisterPageState extends State<AppRegisterPage>
           const SizedBox(width: 8),
           Expanded(
             child: Padding(
-              padding: const EdgeInsets.only(top: 2),
+              padding: const EdgeInsets.only(top: 1),
               child: Wrap(
                 children: [
                   Text(
-                    '我已阅读并同意',
+                    translate('terms_agreed_prefix'),
                     style: TextStyle(
                       fontSize: 12,
                       color: isDark ? Colors.white54 : Colors.black54,
@@ -568,15 +625,15 @@ class _AppRegisterPageState extends State<AppRegisterPage>
                       );
                     },
                     child: Text(
-                      '《用户协议》',
-                      style: TextStyle(
+                      translate('terms_link_label'),
+                      style: const TextStyle(
                         fontSize: 12,
-                        color: MyTheme.accent,
+                        color: Color(0xFF7C3AED),
                       ),
                     ),
                   ),
                   Text(
-                    '与',
+                    translate('and_connector'),
                     style: TextStyle(
                       fontSize: 12,
                       color: isDark ? Colors.white54 : Colors.black54,
@@ -592,10 +649,10 @@ class _AppRegisterPageState extends State<AppRegisterPage>
                       );
                     },
                     child: Text(
-                      '《隐私政策》',
-                      style: TextStyle(
+                      translate('privacy_link_label'),
+                      style: const TextStyle(
                         fontSize: 12,
-                        color: MyTheme.accent,
+                        color: Color(0xFF7C3AED),
                       ),
                     ),
                   ),
@@ -619,6 +676,8 @@ class _AppRegisterPageState extends State<AppRegisterPage>
     TextInputType? keyboardType,
     List<TextInputFormatter>? inputFormatters,
     ValueChanged<String>? onChanged,
+    ValueChanged<String>? onSubmitted,
+    TextInputAction? textInputAction,
   }) {
     return AnimatedBuilder(
       animation: Listenable.merge([
@@ -640,6 +699,8 @@ class _AppRegisterPageState extends State<AppRegisterPage>
             obscureText: obscure,
             keyboardType: keyboardType,
             inputFormatters: inputFormatters,
+            textInputAction: textInputAction ?? TextInputAction.next,
+            onSubmitted: onSubmitted ?? (_) => FocusScope.of(context).nextFocus(),
             onChanged: (value) {
               if ((value.isNotEmpty || value.trim().isNotEmpty) &&
                   _invalidFields[fieldKey] == true) {
@@ -657,7 +718,7 @@ class _AppRegisterPageState extends State<AppRegisterPage>
               labelStyle: TextStyle(color: Colors.grey.shade600, fontSize: 15),
               hintStyle: TextStyle(color: Colors.grey.shade600, fontSize: 15),
               floatingLabelStyle: TextStyle(
-                color: MyTheme.accent,
+                color: const Color(0xFF7C3AED),
                 fontSize: 13,
                 fontWeight: FontWeight.w500,
                 backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -680,12 +741,12 @@ class _AppRegisterPageState extends State<AppRegisterPage>
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(10),
                 borderSide: BorderSide(
-                  color: isInvalid ? Colors.red : MyTheme.accent,
+                  color: isInvalid ? Colors.red : const Color(0xFF7C3AED),
                   width: 1.5,
                 ),
               ),
               contentPadding:
-                  const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                  const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
               isDense: false,
             ),
           ),

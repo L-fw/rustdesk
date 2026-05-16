@@ -126,6 +126,15 @@ class _AppLoginPageState extends State<AppLoginPage>
     return RegExp(r'^[A-Za-z0-9_]+$').hasMatch(value);
   }
 
+  /// Check if an error message is password-related (language-agnostic)
+  bool _isPasswordError(String error) {
+    final lower = error.toLowerCase();
+    return error.contains('密码') ||
+        lower.contains('password') ||
+        error == translate('server_wrong_password') ||
+        error == translate('server_wrong_credentials');
+  }
+
   void _startCountdown() {
     setState(() => _countdown = 60);
     _countdownTimer?.cancel();
@@ -237,11 +246,11 @@ class _AppLoginPageState extends State<AppLoginPage>
   Future<void> _sendSmsCode() async {
     final phone = _phoneController.text.trim();
     if (phone.isEmpty) {
-      _setFieldError('phone', _phoneFocus, '请输入手机号');
+      _setFieldError('phone', _phoneFocus, translate('please_enter_phone'));
       return;
     }
     if (phone.length != 11) {
-      _setFieldError('phone', _phoneFocus, '手机号必须为11位数字');
+      _setFieldError('phone', _phoneFocus, translate('phone_must_be_11_digits'));
       return;
     }
     setState(() {
@@ -256,7 +265,7 @@ class _AppLoginPageState extends State<AppLoginPage>
       } else {
         _startCountdown();
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('验证码已发送')),
+          SnackBar(content: Text(translate('sms_code_sent'))),
         );
       }
     }
@@ -272,17 +281,17 @@ class _AppLoginPageState extends State<AppLoginPage>
         return StatefulBuilder(
           builder: (context, setStateDialog) {
             return AlertDialog(
-              title: const Text('激活码已失效'),
+              title: Text(translate('activation_code_expired_title')),
               content: SingleChildScrollView(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Text('请输入新的激活码继续使用'),
+                    Text(translate('please_enter_new_activation_code')),
                     const SizedBox(height: 12),
                     TextField(
                       controller: controller,
                       decoration: InputDecoration(
-                        labelText: '新激活码',
+                        labelText: translate('new_activation_code_label'),
                         errorText: errorText,
                       ),
                     ),
@@ -292,22 +301,22 @@ class _AppLoginPageState extends State<AppLoginPage>
               actions: [
                 TextButton(
                   onPressed: () => Navigator.of(context).pop(),
-                  child: const Text('取消'),
+                  child: Text(translate('Cancel')),
                 ),
                 ElevatedButton(
                   onPressed: () {
                     final value = controller.text.trim();
                     if (value.isEmpty) {
-                      setStateDialog(() => errorText = '请输入激活码');
+                      setStateDialog(() => errorText = translate('please_enter_activation_code'));
                       return;
                     }
                     Navigator.of(context).pop(value);
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: MyTheme.accent,
+                    backgroundColor: const Color(0xFF7C3AED),
                     foregroundColor: Colors.white,
                   ),
-                  child: const Text('确认'),
+                  child: Text(translate('OK')),
                 ),
               ],
             );
@@ -344,20 +353,20 @@ class _AppLoginPageState extends State<AppLoginPage>
     final password = _passwordController.text;
 
     if (username.isEmpty) {
-      _setFieldError('username', _usernameFocus, '请输入用户名');
+      _setFieldError('username', _usernameFocus, translate('please_enter_username'));
       return;
     }
     if (!_isUsernameValid(username)) {
-      _setFieldError('username', _usernameFocus, '用户名需为1-20位字符，只能包含英文、数字和下划线');
+      _setFieldError('username', _usernameFocus, translate('username_format_tip'));
       return;
     }
     if (password.isEmpty) {
-      _setFieldError('password', _passwordFocus, '请输入密码');
+      _setFieldError('password', _passwordFocus, translate('Please enter your password'));
       return;
     }
 
     if (!_agreedToTerms) {
-      setState(() => _errorMsg = '请先阅读并同意《用户协议》与《隐私政策》');
+      setState(() => _errorMsg = translate('please_agree_terms'));
       _shakeControllers['terms']?.forward(from: 0);
       return;
     }
@@ -378,7 +387,7 @@ class _AppLoginPageState extends State<AppLoginPage>
     if (mounted) {
       setState(() => _isLoading = false);
       if (error != null) {
-        if (error == '激活码已过期') {
+        if (error == translate('activation_code_expired_error')) {
           final newCode = await _showActivationCodeDialog();
           if (!mounted) return;
           if (newCode == null) {
@@ -400,7 +409,7 @@ class _AppLoginPageState extends State<AppLoginPage>
           if (!mounted) return;
           setState(() => _isLoading = false);
           if (retryError != null) {
-            if (retryError.contains('密码')) {
+            if (_isPasswordError(retryError)) {
               _setFieldError('password', _passwordFocus, retryError);
             } else {
               setState(() => _errorMsg = retryError);
@@ -410,7 +419,7 @@ class _AppLoginPageState extends State<AppLoginPage>
           }
           return;
         }
-        if (error.contains('密码')) {
+        if (_isPasswordError(error)) {
           _setFieldError('password', _passwordFocus, error);
         } else {
           setState(() => _errorMsg = error);
@@ -426,20 +435,20 @@ class _AppLoginPageState extends State<AppLoginPage>
     final code = _smsCodeController.text.trim();
 
     if (phone.isEmpty) {
-      _setFieldError('phone', _phoneFocus, '请输入手机号');
+      _setFieldError('phone', _phoneFocus, translate('please_enter_phone'));
       return;
     }
     if (phone.length != 11) {
-      _setFieldError('phone', _phoneFocus, '手机号必须为11位数字');
+      _setFieldError('phone', _phoneFocus, translate('phone_must_be_11_digits'));
       return;
     }
     if (code.isEmpty) {
-      _setFieldError('sms', _smsCodeFocus, '请输入验证码');
+      _setFieldError('sms', _smsCodeFocus, translate('please_enter_sms_code'));
       return;
     }
 
     if (!_agreedToTerms) {
-      setState(() => _errorMsg = '请先阅读并同意《用户协议》与《隐私政策》');
+      setState(() => _errorMsg = translate('please_agree_terms'));
       _shakeControllers['terms']?.forward(from: 0);
       return;
     }
@@ -460,7 +469,7 @@ class _AppLoginPageState extends State<AppLoginPage>
     if (mounted) {
       setState(() => _isLoading = false);
       if (error != null) {
-        if (error == '激活码已过期') {
+        if (error == translate('activation_code_expired_error')) {
           final newCode = await _showActivationCodeDialog();
           if (!mounted) return;
           if (newCode == null) {
@@ -524,7 +533,7 @@ class _AppLoginPageState extends State<AppLoginPage>
     if (!mounted) return;
     if (ok == true) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('密码已重置，请使用新密码登录')),
+        SnackBar(content: Text(translate('password_reset_success'))),
       );
     }
   }
@@ -542,21 +551,25 @@ class _AppLoginPageState extends State<AppLoginPage>
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 // Logo & App Name
-                Icon(
-                  Icons.connected_tv_rounded,
-                  size: 72,
-                  color: MyTheme.accent,
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: Image.asset(
+                    'assets/about_logo.png',
+                    width: 52,
+                    height: 52,
+                    fit: BoxFit.cover,
+                  ),
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 10),
                 Text(
                   bind.mainGetAppNameSync(),
                   style: const TextStyle(
-                    fontSize: 28,
+                    fontSize: 20,
                     fontWeight: FontWeight.bold,
-                    letterSpacing: 1.2,
+                    letterSpacing: 0.5,
                   ),
                 ),
-                const SizedBox(height: 36),
+                const SizedBox(height: 20),
 
                 // Tab Bar
                 Container(
@@ -564,33 +577,33 @@ class _AppLoginPageState extends State<AppLoginPage>
                     color: isDark
                         ? Colors.white.withOpacity(0.08)
                         : Colors.grey.shade100,
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(10),
                   ),
                   child: TabBar(
                     controller: _tabController,
                     indicator: BoxDecoration(
-                      color: MyTheme.accent,
-                      borderRadius: BorderRadius.circular(12),
+                      color: const Color(0xFF7C3AED),
+                      borderRadius: BorderRadius.circular(10),
                     ),
                     labelColor: Colors.white,
                     unselectedLabelColor:
                         isDark ? Colors.white60 : Colors.black54,
                     labelStyle: const TextStyle(
-                        fontSize: 15, fontWeight: FontWeight.w600),
-                    unselectedLabelStyle: const TextStyle(fontSize: 15),
+                        fontSize: 13, fontWeight: FontWeight.w600),
+                    unselectedLabelStyle: const TextStyle(fontSize: 13),
                     indicatorSize: TabBarIndicatorSize.tab,
                     dividerColor: Colors.transparent,
-                    tabs: const [
-                      Tab(text: '账号登录'),
-                      Tab(text: '手机登录'),
+                    tabs: [
+                      Tab(text: translate('tab_account_login')),
+                      Tab(text: translate('tab_phone_login')),
                     ],
                   ),
                 ),
-                const SizedBox(height: 24),
+                const SizedBox(height: 20),
 
                 // Tab Content
                 SizedBox(
-                  height: 280,
+                  height: 252,
                   child: TabBarView(
                     controller: _tabController,
                     children: [
@@ -605,21 +618,22 @@ class _AppLoginPageState extends State<AppLoginPage>
                   const SizedBox(height: 8),
                   Container(
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 16, vertical: 10),
+                        horizontal: 12, vertical: 8),
                     decoration: BoxDecoration(
-                      color: Colors.red.withOpacity(0.1),
+                      color: Colors.red.withOpacity(0.08),
                       borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.red.withOpacity(0.2)),
                     ),
                     child: Row(
                       children: [
                         const Icon(Icons.error_outline,
-                            color: Colors.red, size: 20),
-                        const SizedBox(width: 8),
+                            color: Colors.red, size: 16),
+                        const SizedBox(width: 6),
                         Expanded(
                           child: Text(
                             _errorMsg!,
                             style: const TextStyle(
-                                color: Colors.red, fontSize: 13),
+                                color: Colors.red, fontSize: 12),
                           ),
                         ),
                       ],
@@ -627,27 +641,30 @@ class _AppLoginPageState extends State<AppLoginPage>
                   ),
                 ],
 
-                const SizedBox(height: 20),
+                const SizedBox(height: 16),
 
                 // Register Link
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text(
-                      '没有账号？',
+                      translate('no_account_prompt'),
                       style: TextStyle(
                         color: isDark ? Colors.white54 : Colors.black45,
-                        fontSize: 14,
+                        fontSize: 13,
                       ),
                     ),
-                    GestureDetector(
-                      onTap: _goToRegister,
-                      child: Text(
-                        '立即注册',
-                        style: TextStyle(
-                          color: MyTheme.accent,
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
+                    MouseRegion(
+                      cursor: SystemMouseCursors.click,
+                      child: GestureDetector(
+                        onTap: _goToRegister,
+                        child: Text(
+                          translate('register_now'),
+                          style: TextStyle(
+                            color: const Color(0xFF7C3AED),
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                       ),
                     ),
@@ -670,7 +687,7 @@ class _AppLoginPageState extends State<AppLoginPage>
           fieldKey: 'username',
           controller: _usernameController,
           focusNode: _usernameFocus,
-          label: '用户名',
+          label: translate('Username'),
           icon: Icons.person_outline,
           suffix: _buildAccountSwitcher(),
           inputFormatters: [
@@ -679,13 +696,13 @@ class _AppLoginPageState extends State<AppLoginPage>
             LengthLimitingTextInputFormatter(20),
           ],
         ),
-        const SizedBox(height: 14),
+        const SizedBox(height: 10),
         // Password
         _buildTextField(
           fieldKey: 'password',
           controller: _passwordController,
           focusNode: _passwordFocus,
-          label: '密码',
+          label: translate('Password'),
           icon: Icons.lock_outline,
           obscure: _obscurePassword,
           inputFormatters: [
@@ -704,16 +721,16 @@ class _AppLoginPageState extends State<AppLoginPage>
             },
           ),
         ),
-        const SizedBox(height: 10),
+        const SizedBox(height: 8),
         Row(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             SizedBox(
-              width: 24,
-              height: 24,
+              width: 20,
+              height: 20,
               child: Checkbox(
                 value: _rememberPassword,
-                activeColor: MyTheme.accent,
+                activeColor: const Color(0xFF7C3AED),
                 onChanged: (val) {
                   final next = val ?? false;
                   setState(() => _rememberPassword = next);
@@ -729,7 +746,7 @@ class _AppLoginPageState extends State<AppLoginPage>
             ),
             const SizedBox(width: 8),
             Text(
-              '记住密码（7天）',
+              translate('remember_password'),
               style: TextStyle(
                 fontSize: 12,
                 color: Theme.of(context).brightness == Brightness.dark
@@ -739,22 +756,25 @@ class _AppLoginPageState extends State<AppLoginPage>
             ),
           ],
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 10),
         _buildTermsCheckbox(isDark),
-        const SizedBox(height: 16),
+        const SizedBox(height: 12),
         // Login Button
         _buildLoginButton(onPressed: _loginWithPassword),
-        const SizedBox(height: 10),
+        const SizedBox(height: 6),
         Align(
           alignment: Alignment.centerRight,
-          child: GestureDetector(
-            onTap: _showForgotPassword,
-            child: Text(
-              '忘记密码？',
-              style: TextStyle(
-                color: MyTheme.accent,
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
+          child: MouseRegion(
+            cursor: SystemMouseCursors.click,
+            child: GestureDetector(
+              onTap: _showForgotPassword,
+              child: Text(
+                translate('Forget Password'),
+                style: TextStyle(
+                  color: const Color(0xFF7C3AED),
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ),
           ),
@@ -777,11 +797,11 @@ class _AppLoginPageState extends State<AppLoginPage>
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SizedBox(
-            width: 24,
-            height: 24,
+            width: 20,
+            height: 20,
             child: Checkbox(
               value: _agreedToTerms,
-              activeColor: MyTheme.accent,
+              activeColor: const Color(0xFF7C3AED),
               onChanged: (val) {
                 setState(() => _agreedToTerms = val ?? false);
               },
@@ -794,7 +814,7 @@ class _AppLoginPageState extends State<AppLoginPage>
               child: Wrap(
                 children: [
                   Text(
-                    '我已阅读并同意',
+                    translate('terms_agreed_prefix'),
                     style: TextStyle(
                       fontSize: 12,
                       color: isDark ? Colors.white54 : Colors.black54,
@@ -809,15 +829,15 @@ class _AppLoginPageState extends State<AppLoginPage>
                       );
                     },
                     child: Text(
-                      '《用户协议》',
+                      translate('terms_link_label'),
                       style: TextStyle(
                         fontSize: 12,
-                        color: MyTheme.accent,
+                        color: const Color(0xFF7C3AED),
                       ),
                     ),
                   ),
                   Text(
-                    '与',
+                    translate('and_connector'),
                     style: TextStyle(
                       fontSize: 12,
                       color: isDark ? Colors.white54 : Colors.black54,
@@ -833,10 +853,10 @@ class _AppLoginPageState extends State<AppLoginPage>
                       );
                     },
                     child: Text(
-                      '《隐私政策》',
+                      translate('privacy_link_label'),
                       style: TextStyle(
                         fontSize: 12,
-                        color: MyTheme.accent,
+                        color: const Color(0xFF7C3AED),
                       ),
                     ),
                   ),
@@ -858,7 +878,7 @@ class _AppLoginPageState extends State<AppLoginPage>
           fieldKey: 'phone',
           controller: _phoneController,
           focusNode: _phoneFocus,
-          label: '手机号',
+          label: translate('Phone Number'),
           icon: Icons.phone_android,
           keyboardType: TextInputType.phone,
           inputFormatters: [
@@ -866,7 +886,7 @@ class _AppLoginPageState extends State<AppLoginPage>
             LengthLimitingTextInputFormatter(11),
           ],
         ),
-        const SizedBox(height: 14),
+        const SizedBox(height: 10),
         // SMS Code + Send Button
         Row(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -876,7 +896,7 @@ class _AppLoginPageState extends State<AppLoginPage>
                 fieldKey: 'sms',
                 controller: _smsCodeController,
                 focusNode: _smsCodeFocus,
-                label: '验证码',
+                label: translate('Verification code'),
                 icon: Icons.sms_outlined,
                 keyboardType: TextInputType.number,
               ),
@@ -888,7 +908,7 @@ class _AppLoginPageState extends State<AppLoginPage>
                 onPressed:
                     (_countdown > 0 || _isLoading) ? null : _sendSmsCode,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: MyTheme.accent,
+                  backgroundColor: const Color(0xFF7C3AED),
                   foregroundColor: Colors.white,
                   disabledBackgroundColor: Colors.grey.shade300,
                   shape: RoundedRectangleBorder(
@@ -898,16 +918,16 @@ class _AppLoginPageState extends State<AppLoginPage>
                   elevation: 0,
                 ),
                 child: Text(
-                  _countdown > 0 ? '${_countdown}s' : '获取验证码',
+                  _countdown > 0 ? '${_countdown}s' : translate('get_sms_code'),
                   style: const TextStyle(fontSize: 13),
                 ),
               ),
             ),
           ],
         ),
-        const SizedBox(height: 30),
+        const SizedBox(height: 20),
         _buildTermsCheckbox(isDark),
-        const SizedBox(height: 16),
+        const SizedBox(height: 12),
         // Login Button
         _buildLoginButton(onPressed: _loginWithSms),
       ],
@@ -932,7 +952,6 @@ class _AppLoginPageState extends State<AppLoginPage>
         if (_shakeControllers[fieldKey] != null) _shakeControllers[fieldKey]!,
       ]),
       builder: (context, _) {
-        final hasFocus = focusNode.hasFocus;
         final isInvalid = _invalidFields[fieldKey] == true;
         final shake = _shakeControllers[fieldKey];
         final dx = shake == null
@@ -955,24 +974,12 @@ class _AppLoginPageState extends State<AppLoginPage>
             },
             style: const TextStyle(fontSize: 15),
             decoration: InputDecoration(
-              labelText: hasFocus ? label : null,
-              hintText: hasFocus ? null : label,
-              floatingLabelBehavior: hasFocus
-                  ? FloatingLabelBehavior.always
-                  : FloatingLabelBehavior.never,
-              labelStyle: TextStyle(color: Colors.grey.shade600, fontSize: 15),
-              hintStyle: TextStyle(color: Colors.grey.shade600, fontSize: 15),
-              floatingLabelStyle: TextStyle(
-                color: MyTheme.accent,
-                fontSize: 13,
-                fontWeight: FontWeight.w500,
-                backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-              ),
-              prefixIcon: Icon(
-                icon,
-                size: 20,
-                color: isInvalid ? Colors.red : null,
-              ),
+              hintText: label,
+              floatingLabelBehavior: FloatingLabelBehavior.never,
+              hintStyle:
+                  TextStyle(color: Colors.grey.shade500, fontSize: 15),
+              prefixIcon: Icon(icon,
+                  size: 20, color: isInvalid ? Colors.red : null),
               suffixIcon: suffix,
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(10),
@@ -981,17 +988,18 @@ class _AppLoginPageState extends State<AppLoginPage>
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(10),
                 borderSide: BorderSide(
-                    color: isInvalid ? Colors.red : Colors.grey.shade300),
+                    color:
+                        isInvalid ? Colors.red : Colors.grey.shade300),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(10),
                 borderSide: BorderSide(
-                  color: isInvalid ? Colors.red : MyTheme.accent,
+                  color: isInvalid ? Colors.red : const Color(0xFF7C3AED),
                   width: 1.5,
                 ),
               ),
-              contentPadding:
-                  const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+              contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 14, vertical: 12),
               isDense: false,
             ),
           ),
@@ -1001,31 +1009,39 @@ class _AppLoginPageState extends State<AppLoginPage>
   }
 
   Widget _buildLoginButton({required VoidCallback onPressed}) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bgColor = isDark ? const Color(0xFF6D28D9) : const Color(0xFF7C3AED);
+    const textColor = Colors.white;
+    final overlayColor = isDark
+        ? const Color(0xFF7C3AED)
+        : const Color(0xFF6D28D9);
+
     return SizedBox(
       width: double.infinity,
-      height: 48,
+      height: 44,
       child: ElevatedButton(
         onPressed: _isLoading ? null : onPressed,
         style: ElevatedButton.styleFrom(
-          backgroundColor: MyTheme.accent,
-          foregroundColor: Colors.white,
+          backgroundColor: bgColor,
+          foregroundColor: textColor,
+          overlayColor: overlayColor,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(10),
           ),
           elevation: 0,
         ),
         child: _isLoading
-            ? const SizedBox(
-                width: 22,
-                height: 22,
+            ? SizedBox(
+                width: 20,
+                height: 20,
                 child: CircularProgressIndicator(
                   strokeWidth: 2.5,
-                  color: Colors.white,
+                  color: textColor,
                 ),
               )
-            : const Text(
-                '登 录',
-                style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600),
+            : Text(
+                translate('login_btn'),
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
               ),
       ),
     );
@@ -1084,11 +1100,11 @@ class _ForgotPasswordDialogState extends State<_ForgotPasswordDialog> {
   Future<void> _sendSmsCode() async {
     final phone = _phoneController.text.trim();
     if (phone.isEmpty) {
-      setState(() => _errorMsg = '请输入手机号');
+      setState(() => _errorMsg = translate('please_enter_phone'));
       return;
     }
     if (phone.length != 11) {
-      setState(() => _errorMsg = '手机号必须为11位数字');
+      setState(() => _errorMsg = translate('phone_must_be_11_digits'));
       return;
     }
     setState(() {
@@ -1108,12 +1124,12 @@ class _ForgotPasswordDialogState extends State<_ForgotPasswordDialog> {
   String? _validatePasswordFormat(String value) {
     if (value.isEmpty) return null;
     if (value.length < 6 || value.length > 20) {
-      return '密码需为6-20位字符';
+      return translate('password_length_tip');
     }
     final hasLetter = value.contains(RegExp(r'[A-Za-z]'));
     final hasDigit = value.contains(RegExp(r'\d'));
     if (!hasLetter || !hasDigit) {
-      return '密码需包含字母和数字';
+      return translate('password_letter_digit_tip');
     }
     return null;
   }
@@ -1125,33 +1141,33 @@ class _ForgotPasswordDialogState extends State<_ForgotPasswordDialog> {
     final confirmPassword = _confirmPasswordController.text;
 
     if (phone.isEmpty) {
-      setState(() => _errorMsg = '请输入手机号');
+      setState(() => _errorMsg = translate('please_enter_phone'));
       return;
     }
     if (phone.length != 11) {
-      setState(() => _errorMsg = '手机号必须为11位数字');
+      setState(() => _errorMsg = translate('phone_must_be_11_digits'));
       return;
     }
     if (smsCode.isEmpty) {
-      setState(() => _errorMsg = '请输入验证码');
+      setState(() => _errorMsg = translate('please_enter_sms_code'));
       return;
     }
     if (password.isEmpty) {
-      setState(() => _errorMsg = '请输入新密码');
+      setState(() => _errorMsg = translate('please_enter_new_password'));
       return;
     }
     if (password.length < 6 || password.length > 20) {
-      setState(() => _errorMsg = '密码需为6-20位字符');
+      setState(() => _errorMsg = translate('password_length_tip'));
       return;
     }
     final hasLetter = password.contains(RegExp(r'[A-Za-z]'));
     final hasDigit = password.contains(RegExp(r'\d'));
     if (!hasLetter || !hasDigit) {
-      setState(() => _errorMsg = '密码需包含字母和数字');
+      setState(() => _errorMsg = translate('password_letter_digit_tip'));
       return;
     }
     if (password != confirmPassword) {
-      setState(() => _errorMsg = '两次密码输入不一致');
+      setState(() => _errorMsg = translate('password_not_match'));
       return;
     }
 
@@ -1179,7 +1195,7 @@ class _ForgotPasswordDialogState extends State<_ForgotPasswordDialog> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return AlertDialog(
-      title: const Text('忘记密码'),
+      title: Text(translate('Forget Password')),
       content: SingleChildScrollView(
         child: SizedBox(
           width: 360,
@@ -1193,9 +1209,9 @@ class _ForgotPasswordDialogState extends State<_ForgotPasswordDialog> {
                   FilteringTextInputFormatter.digitsOnly,
                   LengthLimitingTextInputFormatter(11),
                 ],
-                decoration: const InputDecoration(
-                  labelText: '手机号',
-                  prefixIcon: Icon(Icons.phone_android, size: 20),
+                decoration: InputDecoration(
+                  labelText: translate('Phone Number'),
+                  prefixIcon: const Icon(Icons.phone_android, size: 20),
                 ),
               ),
               const SizedBox(height: 12),
@@ -1206,9 +1222,9 @@ class _ForgotPasswordDialogState extends State<_ForgotPasswordDialog> {
                     child: TextField(
                       controller: _smsCodeController,
                       keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(
-                        labelText: '验证码',
-                        prefixIcon: Icon(Icons.sms_outlined, size: 20),
+                      decoration: InputDecoration(
+                        labelText: translate('Verification code'),
+                        prefixIcon: const Icon(Icons.sms_outlined, size: 20),
                       ),
                     ),
                   ),
@@ -1220,7 +1236,7 @@ class _ForgotPasswordDialogState extends State<_ForgotPasswordDialog> {
                           ? null
                           : _sendSmsCode,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: MyTheme.accent,
+                        backgroundColor: const Color(0xFF7C3AED),
                         foregroundColor: Colors.white,
                         disabledBackgroundColor: Colors.grey.shade300,
                         shape: RoundedRectangleBorder(
@@ -1230,7 +1246,7 @@ class _ForgotPasswordDialogState extends State<_ForgotPasswordDialog> {
                         elevation: 0,
                       ),
                       child: Text(
-                        _countdown > 0 ? '${_countdown}s' : '获取验证码',
+                        _countdown > 0 ? '${_countdown}s' : translate('get_sms_code'),
                         style: const TextStyle(fontSize: 13),
                       ),
                     ),
@@ -1251,7 +1267,7 @@ class _ForgotPasswordDialogState extends State<_ForgotPasswordDialog> {
                   }
                 },
                 decoration: InputDecoration(
-                  labelText: '新密码',
+                  labelText: translate('new_password_label'),
                   prefixIcon: const Icon(Icons.lock_outline, size: 20),
                   suffixIcon: IconButton(
                     icon: Icon(
@@ -1286,14 +1302,14 @@ class _ForgotPasswordDialogState extends State<_ForgotPasswordDialog> {
                 ],
                 onChanged: (value) {
                   final error = (value.isNotEmpty && value != _passwordController.text)
-                      ? '两次密码输入不一致'
+                      ? translate('password_not_match')
                       : null;
                   if (error != _confirmPasswordError) {
                     setState(() => _confirmPasswordError = error);
                   }
                 },
                 decoration: InputDecoration(
-                  labelText: '确认新密码',
+                  labelText: translate('confirm_new_password_label'),
                   prefixIcon: const Icon(Icons.lock_outline, size: 20),
                   suffixIcon: IconButton(
                     icon: Icon(
@@ -1334,7 +1350,7 @@ class _ForgotPasswordDialogState extends State<_ForgotPasswordDialog> {
               Align(
                 alignment: Alignment.centerLeft,
                 child: Text(
-                  '验证码会发送到你填写的手机号',
+                  translate('sms_hint'),
                   style: TextStyle(
                     fontSize: 12,
                     color: isDark ? Colors.white54 : Colors.black45,
@@ -1348,12 +1364,12 @@ class _ForgotPasswordDialogState extends State<_ForgotPasswordDialog> {
       actions: [
         TextButton(
           onPressed: _isLoading ? null : () => Navigator.of(context).pop(false),
-          child: const Text('取消'),
+          child: Text(translate('Cancel')),
         ),
         ElevatedButton(
           onPressed: _isLoading ? null : _submit,
           style: ElevatedButton.styleFrom(
-            backgroundColor: MyTheme.accent,
+            backgroundColor: const Color(0xFF7C3AED),
             foregroundColor: Colors.white,
             elevation: 0,
           ),
@@ -1366,7 +1382,7 @@ class _ForgotPasswordDialogState extends State<_ForgotPasswordDialog> {
                     color: Colors.white,
                   ),
                 )
-              : const Text('确认重置'),
+              : Text(translate('confirm_reset_btn')),
         ),
       ],
     );
