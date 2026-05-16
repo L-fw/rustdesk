@@ -844,5 +844,6 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
         ("confirm_to_logout", "你确定要退出账号吗？"),
         ("Memory", "内存"),
         ("No camera permission", "没有相机权限"),
+        ("Your version is up to date", "当前已是最新版本！"),
     ].iter().cloned().collect();
 }

@@ -2397,7 +2397,7 @@ class _UpdateState extends State<_Update> {
       } else {
         return Center(
           child: Text(
-            '当前已是最新版本！',
+            translate('Your version is up to date'),
             style: const TextStyle(fontSize: 18),
           ),
         );
