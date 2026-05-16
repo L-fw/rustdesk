@@ -543,6 +543,7 @@ class _AppLoginPageState extends State<AppLoginPage>
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
+      backgroundColor: isDark ? const Color(0xFF1A1D23) : Colors.white,
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
@@ -691,10 +692,11 @@ class _AppLoginPageState extends State<AppLoginPage>
           icon: Icons.person_outline,
           suffix: _buildAccountSwitcher(),
           inputFormatters: [
-            FilteringTextInputFormatter.allow(
-                RegExp(r'[A-Za-z0-9_]')),
+            _UsernameInputFormatter(),
             LengthLimitingTextInputFormatter(20),
           ],
+          textInputAction: TextInputAction.next,
+          onSubmitted: (_) => _passwordFocus.requestFocus(),
         ),
         const SizedBox(height: 10),
         // Password
@@ -720,6 +722,8 @@ class _AppLoginPageState extends State<AppLoginPage>
               setState(() => _obscurePassword = !_obscurePassword);
             },
           ),
+          textInputAction: TextInputAction.done,
+          onSubmitted: (_) => _loginWithPassword(),
         ),
         const SizedBox(height: 8),
         Row(
@@ -885,6 +889,8 @@ class _AppLoginPageState extends State<AppLoginPage>
             FilteringTextInputFormatter.digitsOnly,
             LengthLimitingTextInputFormatter(11),
           ],
+          textInputAction: TextInputAction.next,
+          onSubmitted: (_) => _smsCodeFocus.requestFocus(),
         ),
         const SizedBox(height: 10),
         // SMS Code + Send Button
@@ -899,6 +905,8 @@ class _AppLoginPageState extends State<AppLoginPage>
                 label: translate('Verification code'),
                 icon: Icons.sms_outlined,
                 keyboardType: TextInputType.number,
+                textInputAction: TextInputAction.done,
+                onSubmitted: (_) => _loginWithSms(),
               ),
             ),
             const SizedBox(width: 12),
@@ -945,6 +953,8 @@ class _AppLoginPageState extends State<AppLoginPage>
     TextInputType? keyboardType,
     List<TextInputFormatter>? inputFormatters,
     ValueChanged<String>? onChanged,
+    ValueChanged<String>? onSubmitted,
+    TextInputAction? textInputAction,
   }) {
     return AnimatedBuilder(
       animation: Listenable.merge([
@@ -965,6 +975,8 @@ class _AppLoginPageState extends State<AppLoginPage>
             obscureText: obscure,
             keyboardType: keyboardType,
             inputFormatters: inputFormatters,
+            textInputAction: textInputAction ?? TextInputAction.done,
+            onSubmitted: onSubmitted ?? (_) => FocusScope.of(context).nextFocus(),
             onChanged: (value) {
               if ((value.isNotEmpty || value.trim().isNotEmpty) &&
                   _invalidFields[fieldKey] == true) {
@@ -1205,6 +1217,7 @@ class _ForgotPasswordDialogState extends State<_ForgotPasswordDialog> {
               TextField(
                 controller: _phoneController,
                 keyboardType: TextInputType.phone,
+                textInputAction: TextInputAction.next,
                 inputFormatters: [
                   FilteringTextInputFormatter.digitsOnly,
                   LengthLimitingTextInputFormatter(11),
@@ -1222,6 +1235,7 @@ class _ForgotPasswordDialogState extends State<_ForgotPasswordDialog> {
                     child: TextField(
                       controller: _smsCodeController,
                       keyboardType: TextInputType.number,
+                      textInputAction: TextInputAction.next,
                       decoration: InputDecoration(
                         labelText: translate('Verification code'),
                         prefixIcon: const Icon(Icons.sms_outlined, size: 20),
@@ -1257,6 +1271,7 @@ class _ForgotPasswordDialogState extends State<_ForgotPasswordDialog> {
               TextField(
                 controller: _passwordController,
                 obscureText: _obscurePassword,
+                textInputAction: TextInputAction.next,
                 inputFormatters: [
                   FilteringTextInputFormatter.deny(RegExp(r'[\u4e00-\u9fff]')),
                 ],
@@ -1297,6 +1312,8 @@ class _ForgotPasswordDialogState extends State<_ForgotPasswordDialog> {
               TextField(
                 controller: _confirmPasswordController,
                 obscureText: _obscureConfirmPassword,
+                textInputAction: TextInputAction.done,
+                onSubmitted: (_) => _submit(),
                 inputFormatters: [
                   FilteringTextInputFormatter.deny(RegExp(r'[\u4e00-\u9fff]')),
                 ],
@@ -1385,6 +1402,29 @@ class _ForgotPasswordDialogState extends State<_ForgotPasswordDialog> {
               : Text(translate('confirm_reset_btn')),
         ),
       ],
+    );
+  }
+}
+
+/// 用户名输入过滤器：只允许英文、数字和下划线，不允许中文。
+/// IME 组字期间不干预，避免输入法叠字问题。
+class _UsernameInputFormatter extends TextInputFormatter {
+  static final _allowedPattern = RegExp(r'[^A-Za-z0-9_]');
+
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    if (newValue.composing != TextRange.empty) return newValue;
+
+    final filtered = newValue.text.replaceAll(_allowedPattern, '');
+    if (filtered == newValue.text) return newValue;
+
+    return newValue.copyWith(
+      text: filtered,
+      selection: TextSelection.collapsed(offset: filtered.length),
+      composing: TextRange.empty,
     );
   }
 }
