@@ -603,14 +603,21 @@ class _AppLoginPageState extends State<AppLoginPage>
                 const SizedBox(height: 20),
 
                 // Tab Content
-                SizedBox(
-                  height: 252,
-                  child: TabBarView(
-                    controller: _tabController,
-                    children: [
-                      _buildPasswordLoginTab(),
-                      _buildSmsLoginTab(),
-                    ],
+                AnimatedSize(
+                  duration: const Duration(milliseconds: 300),
+                  curve: Curves.easeInOut,
+                  alignment: Alignment.topCenter,
+                  child: AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 300),
+                    child: _tabController.index == 0
+                        ? Container(
+                            key: const ValueKey(0),
+                            child: _buildPasswordLoginTab(),
+                          )
+                        : Container(
+                            key: const ValueKey(1),
+                            child: _buildSmsLoginTab(),
+                          ),
                   ),
                 ),
 
