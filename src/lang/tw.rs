@@ -844,5 +844,7 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
         ("No camera permission", "沒有相機權限"),
         ("Your version is up to date", "目前已是最新版本！"),
         ("Memory", "記憶體"),
+        ("Hide Password", "隱藏密碼"),
+        ("Show Password", "顯示密碼"),
     ].iter().cloned().collect();
 }
