@@ -149,7 +149,9 @@ pub fn core_main() -> Option<Vec<String>> {
                     | "--update"
             )
         });
-        if !crate::platform::is_installed() && !allow_install_args {
+        if !allow_install_args && !crate::platform::is_cur_exe_the_installed() {
+            // Show install page for both fresh install and overlay install
+            // (when running a different exe copy than the installed one)
             let _ = crate::run_me(vec!["--install"]);
             return None;
         }
