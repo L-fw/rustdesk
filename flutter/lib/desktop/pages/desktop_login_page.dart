@@ -523,8 +523,13 @@ class _AppLoginPageState extends State<AppLoginPage>
   }
 
   void _goToHome() async {
-    // 成功登录后，恢复用户之前保存的主窗口大小和位置
-    await restoreWindowPosition(WindowType.Main);
+    // 登录成功后，固定设置窗口大小为940x640并居中（仅Windows桌面端）
+    if (isWindows) {
+      await windowManager.setResizable(true);
+      await windowManager.setMinimumSize(const Size(600, 480));
+      await windowManager.setSize(const Size(940, 640));
+      await windowManager.center();
+    }
     Navigator.of(context).pushAndRemoveUntil(
       PageRouteBuilder(
         pageBuilder: (context, animation, secondaryAnimation) =>
