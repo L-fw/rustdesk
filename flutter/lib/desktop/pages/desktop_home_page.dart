@@ -56,6 +56,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
   bool _loginStatusDialogShowing = false;
 
   final RxBool _editHover = false.obs;
+  final RxBool _passwordVisible = true.obs;
   final RxBool _block = false.obs;
 
   final GlobalKey _childKey = GlobalKey();
@@ -244,26 +245,16 @@ class _DesktopHomePageState extends State<DesktopHomePage>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Container(
-                    height: 25,
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          translate("ID"),
-                          style: TextStyle(
-                              fontSize: 14,
-                              color: Theme.of(context)
-                                  .textTheme
-                                  .titleLarge
-                                  ?.color
-                                  ?.withOpacity(0.5)),
-                        ).marginOnly(top: 5),
-                        buildPopupMenu(context)
-                      ],
-                    ),
-                  ),
+                  Text(
+                    translate("ID"),
+                    style: TextStyle(
+                        fontSize: 14,
+                        color: Theme.of(context)
+                            .textTheme
+                            .titleLarge
+                            ?.color
+                            ?.withOpacity(0.5)),
+                  ).marginOnly(top: 5),
                   Flexible(
                     child: GestureDetector(
                       onDoubleTap: () {
@@ -329,8 +320,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
   }
 
   buildPasswordBoard2(BuildContext context, ServerModel model) {
-    RxBool refreshHover = false.obs;
-    RxBool editHover = false.obs;
+    RxBool visibilityHover = false.obs;
     final textColor = Theme.of(context).textTheme.titleLarge?.color;
     final showOneTime = model.approveMode != 'click' &&
         model.verificationMethod != kUsePermanentPassword;
@@ -368,52 +358,80 @@ class _DesktopHomePageState extends State<DesktopHomePage>
                               showToast(translate("Copied"));
                             }
                           },
-                          child: TextFormField(
+                          child: Obx(() => TextFormField(
                             controller: model.serverPasswd,
                             readOnly: true,
+                            obscureText: showOneTime && !_passwordVisible.value,
                             decoration: InputDecoration(
                               border: InputBorder.none,
                               contentPadding:
                                   EdgeInsets.only(top: 14, bottom: 10),
                             ),
                             style: TextStyle(fontSize: 15),
-                          ).workaroundFreezeLinuxMint(),
+                          ).workaroundFreezeLinuxMint()),
                         ),
                       ),
                       if (showOneTime)
-                        AnimatedRotationWidget(
-                          onPressed: () => bind.mainUpdateTemporaryPassword(),
+                        Obx(() => InkWell(
+                          onTap: () => _passwordVisible.toggle(),
+                          onHover: (value) => visibilityHover.value = value,
                           child: Tooltip(
-                            message: translate('Refresh Password'),
-                            child: Obx(() => RotatedBox(
-                                quarterTurns: 2,
-                                child: Icon(
-                                  Icons.refresh,
-                                  color: refreshHover.value
-                                      ? textColor
-                                      : Color(0xFFDDDDDD),
-                                  size: 22,
-                                ))),
+                            message: _passwordVisible.value
+                                ? translate('Hide Password')
+                                : translate('Show Password'),
+                            child: Icon(
+                              _passwordVisible.value
+                                  ? Icons.visibility
+                                  : Icons.visibility_off,
+                              color: visibilityHover.value
+                                  ? textColor
+                                  : Color(0xFFDDDDDD),
+                              size: 22,
+                            ).marginOnly(right: 4, top: 4),
                           ),
-                          onHover: (value) => refreshHover.value = value,
-                        ).marginOnly(right: 8, top: 4),
-                      if (!bind.isDisableSettings())
-                        InkWell(
-                          child: Tooltip(
-                            message: translate('Change Password'),
-                            child: Obx(
-                              () => Icon(
-                                Icons.edit,
-                                color: editHover.value
-                                    ? textColor
-                                    : Color(0xFFDDDDDD),
-                                size: 22,
-                              ).marginOnly(right: 8, top: 4),
-                            ),
+                        )),
+                      if (showOneTime || !bind.isDisableSettings())
+                        PopupMenuButton<String>(
+                          icon: Icon(
+                            Icons.more_vert,
+                            color: Color(0xFFDDDDDD),
+                            size: 22,
                           ),
-                          onTap: () => DesktopSettingPage.switch2page(
-                              SettingsTabKey.safety),
-                          onHover: (value) => editHover.value = value,
+                          padding: EdgeInsets.zero,
+                          tooltip: '',
+                          position: PopupMenuPosition.under,
+                          itemBuilder: (context) => [
+                            if (showOneTime)
+                              PopupMenuItem<String>(
+                                value: 'refresh',
+                                child: Row(
+                                  children: [
+                                    Icon(Icons.refresh, size: 20),
+                                    SizedBox(width: 8),
+                                    Text(translate('Refresh Password')),
+                                  ],
+                                ),
+                              ),
+                            if (!bind.isDisableSettings())
+                              PopupMenuItem<String>(
+                                value: 'edit',
+                                child: Row(
+                                  children: [
+                                    Icon(Icons.edit, size: 20),
+                                    SizedBox(width: 8),
+                                    Text(translate('Change Password')),
+                                  ],
+                                ),
+                              ),
+                          ],
+                          onSelected: (value) {
+                            if (value == 'refresh') {
+                              bind.mainUpdateTemporaryPassword();
+                            } else if (value == 'edit') {
+                              DesktopSettingPage.switch2page(
+                                  SettingsTabKey.safety);
+                            }
+                          },
                         ),
                     ],
                   ),
