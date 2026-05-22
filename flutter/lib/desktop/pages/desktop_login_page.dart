@@ -527,7 +527,7 @@ class _AppLoginPageState extends State<AppLoginPage>
     if (isWindows) {
       await windowManager.setResizable(true);
       await windowManager.setMinimumSize(const Size(600, 480));
-      await windowManager.setSize(const Size(940, 640));
+      await windowManager.setSize(const Size(940, 650));
       await windowManager.center();
     }
     Navigator.of(context).pushAndRemoveUntil(
