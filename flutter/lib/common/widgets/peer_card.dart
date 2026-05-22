@@ -21,7 +21,7 @@ typedef PopupMenuEntryBuilder = Future<List<mod_menu.PopupMenuEntry<String>>>
 
 enum PeerUiType { grid, tile, list }
 
-final peerCardUiType = PeerUiType.grid.obs;
+final peerCardUiType = PeerUiType.list.obs;
 
 bool? hideUsernameOnCard;
 
