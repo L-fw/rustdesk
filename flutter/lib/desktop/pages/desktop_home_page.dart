@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_hbb/common.dart';
 import 'package:flutter_hbb/common/app_auth_service.dart';
+import 'package:flutter_hbb/common/formatter/id_formatter.dart';
 import 'package:flutter_hbb/common/widgets/animated_rotation_widget.dart';
 import 'package:flutter_hbb/common/widgets/custom_password.dart';
 import 'package:flutter_hbb/consts.dart';
@@ -14,6 +15,7 @@ import 'package:flutter_hbb/desktop/pages/connection_page.dart';
 import 'package:flutter_hbb/desktop/pages/desktop_setting_page.dart';
 import 'package:flutter_hbb/desktop/pages/desktop_tab_page.dart';
 import 'package:flutter_hbb/desktop/widgets/update_progress.dart';
+import 'package:flutter_hbb/models/peer_model.dart';
 import 'package:flutter_hbb/models/platform_model.dart';
 import 'package:flutter_hbb/models/server_model.dart';
 import 'package:flutter_hbb/models/state_model.dart';
@@ -61,25 +63,29 @@ class _DesktopHomePageState extends State<DesktopHomePage>
 
   final GlobalKey _childKey = GlobalKey();
 
+  // New layout state
+  final ValueNotifier<String> _selectedNav = ValueNotifier('home');
+  final ValueNotifier<int> _sidebarPeerTab = ValueNotifier(0);
+  final IDTextEditingController _homeRemoteIdController =
+      IDTextEditingController();
+
   @override
   Widget build(BuildContext context) {
     super.build(context);
     final isIncomingOnly = bind.isIncomingOnly();
     return _buildBlock(
-        child: ConstrainedBox(
-      constraints: const BoxConstraints(
-        minWidth: 600,
-        minHeight: 480,
+      child: Container(
+        color: const Color(0xFFF3F5F8),
+        constraints: const BoxConstraints(minWidth: 900, minHeight: 560),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            buildLeftPane(context),
+            if (!isIncomingOnly) Expanded(child: buildRightPane(context)),
+          ],
+        ),
       ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          buildLeftPane(context),
-          if (!isIncomingOnly) const VerticalDivider(width: 1),
-          if (!isIncomingOnly) Expanded(child: buildRightPane(context)),
-        ],
-      ),
-    ));
+    );
   }
 
   Widget _buildBlock({required Widget child}) {
@@ -87,144 +93,908 @@ class _DesktopHomePageState extends State<DesktopHomePage>
         block: _block, mask: true, use: canBeBlocked, child: child);
   }
 
+  // ---------------------------------------------------------------------------
+  // New layout: Left sidebar
+  // ---------------------------------------------------------------------------
 
   Widget buildLeftPane(BuildContext context) {
-    final isIncomingOnly = bind.isIncomingOnly();
-    final isOutgoingOnly = bind.isOutgoingOnly();
-    final children = <Widget>[
-      if (!isOutgoingOnly) buildPresetPasswordWarning(),
-      Align(
-        alignment: Alignment.center,
-        child: loadLogo(),
+    return Container(
+      width: 220,
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        border: Border(
+          right: BorderSide(color: Color(0xFFEDEFF3), width: 1),
+        ),
       ),
-      buildTip(context),
-      if (!isOutgoingOnly) buildIDBoard(context),
-      if (!isOutgoingOnly) buildPasswordBoard(context),
-      FutureBuilder<Widget>(
-        future: Future.value(
-            Obx(() => buildHelpCards(stateGlobal.updateUrl.value))),
-        builder: (_, data) {
-          if (data.hasData) {
-            if (isIncomingOnly) {
-              if (isInHomePage()) {
-                Future.delayed(Duration(milliseconds: 300), () {
-                  _updateWindowSize();
-                });
-              }
-            }
-            return data.data!;
-          } else {
-            return const Offstage();
-          }
-        },
+      child: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(14, 16, 14, 8),
+            child: _buildSidebarUserCard(context),
+          ),
+          _buildSidebarNav(context),
+          const SizedBox(height: 8),
+          Expanded(child: _buildSidebarPeersBox(context)),
+          if (!bind.isDisableSettings())
+            Padding(
+              padding: const EdgeInsets.fromLTRB(14, 8, 14, 14),
+              child: _buildHelpCenterCard(context),
+            ),
+        ],
       ),
-      buildPluginEntry(),
-    ];
-    if (isIncomingOnly) {
-      children.addAll([
-        Divider(),
-        OnlineStatusWidget(
-          onSvcStatusChanged: () {
-            if (isInHomePage()) {
-              Future.delayed(Duration(milliseconds: 300), () {
-                _updateWindowSize();
-              });
-            }
-          },
-        ).marginOnly(bottom: 6, right: 6)
-      ]);
-    }
-    return ChangeNotifierProvider.value(
-      value: gFFI.serverModel,
-      child: Container(
-        width: isIncomingOnly ? 280.0 : 220.0,
-        color: Theme.of(context).colorScheme.background,
-        child: Stack(
-          children: [
-            Column(
+    );
+  }
+
+  Widget _buildSidebarUserCard(BuildContext context) {
+    return Obx(() {
+      final currentUserName = AppAuthService().currentUserName.value;
+      final loggedIn = currentUserName.isNotEmpty;
+      return GestureDetector(
+        onTap: bind.isDisableAccount()
+            ? null
+            : () => DesktopSettingPage.switch2page(SettingsTabKey.account),
+        child: MouseRegion(
+          cursor: bind.isDisableAccount()
+              ? MouseCursor.defer
+              : SystemMouseCursors.click,
+          child: Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: const Color(0xFFEFF4FF),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Row(
               children: [
-                SingleChildScrollView(
-                  controller: _leftPaneScrollController,
-                  child: Column(
-                    key: _childKey,
-                    children: children,
+                Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: LinearGradient(
+                      colors: [
+                        MyTheme.accent,
+                        MyTheme.accent.withOpacity(0.7),
+                      ],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                  ),
+                  child: const Center(
+                    child: Icon(Icons.person, color: Colors.white, size: 26),
                   ),
                 ),
-                Expanded(child: Container()),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        loggedIn ? currentUserName : translate('Your Desktop'),
+                        style: const TextStyle(
+                            fontSize: 14, fontWeight: FontWeight.w600),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 4),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: loggedIn
+                              ? const Color(0xFFD7E4FF)
+                              : const Color(0xFFE6E8EC),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          loggedIn ? '已登录' : '未登录',
+                          style: TextStyle(
+                            fontSize: 10,
+                            color: loggedIn
+                                ? MyTheme.accent
+                                : const Color(0xFF6B7280),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ],
             ),
+          ),
+        ),
+      );
+    });
+  }
+
+  Widget _buildSidebarNav(BuildContext context) {
+    return ValueListenableBuilder<String>(
+      valueListenable: _selectedNav,
+      builder: (_, selected, __) {
+        return Column(
+          key: _childKey,
+          children: [
+            _navItem(Icons.home_outlined, translate('Home'), 'home', selected),
+            _navItem(
+                Icons.desktop_windows_outlined, '我的设备', 'devices', selected),
+            _navItem(
+                Icons.folder_outlined, translate('File Transfer'), 'file',
+                selected),
             if (!bind.isDisableSettings())
-              Positioned(
-                bottom: 0,
-                left: 0,
-                right: 0,
-                child: _buildSettingsButton(context),
-              )
+              _navItem(Icons.settings_outlined, translate('Settings'),
+                  'settings', selected),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _navItem(
+      IconData icon, String label, String key, String selected) {
+    final isSelected = key == selected;
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(8),
+        onTap: () {
+          if (key == 'settings') {
+            if (DesktopSettingPage.tabKeys.isNotEmpty) {
+              DesktopSettingPage.switch2page(DesktopSettingPage.tabKeys[0]);
+            }
+            return;
+          }
+          _selectedNav.value = key;
+        },
+        child: Container(
+          margin: const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          decoration: BoxDecoration(
+            color: isSelected
+                ? const Color(0xFFEFF4FF)
+                : Colors.transparent,
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Row(
+            children: [
+              Icon(
+                icon,
+                size: 19,
+                color: isSelected
+                    ? MyTheme.accent
+                    : const Color(0xFF6B7280),
+              ),
+              const SizedBox(width: 12),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight:
+                      isSelected ? FontWeight.w600 : FontWeight.w500,
+                  color: isSelected
+                      ? MyTheme.accent
+                      : const Color(0xFF1F2937),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSidebarPeersBox(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFAFBFC),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFEDEFF3)),
+      ),
+      child: ValueListenableBuilder<int>(
+        valueListenable: _sidebarPeerTab,
+        builder: (_, tab, __) {
+          return Column(
+            children: [
+              Row(
+                children: [
+                  Expanded(child: _peerTabBtn(translate('Recent Sessions'), 0, tab)),
+                  Expanded(child: _peerTabBtn(translate('Favorites'), 1, tab)),
+                ],
+              ),
+              const Divider(height: 1, color: Color(0xFFEDEFF3)),
+              Expanded(child: _sidebarPeerList(tab == 0)),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _peerTabBtn(String label, int idx, int current) {
+    final active = idx == current;
+    return InkWell(
+      onTap: () => _sidebarPeerTab.value = idx,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 10),
+        decoration: BoxDecoration(
+          border: Border(
+            bottom: BorderSide(
+              color: active ? MyTheme.accent : Colors.transparent,
+              width: 2,
+            ),
+          ),
+        ),
+        alignment: Alignment.center,
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: active ? FontWeight.w600 : FontWeight.w500,
+            color: active ? MyTheme.accent : const Color(0xFF6B7280),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _sidebarPeerList(bool recent) {
+    final peers = recent ? gFFI.recentPeersModel : gFFI.favoritePeersModel;
+    if (recent) {
+      bind.mainLoadRecentPeers();
+    } else {
+      bind.mainLoadFavPeers();
+    }
+    return AnimatedBuilder(
+      animation: peers,
+      builder: (_, __) {
+        if (peers.peers.isEmpty) {
+          return Center(
+            child: Text(
+              recent ? '暂无最近连接' : '暂无收藏',
+              style: const TextStyle(
+                  fontSize: 12, color: Color(0xFF9CA3AF)),
+            ),
+          );
+        }
+        return ListView.separated(
+          padding: const EdgeInsets.symmetric(vertical: 6),
+          itemCount: peers.peers.length,
+          separatorBuilder: (_, __) => const SizedBox(height: 2),
+          itemBuilder: (_, i) => _compactPeerTile(peers.peers[i]),
+        );
+      },
+    );
+  }
+
+  Widget _compactPeerTile(Peer peer) {
+    final displayName = peer.alias.isNotEmpty
+        ? peer.alias
+        : (peer.username.isNotEmpty && peer.hostname.isNotEmpty
+            ? '${peer.username}@${peer.hostname}'
+            : (peer.hostname.isNotEmpty ? peer.hostname : peer.id));
+    return InkWell(
+      onTap: () => connect(context, peer.id),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        child: Row(
+          children: [
+            Container(
+              width: 28,
+              height: 28,
+              decoration: BoxDecoration(
+                color: const Color(0xFFEFF4FF),
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: Icon(_platformIcon(peer.platform),
+                  size: 16, color: MyTheme.accent),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    displayName,
+                    style: const TextStyle(
+                        fontSize: 12, fontWeight: FontWeight.w600),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  Text(
+                    peer.id,
+                    style: const TextStyle(
+                        fontSize: 11, color: Color(0xFF9CA3AF)),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildSettingsButton(BuildContext context) {
+  IconData _platformIcon(String platform) {
+    final p = platform.toLowerCase();
+    if (p.contains('windows')) return Icons.window;
+    if (p.contains('mac') || p.contains('osx')) return Icons.laptop_mac;
+    if (p.contains('linux')) return Icons.computer;
+    if (p.contains('android')) return Icons.smartphone;
+    if (p.contains('ios')) return Icons.phone_iphone;
+    return Icons.devices_other;
+  }
+
+  Widget _buildHelpCenterCard(BuildContext context) {
     final RxBool hover = false.obs;
     return Obx(() => InkWell(
-          onTap: () {
-            if (DesktopSettingPage.tabKeys.isNotEmpty) {
-              DesktopSettingPage.switch2page(DesktopSettingPage.tabKeys[0]);
-            }
+          onTap: () async {
+            try {
+              await launchUrl(Uri.parse('https://jyyxt.cloud/docs/tech'));
+            } catch (_) {}
           },
           onHover: (v) => hover.value = v,
+          borderRadius: BorderRadius.circular(12),
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 150),
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(vertical: 14),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
             decoration: BoxDecoration(
               color: hover.value
-                  ? Theme.of(context).colorScheme.primary.withOpacity(0.12)
-                  : Colors.transparent,
+                  ? const Color(0xFFEFF4FF)
+                  : const Color(0xFFF9FAFB),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: const Color(0xFFEDEFF3)),
             ),
             child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(
-                  Icons.settings_outlined,
-                  size: 20,
-                  color: hover.value
-                      ? Theme.of(context).colorScheme.primary
-                      : Theme.of(context)
-                          .textTheme
-                          .bodyMedium
-                          ?.color
-                          ?.withOpacity(0.6),
+                Container(
+                  width: 32,
+                  height: 32,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    shape: BoxShape.circle,
+                    border: Border.all(color: const Color(0xFFE5E7EB)),
+                  ),
+                  child:
+                      Icon(Icons.shield_outlined, color: MyTheme.accent, size: 18),
                 ),
-                const SizedBox(width: 8),
-                Text(
-                  translate('Settings'),
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                    color: hover.value
-                        ? Theme.of(context).colorScheme.primary
-                        : Theme.of(context)
-                            .textTheme
-                            .bodyMedium
-                            ?.color
-                            ?.withOpacity(0.6),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: const [
+                      Text(
+                        '帮助中心',
+                        style: TextStyle(
+                            fontSize: 13, fontWeight: FontWeight.w600),
+                      ),
+                      SizedBox(height: 2),
+                      Text(
+                        '获取使用帮助与支持',
+                        style: TextStyle(
+                            fontSize: 11, color: Color(0xFF9CA3AF)),
+                      ),
+                    ],
                   ),
                 ),
+                const Icon(Icons.chevron_right,
+                    size: 18, color: Color(0xFF9CA3AF)),
               ],
             ),
           ),
         ));
   }
 
-  buildRightPane(BuildContext context) {
+  // ---------------------------------------------------------------------------
+  // New layout: Right pane
+  // ---------------------------------------------------------------------------
+
+  Widget buildRightPane(BuildContext context) {
     return Container(
-      color: Theme.of(context).scaffoldBackgroundColor,
-      child: ConnectionPage(),
+      color: const Color(0xFFF3F5F8),
+      child: ValueListenableBuilder<String>(
+        valueListenable: _selectedNav,
+        builder: (_, selected, __) {
+          Widget body;
+          if (selected == 'devices') {
+            body = _comingSoonPanel('我的设备', Icons.desktop_windows_outlined);
+          } else if (selected == 'file') {
+            body = _comingSoonPanel(
+                translate('File Transfer'), Icons.folder_outlined);
+          } else {
+            body = _homeRightPane(context);
+          }
+          return Column(
+            children: [
+              Expanded(child: body),
+              const Divider(height: 1, color: Color(0xFFEDEFF3)),
+              Container(
+                color: Colors.white,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                child: Row(
+                  children: [
+                    Expanded(child: OnlineStatusWidget()),
+                  ],
+                ),
+              ),
+            ],
+          );
+        },
+      ),
     );
   }
+
+  Widget _homeRightPane(BuildContext context) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Expanded(flex: 3, child: _buildControlRemoteCard(context)),
+                const SizedBox(width: 16),
+                Expanded(flex: 2, child: _buildLocalDeviceCard(context)),
+              ],
+            ),
+          ),
+          const SizedBox(height: 20),
+          Obx(() => Padding(
+                padding: const EdgeInsets.only(bottom: 16),
+                child: buildHelpCards(stateGlobal.updateUrl.value),
+              )),
+          _buildRecentPeersSection(context),
+        ],
+      ),
+    );
+  }
+
+  Widget _comingSoonPanel(String title, IconData icon) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(icon, size: 56, color: const Color(0xFFCBD5E1)),
+          const SizedBox(height: 16),
+          Text(
+            title,
+            style: const TextStyle(
+                fontSize: 18, fontWeight: FontWeight.w600),
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            '功能即将上线，敬请期待',
+            style: TextStyle(fontSize: 13, color: Color(0xFF9CA3AF)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildControlRemoteCard(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(22),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 12,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            translate('Control Remote Desktop'),
+            style:
+                const TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
+          ),
+          const SizedBox(height: 6),
+          const Text(
+            '输入对方设备 ID，立即发起远程连接',
+            style: TextStyle(fontSize: 12, color: Color(0xFF6B7280)),
+          ),
+          const SizedBox(height: 18),
+          Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: _homeRemoteIdController,
+                  inputFormatters: [IDTextInputFormatter()],
+                  style: const TextStyle(fontSize: 15),
+                  decoration: InputDecoration(
+                    hintText: '输入设备 ID',
+                    hintStyle: const TextStyle(
+                        color: Color(0xFF9CA3AF), fontSize: 14),
+                    isDense: true,
+                    contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 14, vertical: 14),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide:
+                          const BorderSide(color: Color(0xFFE5E7EB)),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide:
+                          const BorderSide(color: Color(0xFFE5E7EB)),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide:
+                          BorderSide(color: MyTheme.accent, width: 1.4),
+                    ),
+                  ),
+                  onSubmitted: (_) => _doConnect(),
+                ),
+              ),
+              const SizedBox(width: 12),
+              SizedBox(
+                height: 46,
+                child: ElevatedButton(
+                  onPressed: _doConnect,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: MyTheme.accent,
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 28),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  child: Text(
+                    translate('Connect'),
+                    style: const TextStyle(
+                        fontSize: 14, fontWeight: FontWeight.w600),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _doConnect() {
+    final id = _homeRemoteIdController.id;
+    if (id.isEmpty) return;
+    connect(context, id);
+  }
+
+  Widget _buildLocalDeviceCard(BuildContext context) {
+    return ChangeNotifierProvider.value(
+      value: gFFI.serverModel,
+      child: Consumer<ServerModel>(
+        builder: (context, model, _) {
+          final showOneTime = model.approveMode != 'click' &&
+              model.verificationMethod != kUsePermanentPassword;
+          return Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(14),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.04),
+                  blurRadius: 12,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(
+                  children: const [
+                    Text('本机 ID',
+                        style: TextStyle(
+                            fontSize: 14,
+                            color: Color(0xFF374151),
+                            fontWeight: FontWeight.w600)),
+                    SizedBox(width: 4),
+                    Icon(Icons.info_outline,
+                        size: 14, color: Color(0xFF9CA3AF)),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                GestureDetector(
+                  onDoubleTap: () {
+                    Clipboard.setData(
+                        ClipboardData(text: model.serverId.text));
+                    showToast(translate('Copied'));
+                  },
+                  child: Text(
+                    model.serverId.text.isEmpty ? '---' : model.serverId.text,
+                    style: TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.bold,
+                      color: MyTheme.accent,
+                      letterSpacing: 1.5,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 14),
+                Row(
+                  children: const [
+                    Text('一次性密码',
+                        style: TextStyle(
+                            fontSize: 12, color: Color(0xFF6B7280))),
+                    SizedBox(width: 4),
+                    Icon(Icons.info_outline,
+                        size: 12, color: Color(0xFF9CA3AF)),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                Row(
+                  children: [
+                    Expanded(
+                      child: GestureDetector(
+                        onDoubleTap: () {
+                          if (showOneTime) {
+                            Clipboard.setData(ClipboardData(
+                                text: model.serverPasswd.text));
+                            showToast(translate('Copied'));
+                          }
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 10),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF5F6F8),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Obx(() => Text(
+                                showOneTime && !_passwordVisible.value
+                                    ? '•' *
+                                        (model.serverPasswd.text.isEmpty
+                                            ? 6
+                                            : model.serverPasswd.text.length)
+                                    : (model.serverPasswd.text.isEmpty
+                                        ? '------'
+                                        : model.serverPasswd.text),
+                                style: const TextStyle(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w600),
+                              )),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    if (showOneTime)
+                      Obx(() => _smallIconBtn(
+                            _passwordVisible.value
+                                ? Icons.visibility_outlined
+                                : Icons.visibility_off_outlined,
+                            tooltip: _passwordVisible.value
+                                ? translate('Hide Password')
+                                : translate('Show Password'),
+                            onTap: () => _passwordVisible.toggle(),
+                          )),
+                    if (showOneTime)
+                      _smallIconBtn(
+                        Icons.refresh,
+                        tooltip: translate('Refresh Password'),
+                        onTap: () => bind.mainUpdateTemporaryPassword(),
+                      ),
+                    _smallIconBtn(
+                      Icons.content_copy_outlined,
+                      tooltip: translate('Copy'),
+                      onTap: () {
+                        Clipboard.setData(ClipboardData(
+                            text: model.serverPasswd.text));
+                        showToast(translate('Copied'));
+                      },
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _smallIconBtn(IconData icon,
+      {required VoidCallback onTap, String? tooltip}) {
+    final btn = Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(6),
+        child: Container(
+          margin: const EdgeInsets.only(left: 4),
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            border: Border.all(color: const Color(0xFFE5E7EB)),
+            borderRadius: BorderRadius.circular(6),
+          ),
+          child: Icon(icon, size: 16, color: const Color(0xFF6B7280)),
+        ),
+      ),
+    );
+    return tooltip != null ? Tooltip(message: tooltip, child: btn) : btn;
+  }
+
+  Widget _buildRecentPeersSection(BuildContext context) {
+    return ChangeNotifierProvider.value(
+      value: gFFI.recentPeersModel,
+      child: Consumer<Peers>(
+        builder: (_, peers, __) {
+          bind.mainLoadRecentPeers();
+          final items = peers.peers;
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  const Text('最近连接',
+                      style: TextStyle(
+                          fontSize: 16, fontWeight: FontWeight.w700)),
+                  const SizedBox(width: 6),
+                  Text('(${items.length})',
+                      style: const TextStyle(
+                          fontSize: 14, color: Color(0xFF6B7280))),
+                ],
+              ),
+              const SizedBox(height: 12),
+              if (items.isEmpty)
+                Container(
+                  padding: const EdgeInsets.all(36),
+                  alignment: Alignment.center,
+                  child: const Text(
+                    '暂无最近连接',
+                    style: TextStyle(color: Color(0xFF9CA3AF)),
+                  ),
+                )
+              else
+                Wrap(
+                  spacing: 16,
+                  runSpacing: 16,
+                  children: items
+                      .take(8)
+                      .map((p) => SizedBox(
+                            width: 240,
+                            child: _bigPeerCard(p),
+                          ))
+                      .toList(),
+                ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _bigPeerCard(Peer peer) {
+    final displayName = peer.alias.isNotEmpty
+        ? peer.alias
+        : (peer.username.isNotEmpty && peer.hostname.isNotEmpty
+            ? '${peer.username}@${peer.hostname}'
+            : (peer.hostname.isNotEmpty ? peer.hostname : peer.id));
+    final platformLabel = peer.platform.isEmpty ? '未知' : peer.platform;
+    final online = peer.online;
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFEFF4FF),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(_platformIcon(peer.platform),
+                    color: MyTheme.accent, size: 22),
+              ),
+              const Spacer(),
+              Container(
+                width: 7,
+                height: 7,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: online
+                      ? const Color(0xFF22C55E)
+                      : const Color(0xFFCBD5E1),
+                ),
+              ),
+              const SizedBox(width: 6),
+              Text(
+                online ? translate('Online') : translate('Offline'),
+                style: TextStyle(
+                  fontSize: 11,
+                  color: online
+                      ? const Color(0xFF22C55E)
+                      : const Color(0xFF9CA3AF),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          Text(
+            displayName,
+            style: const TextStyle(
+                fontSize: 14, fontWeight: FontWeight.w600),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+          const SizedBox(height: 6),
+          Container(
+            padding:
+                const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+            decoration: BoxDecoration(
+              color: const Color(0xFFEFF4FF),
+              borderRadius: BorderRadius.circular(4),
+            ),
+            child: Text(
+              platformLabel,
+              style:
+                  TextStyle(fontSize: 10, color: MyTheme.accent),
+            ),
+          ),
+          const SizedBox(height: 10),
+          Text(
+            peer.id,
+            style: const TextStyle(
+                fontSize: 12, color: Color(0xFF6B7280)),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: SizedBox(
+                  height: 34,
+                  child: ElevatedButton(
+                    onPressed: () => connect(context, peer.id),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: MyTheme.accent,
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                      padding: EdgeInsets.zero,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    child: Text(translate('Connect'),
+                        style: const TextStyle(fontSize: 13)),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // Legacy ID/password board kept for compatibility; no longer used in build.
+  // ---------------------------------------------------------------------------
 
   buildIDBoard(BuildContext context) {
     final model = gFFI.serverModel;
@@ -1006,6 +1776,9 @@ class _DesktopHomePageState extends State<DesktopHomePage>
     _uniLinksSubscription?.cancel();
     Get.delete<RxBool>(tag: 'stop-service');
     _updateTimer?.cancel();
+    _selectedNav.dispose();
+    _sidebarPeerTab.dispose();
+    _homeRemoteIdController.dispose();
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
