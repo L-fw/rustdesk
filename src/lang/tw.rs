@@ -846,5 +846,16 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
         ("Memory", "記憶體"),
         ("Hide Password", "隱藏密碼"),
         ("Show Password", "顯示密碼"),
+        ("Logged in", "已登入"),
+        ("Not logged in", "未登入"),
+        ("My devices", "我的裝置"),
+        ("File Transfer", "檔案傳輸"),
+        ("Help Center", "說明中心"),
+        ("Get help and support", "取得使用說明與支援"),
+        ("Coming soon", "功能即將上線，敬請期待"),
+        ("home_control_remote_tip", "輸入對方裝置 ID，立即發起遠端連線"),
+        ("No recent sessions", "暫無最近連線"),
+        ("No matching devices", "未找到符合的裝置"),
+        ("Unknown", "未知"),
     ].iter().cloned().collect();
 }

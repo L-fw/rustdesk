@@ -10,6 +10,10 @@ import 'package:flutter_hbb/common/app_auth_service.dart';
 import 'package:flutter_hbb/common/formatter/id_formatter.dart';
 import 'package:flutter_hbb/common/widgets/animated_rotation_widget.dart';
 import 'package:flutter_hbb/common/widgets/custom_password.dart';
+import 'package:flutter_hbb/common/widgets/peer_card.dart';
+import 'package:flutter_hbb/common/widgets/peer_tab_page.dart';
+import 'package:flutter_hbb/common/widgets/peers_view.dart';
+import 'package:flutter_hbb/models/peer_tab_model.dart';
 import 'package:flutter_hbb/consts.dart';
 import 'package:flutter_hbb/desktop/pages/connection_page.dart';
 import 'package:flutter_hbb/desktop/pages/desktop_setting_page.dart';
@@ -65,7 +69,6 @@ class _DesktopHomePageState extends State<DesktopHomePage>
 
   // New layout state
   final ValueNotifier<String> _selectedNav = ValueNotifier('home');
-  final ValueNotifier<int> _sidebarPeerTab = ValueNotifier(0);
   final IDTextEditingController _homeRemoteIdController =
       IDTextEditingController();
 
@@ -113,8 +116,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
             child: _buildSidebarUserCard(context),
           ),
           _buildSidebarNav(context),
-          const SizedBox(height: 8),
-          Expanded(child: _buildSidebarPeersBox(context)),
+          const Spacer(),
           if (!bind.isDisableSettings())
             Padding(
               padding: const EdgeInsets.fromLTRB(14, 8, 14, 14),
@@ -186,7 +188,9 @@ class _DesktopHomePageState extends State<DesktopHomePage>
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: Text(
-                          loggedIn ? '已登录' : '未登录',
+                          loggedIn
+                              ? translate('Logged in')
+                              : translate('Not logged in'),
                           style: TextStyle(
                             fontSize: 10,
                             color: loggedIn
@@ -214,10 +218,13 @@ class _DesktopHomePageState extends State<DesktopHomePage>
           key: _childKey,
           children: [
             _navItem(Icons.home_outlined, translate('Home'), 'home', selected),
-            _navItem(
-                Icons.desktop_windows_outlined, '我的设备', 'devices', selected),
-            _navItem(
-                Icons.folder_outlined, translate('File Transfer'), 'file',
+            _navItem(Icons.desktop_windows_outlined, translate('My devices'),
+                'devices', selected),
+            _navItem(Icons.history, translate('Recent sessions'), 'recent',
+                selected),
+            _navItem(Icons.star_border, translate('Favorites'), 'favorites',
+                selected),
+            _navItem(Icons.folder_outlined, translate('File Transfer'), 'file',
                 selected),
             if (!bind.isDisableSettings())
               _navItem(Icons.settings_outlined, translate('Settings'),
@@ -281,140 +288,6 @@ class _DesktopHomePageState extends State<DesktopHomePage>
     );
   }
 
-  Widget _buildSidebarPeersBox(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
-      decoration: BoxDecoration(
-        color: const Color(0xFFFAFBFC),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFEDEFF3)),
-      ),
-      child: ValueListenableBuilder<int>(
-        valueListenable: _sidebarPeerTab,
-        builder: (_, tab, __) {
-          return Column(
-            children: [
-              Row(
-                children: [
-                  Expanded(child: _peerTabBtn(translate('Recent Sessions'), 0, tab)),
-                  Expanded(child: _peerTabBtn(translate('Favorites'), 1, tab)),
-                ],
-              ),
-              const Divider(height: 1, color: Color(0xFFEDEFF3)),
-              Expanded(child: _sidebarPeerList(tab == 0)),
-            ],
-          );
-        },
-      ),
-    );
-  }
-
-  Widget _peerTabBtn(String label, int idx, int current) {
-    final active = idx == current;
-    return InkWell(
-      onTap: () => _sidebarPeerTab.value = idx,
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 10),
-        decoration: BoxDecoration(
-          border: Border(
-            bottom: BorderSide(
-              color: active ? MyTheme.accent : Colors.transparent,
-              width: 2,
-            ),
-          ),
-        ),
-        alignment: Alignment.center,
-        child: Text(
-          label,
-          style: TextStyle(
-            fontSize: 13,
-            fontWeight: active ? FontWeight.w600 : FontWeight.w500,
-            color: active ? MyTheme.accent : const Color(0xFF6B7280),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _sidebarPeerList(bool recent) {
-    final peers = recent ? gFFI.recentPeersModel : gFFI.favoritePeersModel;
-    if (recent) {
-      bind.mainLoadRecentPeers();
-    } else {
-      bind.mainLoadFavPeers();
-    }
-    return AnimatedBuilder(
-      animation: peers,
-      builder: (_, __) {
-        if (peers.peers.isEmpty) {
-          return Center(
-            child: Text(
-              recent ? '暂无最近连接' : '暂无收藏',
-              style: const TextStyle(
-                  fontSize: 12, color: Color(0xFF9CA3AF)),
-            ),
-          );
-        }
-        return ListView.separated(
-          padding: const EdgeInsets.symmetric(vertical: 6),
-          itemCount: peers.peers.length,
-          separatorBuilder: (_, __) => const SizedBox(height: 2),
-          itemBuilder: (_, i) => _compactPeerTile(peers.peers[i]),
-        );
-      },
-    );
-  }
-
-  Widget _compactPeerTile(Peer peer) {
-    final displayName = peer.alias.isNotEmpty
-        ? peer.alias
-        : (peer.username.isNotEmpty && peer.hostname.isNotEmpty
-            ? '${peer.username}@${peer.hostname}'
-            : (peer.hostname.isNotEmpty ? peer.hostname : peer.id));
-    return InkWell(
-      onTap: () => connect(context, peer.id),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-        child: Row(
-          children: [
-            Container(
-              width: 28,
-              height: 28,
-              decoration: BoxDecoration(
-                color: const Color(0xFFEFF4FF),
-                borderRadius: BorderRadius.circular(6),
-              ),
-              child: Icon(_platformIcon(peer.platform),
-                  size: 16, color: MyTheme.accent),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    displayName,
-                    style: const TextStyle(
-                        fontSize: 12, fontWeight: FontWeight.w600),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  Text(
-                    peer.id,
-                    style: const TextStyle(
-                        fontSize: 11, color: Color(0xFF9CA3AF)),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   IconData _platformIcon(String platform) {
     final p = platform.toLowerCase();
     if (p.contains('windows')) return Icons.window;
@@ -462,16 +335,16 @@ class _DesktopHomePageState extends State<DesktopHomePage>
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
-                    children: const [
+                    children: [
                       Text(
-                        '帮助中心',
-                        style: TextStyle(
+                        translate('Help Center'),
+                        style: const TextStyle(
                             fontSize: 13, fontWeight: FontWeight.w600),
                       ),
-                      SizedBox(height: 2),
+                      const SizedBox(height: 2),
                       Text(
-                        '获取使用帮助与支持',
-                        style: TextStyle(
+                        translate('Get help and support'),
+                        style: const TextStyle(
                             fontSize: 11, color: Color(0xFF9CA3AF)),
                       ),
                     ],
@@ -497,7 +370,14 @@ class _DesktopHomePageState extends State<DesktopHomePage>
         builder: (_, selected, __) {
           Widget body;
           if (selected == 'devices') {
-            body = _comingSoonPanel('我的设备', Icons.desktop_windows_outlined);
+            body = _comingSoonPanel(
+                translate('My devices'), Icons.desktop_windows_outlined);
+          } else if (selected == 'recent') {
+            body = _comingSoonPanel(
+                translate('Recent sessions'), Icons.history);
+          } else if (selected == 'favorites') {
+            body =
+                _comingSoonPanel(translate('Favorites'), Icons.star_border);
           } else if (selected == 'file') {
             body = _comingSoonPanel(
                 translate('File Transfer'), Icons.folder_outlined);
@@ -565,9 +445,9 @@ class _DesktopHomePageState extends State<DesktopHomePage>
                 fontSize: 18, fontWeight: FontWeight.w600),
           ),
           const SizedBox(height: 8),
-          const Text(
-            '功能即将上线，敬请期待',
-            style: TextStyle(fontSize: 13, color: Color(0xFF9CA3AF)),
+          Text(
+            translate('Coming soon'),
+            style: const TextStyle(fontSize: 13, color: Color(0xFF9CA3AF)),
           ),
         ],
       ),
@@ -597,9 +477,9 @@ class _DesktopHomePageState extends State<DesktopHomePage>
                 const TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
           ),
           const SizedBox(height: 6),
-          const Text(
-            '输入对方设备 ID，立即发起远程连接',
-            style: TextStyle(fontSize: 12, color: Color(0xFF6B7280)),
+          Text(
+            translate('home_control_remote_tip'),
+            style: const TextStyle(fontSize: 12, color: Color(0xFF6B7280)),
           ),
           const SizedBox(height: 18),
           Row(
@@ -610,7 +490,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
                   inputFormatters: [IDTextInputFormatter()],
                   style: const TextStyle(fontSize: 15),
                   decoration: InputDecoration(
-                    hintText: '输入设备 ID',
+                    hintText: translate('Enter Remote ID'),
                     hintStyle: const TextStyle(
                         color: Color(0xFF9CA3AF), fontSize: 14),
                     isDense: true,
@@ -695,14 +575,14 @@ class _DesktopHomePageState extends State<DesktopHomePage>
               mainAxisSize: MainAxisSize.min,
               children: [
                 Row(
-                  children: const [
-                    Text('本机 ID',
-                        style: TextStyle(
+                  children: [
+                    Text(translate('ID'),
+                        style: const TextStyle(
                             fontSize: 14,
                             color: Color(0xFF374151),
                             fontWeight: FontWeight.w600)),
-                    SizedBox(width: 4),
-                    Icon(Icons.info_outline,
+                    const SizedBox(width: 4),
+                    const Icon(Icons.info_outline,
                         size: 14, color: Color(0xFF9CA3AF)),
                   ],
                 ),
@@ -725,12 +605,12 @@ class _DesktopHomePageState extends State<DesktopHomePage>
                 ),
                 const SizedBox(height: 14),
                 Row(
-                  children: const [
-                    Text('一次性密码',
-                        style: TextStyle(
+                  children: [
+                    Text(translate('One-time Password'),
+                        style: const TextStyle(
                             fontSize: 12, color: Color(0xFF6B7280))),
-                    SizedBox(width: 4),
-                    Icon(Icons.info_outline,
+                    const SizedBox(width: 4),
+                    const Icon(Icons.info_outline,
                         size: 12, color: Color(0xFF9CA3AF)),
                   ],
                 ),
@@ -828,51 +708,102 @@ class _DesktopHomePageState extends State<DesktopHomePage>
 
   Widget _buildRecentPeersSection(BuildContext context) {
     return ChangeNotifierProvider.value(
-      value: gFFI.recentPeersModel,
-      child: Consumer<Peers>(
-        builder: (_, peers, __) {
-          bind.mainLoadRecentPeers();
-          final items = peers.peers;
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
+      value: gFFI.peerTabModel,
+      child: ChangeNotifierProvider.value(
+        value: gFFI.recentPeersModel,
+        child: Consumer<Peers>(
+          builder: (_, peers, __) {
+            bind.mainLoadRecentPeers();
+            return Obx(() {
+              final query = peerSearchText.value.trim().toLowerCase();
+              final filtered = query.isEmpty
+                  ? peers.peers
+                  : peers.peers.where((p) {
+                      return p.id.toLowerCase().contains(query) ||
+                          p.username.toLowerCase().contains(query) ||
+                          p.hostname.toLowerCase().contains(query) ||
+                          p.alias.toLowerCase().contains(query);
+                    }).toList();
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('最近连接',
-                      style: TextStyle(
-                          fontSize: 16, fontWeight: FontWeight.w700)),
-                  const SizedBox(width: 6),
-                  Text('(${items.length})',
-                      style: const TextStyle(
-                          fontSize: 14, color: Color(0xFF6B7280))),
-                ],
-              ),
-              const SizedBox(height: 12),
-              if (items.isEmpty)
-                Container(
-                  padding: const EdgeInsets.all(36),
-                  alignment: Alignment.center,
-                  child: const Text(
-                    '暂无最近连接',
-                    style: TextStyle(color: Color(0xFF9CA3AF)),
+                  Row(
+                    children: [
+                      Text(translate('Recent sessions'),
+                          style: const TextStyle(
+                              fontSize: 16, fontWeight: FontWeight.w700)),
+                      const SizedBox(width: 6),
+                      Text('(${filtered.length})',
+                          style: const TextStyle(
+                              fontSize: 14, color: Color(0xFF6B7280))),
+                      const Spacer(),
+                      const PeerSearchBar(),
+                      const SizedBox(width: 8),
+                      _multiSelectToggle(context),
+                      const SizedBox(width: 4),
+                      const PeerViewDropdown(),
+                    ],
                   ),
-                )
-              else
-                Wrap(
-                  spacing: 16,
-                  runSpacing: 16,
-                  children: items
-                      .take(8)
-                      .map((p) => SizedBox(
-                            width: 240,
-                            child: _bigPeerCard(p),
-                          ))
-                      .toList(),
-                ),
-            ],
-          );
-        },
+                  const SizedBox(height: 12),
+                  if (filtered.isEmpty)
+                    Container(
+                      padding: const EdgeInsets.all(36),
+                      alignment: Alignment.center,
+                      child: Text(
+                        query.isEmpty
+                            ? translate('No recent sessions')
+                            : translate('No matching devices'),
+                        style: const TextStyle(color: Color(0xFF9CA3AF)),
+                      ),
+                    )
+                  else
+                    Wrap(
+                      spacing: 16,
+                      runSpacing: 16,
+                      children: filtered
+                          .take(12)
+                          .map((p) => SizedBox(
+                                width: 240,
+                                child: _bigPeerCard(p),
+                              ))
+                          .toList(),
+                    ),
+                ],
+              );
+            });
+          },
+        ),
       ),
+    );
+  }
+
+  Widget _multiSelectToggle(BuildContext context) {
+    final RxBool hover = false.obs;
+    final model = Provider.of<PeerTabModel>(context, listen: false);
+    return Tooltip(
+      message: translate('Select'),
+      child: Obx(() => Material(
+            color: Colors.transparent,
+            child: InkWell(
+              borderRadius: BorderRadius.circular(6),
+              onHover: (v) => hover.value = v,
+              onTap: () => model.setMultiSelectionMode(true),
+              child: Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: hover.value
+                      ? const Color(0xFFEFF4FF)
+                      : Colors.transparent,
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Icon(
+                  Icons.check_box_outlined,
+                  size: 18,
+                  color: Theme.of(context).textTheme.titleLarge?.color,
+                ),
+              ),
+            ),
+          )),
     );
   }
 
@@ -882,7 +813,8 @@ class _DesktopHomePageState extends State<DesktopHomePage>
         : (peer.username.isNotEmpty && peer.hostname.isNotEmpty
             ? '${peer.username}@${peer.hostname}'
             : (peer.hostname.isNotEmpty ? peer.hostname : peer.id));
-    final platformLabel = peer.platform.isEmpty ? '未知' : peer.platform;
+    final platformLabel =
+        peer.platform.isEmpty ? translate('Unknown') : peer.platform;
     final online = peer.online;
     return Container(
       padding: const EdgeInsets.all(16),
@@ -1777,7 +1709,6 @@ class _DesktopHomePageState extends State<DesktopHomePage>
     Get.delete<RxBool>(tag: 'stop-service');
     _updateTimer?.cancel();
     _selectedNav.dispose();
-    _sidebarPeerTab.dispose();
     _homeRemoteIdController.dispose();
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();

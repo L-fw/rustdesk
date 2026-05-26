@@ -847,5 +847,16 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
         ("Your version is up to date", "当前已是最新版本！"),
         ("Hide Password", "隐藏密码"),
         ("Show Password", "显示密码"),
+        ("Logged in", "已登录"),
+        ("Not logged in", "未登录"),
+        ("My devices", "我的设备"),
+        ("File Transfer", "文件传输"),
+        ("Help Center", "帮助中心"),
+        ("Get help and support", "获取使用帮助与支持"),
+        ("Coming soon", "功能即将上线，敬请期待"),
+        ("home_control_remote_tip", "输入对方设备 ID，立即发起远程连接"),
+        ("No recent sessions", "暂无最近连接"),
+        ("No matching devices", "未找到匹配的设备"),
+        ("Unknown", "未知"),
     ].iter().cloned().collect();
 }

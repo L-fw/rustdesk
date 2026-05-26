@@ -371,5 +371,16 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
         ("please_enter_password", "Please enter your password"),
         ("confirm_to_logout", "Are you sure you want to logout?"),
         ("Confirm_logout", "Logout"),
+        ("Logged in", "Logged in"),
+        ("Not logged in", "Not logged in"),
+        ("My devices", "My devices"),
+        ("File Transfer", "File Transfer"),
+        ("Help Center", "Help Center"),
+        ("Get help and support", "Get help and support"),
+        ("Coming soon", "Coming soon"),
+        ("home_control_remote_tip", "Enter the remote device ID to start a remote session"),
+        ("No recent sessions", "No recent sessions"),
+        ("No matching devices", "No matching devices"),
+        ("Unknown", "Unknown"),
     ].iter().cloned().collect();
 }
