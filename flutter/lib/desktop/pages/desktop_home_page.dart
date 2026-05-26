@@ -816,111 +816,218 @@ class _DesktopHomePageState extends State<DesktopHomePage>
     final platformLabel =
         peer.platform.isEmpty ? translate('Unknown') : peer.platform;
     final online = peer.online;
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
+
+    return Consumer<PeerTabModel>(
+      builder: (context, model, _) {
+        final isMultiSelect = model.multiSelectionMode;
+        final isSelected =
+            isMultiSelect && model.selectedPeers.any((p) => p.id == peer.id);
+
+        void handleTap() {
+          if (isMultiSelect) {
+            model.select(peer);
+          } else {
+            connect(context, peer.id);
+          }
+        }
+
+        return GestureDetector(
+          onTap: handleTap,
+          child: Stack(
+            clipBehavior: Clip.none,
             children: [
-              Container(
-                width: 40,
-                height: 40,
+              // ── Card body ──────────────────────────────────────────
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 150),
+                padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFEFF4FF),
-                  borderRadius: BorderRadius.circular(8),
+                  color: isSelected
+                      ? const Color(0xFFEFF4FF)
+                      : Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: isSelected
+                        ? MyTheme.accent
+                        : Colors.transparent,
+                    width: 1.5,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.04),
+                      blurRadius: 10,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
                 ),
-                child: Icon(_platformIcon(peer.platform),
-                    color: MyTheme.accent, size: 22),
-              ),
-              const Spacer(),
-              Container(
-                width: 7,
-                height: 7,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: online
-                      ? const Color(0xFF22C55E)
-                      : const Color(0xFFCBD5E1),
-                ),
-              ),
-              const SizedBox(width: 6),
-              Text(
-                online ? translate('Online') : translate('Offline'),
-                style: TextStyle(
-                  fontSize: 11,
-                  color: online
-                      ? const Color(0xFF22C55E)
-                      : const Color(0xFF9CA3AF),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 14),
-          Text(
-            displayName,
-            style: const TextStyle(
-                fontSize: 14, fontWeight: FontWeight.w600),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-          const SizedBox(height: 6),
-          Container(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-            decoration: BoxDecoration(
-              color: const Color(0xFFEFF4FF),
-              borderRadius: BorderRadius.circular(4),
-            ),
-            child: Text(
-              platformLabel,
-              style:
-                  TextStyle(fontSize: 10, color: MyTheme.accent),
-            ),
-          ),
-          const SizedBox(height: 10),
-          Text(
-            peer.id,
-            style: const TextStyle(
-                fontSize: 12, color: Color(0xFF6B7280)),
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(
-                child: SizedBox(
-                  height: 34,
-                  child: ElevatedButton(
-                    onPressed: () => connect(context, peer.id),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: MyTheme.accent,
-                      foregroundColor: Colors.white,
-                      elevation: 0,
-                      padding: EdgeInsets.zero,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          width: 40,
+                          height: 40,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFEFF4FF),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Icon(_platformIcon(peer.platform),
+                              color: MyTheme.accent, size: 22),
+                        ),
+                        const Spacer(),
+                        // Leave room for the checkbox when in multi-select
+                        if (isMultiSelect) const SizedBox(width: 28),
+                        Container(
+                          width: 7,
+                          height: 7,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: online
+                                ? const Color(0xFF22C55E)
+                                : const Color(0xFFCBD5E1),
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          online ? translate('Online') : translate('Offline'),
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: online
+                                ? const Color(0xFF22C55E)
+                                : const Color(0xFF9CA3AF),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 14),
+                    Text(
+                      displayName,
+                      style: const TextStyle(
+                          fontSize: 14, fontWeight: FontWeight.w600),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 6),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFEFF4FF),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Text(
+                        platformLabel,
+                        style: TextStyle(fontSize: 10, color: MyTheme.accent),
                       ),
                     ),
-                    child: Text(translate('Connect'),
-                        style: const TextStyle(fontSize: 13)),
-                  ),
+                    const SizedBox(height: 10),
+                    Text(
+                      peer.id,
+                      style: const TextStyle(
+                          fontSize: 12, color: Color(0xFF6B7280)),
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: SizedBox(
+                            height: 34,
+                            child: ElevatedButton(
+                              onPressed: isMultiSelect
+                                  ? () => model.select(peer)
+                                  : () => connect(context, peer.id),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: isSelected
+                                    ? MyTheme.accent.withOpacity(0.85)
+                                    : MyTheme.accent,
+                                foregroundColor: Colors.white,
+                                elevation: 0,
+                                padding: EdgeInsets.zero,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                              ),
+                              child: Text(
+                                isMultiSelect
+                                    ? (isSelected
+                                        ? translate('Selected')
+                                        : translate('Select'))
+                                    : translate('Connect'),
+                                style: const TextStyle(fontSize: 13),
+                              ),
+                            ),
+                          ),
+                        ),
+                        // Exit multi-select mode button (only on selected cards)
+                        if (isMultiSelect && isSelected) ...[
+                          const SizedBox(width: 8),
+                          SizedBox(
+                            height: 34,
+                            width: 34,
+                            child: Tooltip(
+                              message: translate('Cancel'),
+                              child: OutlinedButton(
+                                onPressed: () =>
+                                    model.setMultiSelectionMode(false),
+                                style: OutlinedButton.styleFrom(
+                                  padding: EdgeInsets.zero,
+                                  side: const BorderSide(
+                                      color: Color(0xFFE5E7EB)),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                ),
+                                child: const Icon(Icons.close,
+                                    size: 16, color: Color(0xFF6B7280)),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ],
                 ),
               ),
+
+              // ── Checkbox overlay (top-right corner) ───────────────
+              if (isMultiSelect)
+                Positioned(
+                  top: 8,
+                  right: 8,
+                  child: GestureDetector(
+                    onTap: () => model.select(peer),
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 150),
+                      width: 22,
+                      height: 22,
+                      decoration: BoxDecoration(
+                        color: isSelected ? MyTheme.accent : Colors.white,
+                        borderRadius: BorderRadius.circular(6),
+                        border: Border.all(
+                          color: isSelected
+                              ? MyTheme.accent
+                              : const Color(0xFFD1D5DB),
+                          width: 1.5,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.08),
+                            blurRadius: 4,
+                            offset: const Offset(0, 1),
+                          ),
+                        ],
+                      ),
+                      child: isSelected
+                          ? const Icon(Icons.check,
+                              size: 14, color: Colors.white)
+                          : null,
+                    ),
+                  ),
+                ),
             ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 
