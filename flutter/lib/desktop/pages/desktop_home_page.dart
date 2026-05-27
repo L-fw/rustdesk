@@ -67,7 +67,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
   bool _loginStatusDialogShowing = false;
 
   final RxBool _editHover = false.obs;
-  final RxBool _passwordVisible = true.obs;
+  final RxBool _passwordVisible = false.obs;
   final RxBool _block = false.obs;
 
   final GlobalKey _childKey = GlobalKey();
@@ -568,20 +568,17 @@ class _DesktopHomePageState extends State<DesktopHomePage>
       ),
       child: Tooltip(
         message: translate('More'),
-        child: StatefulBuilder(
-          builder: (context, _) {
-            var offset = Offset.zero;
+        child: Builder(
+          builder: (btnContext) {
             return Obx(() => InkWell(
                   borderRadius: BorderRadius.circular(8),
-                  onTapDown: (e) => offset = e.globalPosition,
                   onTap: () async {
                     _connectMenuOpen.value = true;
-                    final x = offset.dx;
-                    final y = offset.dy;
+                    final pos = _menuPositionFromButton(btnContext);
                     await mod_menu
                         .showMenu(
                           context: context,
-                          position: RelativeRect.fromLTRB(x, y, x, y),
+                          position: pos,
                           elevation: 8,
                           items: [
                             (
@@ -771,45 +768,57 @@ class _DesktopHomePageState extends State<DesktopHomePage>
   }
 
   Widget _peerCardMenuButton(BuildContext context, Peer peer) {
-    return StatefulBuilder(
-      builder: (context, _) {
-        var offset = Offset.zero;
-        return Tooltip(
-          message: translate('More'),
-          child: Material(
-            color: Colors.white,
-            shape: RoundedRectangleBorder(
-              side: const BorderSide(color: Color(0xFFE5E7EB)),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: InkWell(
-              borderRadius: BorderRadius.circular(8),
-              onTapDown: (e) => offset = e.globalPosition,
-              onTap: () async {
-                final entries = await RecentPeerCard(peer: peer)
-                    .buildPopupMenuEntry(context);
-                if (entries.isEmpty) return;
-                await mod_menu.showMenu(
-                  context: context,
-                  position: RelativeRect.fromLTRB(
-                      offset.dx, offset.dy, offset.dx, offset.dy),
-                  items: entries,
-                  elevation: 8,
-                );
-              },
-              child: SizedBox(
-                height: 34,
-                width: 34,
-                child: Center(
-                  child: Icon(IconFont.more,
-                      size: 14, color: const Color(0xFF6B7280)),
-                ),
+    return Tooltip(
+      message: translate('More'),
+      child: Material(
+        color: Colors.white,
+        shape: RoundedRectangleBorder(
+          side: const BorderSide(color: Color(0xFFE5E7EB)),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Builder(
+          builder: (btnContext) => InkWell(
+            borderRadius: BorderRadius.circular(8),
+            onTap: () async {
+              final entries = await RecentPeerCard(peer: peer)
+                  .buildPopupMenuEntry(context);
+              if (entries.isEmpty) return;
+              final pos = _menuPositionFromButton(btnContext);
+              await mod_menu.showMenu(
+                context: context,
+                position: pos,
+                items: entries,
+                elevation: 8,
+              );
+            },
+            child: SizedBox(
+              height: 34,
+              width: 34,
+              child: Center(
+                child: Icon(IconFont.more,
+                    size: 14, color: const Color(0xFF6B7280)),
               ),
             ),
           ),
-        );
-      },
+        ),
+      ),
     );
+  }
+
+  RelativeRect _menuPositionFromButton(BuildContext btnContext) {
+    final renderBox = btnContext.findRenderObject() as RenderBox?;
+    final overlay =
+        Overlay.of(btnContext).context.findRenderObject() as RenderBox?;
+    if (renderBox == null || overlay == null) {
+      return RelativeRect.fill;
+    }
+    final topLeft = renderBox.localToGlobal(Offset.zero, ancestor: overlay);
+    final size = renderBox.size;
+    final overlaySize = overlay.size;
+    final left = topLeft.dx;
+    final top = topLeft.dy + size.height;
+    final right = overlaySize.width - (topLeft.dx + size.width);
+    return RelativeRect.fromLTRB(left, top, right, 0);
   }
 
   Widget _smallIconBtn(IconData icon,
