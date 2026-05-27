@@ -78,6 +78,12 @@ class _DesktopHomePageState extends State<DesktopHomePage>
       IDTextEditingController();
   final RxBool _connectMenuOpen = false.obs;
 
+  // Recent sessions page state
+  final TextEditingController _recentSearchCtrl = TextEditingController();
+  final ValueNotifier<String> _recentSearch = ValueNotifier('');
+  final ValueNotifier<String> _recentTimeFilter = ValueNotifier('all');
+  final ValueNotifier<String> _recentTypeFilter = ValueNotifier('all');
+
   @override
   Widget build(BuildContext context) {
     super.build(context);
@@ -379,8 +385,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
             body = _comingSoonPanel(
                 translate('My devices'), Icons.desktop_windows_outlined);
           } else if (selected == 'recent') {
-            body = _comingSoonPanel(
-                translate('Recent sessions'), Icons.history);
+            body = _buildRecentSessionsPage(context);
           } else if (selected == 'favorites') {
             body =
                 _comingSoonPanel(translate('Favorites'), Icons.star_border);
@@ -840,6 +845,502 @@ class _DesktopHomePageState extends State<DesktopHomePage>
       ),
     );
     return tooltip != null ? Tooltip(message: tooltip, child: btn) : btn;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Recent sessions: full table-style page
+  // ---------------------------------------------------------------------------
+
+  Widget _buildRecentSessionsPage(BuildContext context) {
+    return ChangeNotifierProvider.value(
+      value: gFFI.recentPeersModel,
+      child: Consumer<Peers>(
+        builder: (_, peers, __) {
+          bind.mainLoadRecentPeers();
+          return ValueListenableBuilder<String>(
+            valueListenable: _recentSearch,
+            builder: (_, query, __) {
+              return ValueListenableBuilder<String>(
+                valueListenable: _recentTimeFilter,
+                builder: (_, timeFilter, __) {
+                  return ValueListenableBuilder<String>(
+                    valueListenable: _recentTypeFilter,
+                    builder: (_, typeFilter, __) {
+                      final filtered = _filterRecentPeers(
+                          peers.peers, query, timeFilter, typeFilter);
+                      return Padding(
+                        padding: const EdgeInsets.all(20),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _recentSessionsHeader(context, filtered.length),
+                            const SizedBox(height: 14),
+                            _recentSessionsToolbar(context),
+                            const SizedBox(height: 14),
+                            Expanded(
+                              child: _recentSessionsTable(context, filtered),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  );
+                },
+              );
+            },
+          );
+        },
+      ),
+    );
+  }
+
+  List<Peer> _filterRecentPeers(List<Peer> all, String query, String timeFilter,
+      String typeFilter) {
+    final q = query.trim().toLowerCase();
+    return all.where((p) {
+      if (q.isNotEmpty) {
+        final matches = p.id.toLowerCase().contains(q) ||
+            p.alias.toLowerCase().contains(q) ||
+            p.hostname.toLowerCase().contains(q) ||
+            p.username.toLowerCase().contains(q);
+        if (!matches) return false;
+      }
+      // Type filter: 'all' / 'desktop' / 'mobile'
+      if (typeFilter != 'all') {
+        final plat = p.platform.toLowerCase();
+        final isMobile = plat.contains('android') || plat.contains('ios');
+        if (typeFilter == 'mobile' && !isMobile) return false;
+        if (typeFilter == 'desktop' && isMobile) return false;
+      }
+      // Time filter is a no-op until we track per-peer last-connect timestamps.
+      return true;
+    }).toList();
+  }
+
+  Widget _recentSessionsHeader(BuildContext context, int count) {
+    return Row(
+      children: [
+        Text(
+          translate('Recent sessions'),
+          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+        ),
+        const SizedBox(width: 8),
+        Text(
+          '($count)',
+          style: const TextStyle(fontSize: 15, color: Color(0xFF6B7280)),
+        ),
+        const Spacer(),
+        _outlineButton(
+          icon: Icons.delete_outline,
+          label: translate('Clear records'),
+          onTap: count == 0 ? null : () => _confirmClearRecent(context),
+        ),
+      ],
+    );
+  }
+
+  Widget _recentSessionsToolbar(BuildContext context) {
+    return Row(
+      children: [
+        Expanded(
+          flex: 3,
+          child: Container(
+            height: 38,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: const Color(0xFFE5E7EB)),
+            ),
+            child: TextField(
+              controller: _recentSearchCtrl,
+              style: const TextStyle(fontSize: 13),
+              onChanged: (v) => _recentSearch.value = v,
+              decoration: InputDecoration(
+                isDense: true,
+                hintText: translate('Search device or ID'),
+                hintStyle: const TextStyle(
+                    color: Color(0xFF9CA3AF), fontSize: 13),
+                prefixIcon: const Icon(Icons.search,
+                    size: 18, color: Color(0xFF9CA3AF)),
+                prefixIconConstraints:
+                    const BoxConstraints(minWidth: 36, minHeight: 36),
+                border: InputBorder.none,
+                contentPadding:
+                    const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(width: 12),
+        _filterDropdown(
+          value: _recentTimeFilter,
+          items: [
+            ('all', translate('All time')),
+            ('today', translate('Today')),
+            ('week', translate('This week')),
+            ('month', translate('This month')),
+          ],
+        ),
+        const SizedBox(width: 12),
+        _filterDropdown(
+          value: _recentTypeFilter,
+          items: [
+            ('all', translate('All types')),
+            ('desktop', translate('Desktop')),
+            ('mobile', translate('Mobile')),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _filterDropdown({
+    required ValueNotifier<String> value,
+    required List<(String, String)> items,
+  }) {
+    return ValueListenableBuilder<String>(
+      valueListenable: value,
+      builder: (_, current, __) {
+        return Container(
+          height: 38,
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: const Color(0xFFE5E7EB)),
+          ),
+          child: DropdownButtonHideUnderline(
+            child: DropdownButton<String>(
+              value: current,
+              isDense: true,
+              icon: const Icon(Icons.keyboard_arrow_down,
+                  size: 18, color: Color(0xFF6B7280)),
+              style: const TextStyle(
+                  fontSize: 13, color: Color(0xFF374151)),
+              items: items
+                  .map((e) => DropdownMenuItem(
+                        value: e.$1,
+                        child: Text(e.$2),
+                      ))
+                  .toList(),
+              onChanged: (v) {
+                if (v != null) value.value = v;
+              },
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _outlineButton({
+    required IconData icon,
+    required String label,
+    VoidCallback? onTap,
+  }) {
+    final enabled = onTap != null;
+    final fg = enabled ? const Color(0xFF374151) : const Color(0xFF9CA3AF);
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(8),
+        onTap: onTap,
+        child: Container(
+          height: 38,
+          padding: const EdgeInsets.symmetric(horizontal: 14),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: const Color(0xFFE5E7EB)),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, size: 16, color: fg),
+              const SizedBox(width: 6),
+              Text(label,
+                  style: TextStyle(
+                      fontSize: 13, fontWeight: FontWeight.w500, color: fg)),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _recentSessionsTable(BuildContext context, List<Peer> peers) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          _recentTableHeader(),
+          const Divider(height: 1, color: Color(0xFFEDEFF3)),
+          Expanded(
+            child: peers.isEmpty
+                ? Center(
+                    child: Text(
+                      translate('No recent sessions'),
+                      style: const TextStyle(color: Color(0xFF9CA3AF)),
+                    ),
+                  )
+                : ListView.separated(
+                    padding: EdgeInsets.zero,
+                    itemCount: peers.length + 1,
+                    separatorBuilder: (_, __) => const Divider(
+                        height: 1, color: Color(0xFFF3F4F6)),
+                    itemBuilder: (_, i) {
+                      if (i == peers.length) return _recentTableFooter();
+                      return _recentTableRow(context, peers[i]);
+                    },
+                  ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _recentTableHeader() {
+    const style = TextStyle(
+      fontSize: 12,
+      fontWeight: FontWeight.w600,
+      color: Color(0xFF6B7280),
+    );
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: const BoxDecoration(
+        color: Color(0xFFF9FAFB),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
+      ),
+      child: Row(
+        children: [
+          Expanded(flex: 3, child: Text(translate('Device'), style: style)),
+          Expanded(flex: 2, child: Text(translate('Target ID'), style: style)),
+          Expanded(
+              flex: 2,
+              child: Text(translate('Connection type'), style: style)),
+          Expanded(flex: 1, child: Text(translate('Status'), style: style)),
+          Expanded(
+              flex: 2, child: Text(translate('Connect time'), style: style)),
+          Expanded(flex: 1, child: Text(translate('Duration'), style: style)),
+          SizedBox(
+            width: 160,
+            child: Text(translate('Actions'), style: style),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _recentTableFooter() {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 14),
+      alignment: Alignment.center,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(Icons.check_circle_outline,
+              size: 14, color: Color(0xFF22C55E)),
+          const SizedBox(width: 6),
+          Text(
+            translate('End of list'),
+            style: const TextStyle(fontSize: 12, color: Color(0xFF9CA3AF)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _recentTableRow(BuildContext context, Peer peer) {
+    final displayName = peer.alias.isNotEmpty
+        ? peer.alias
+        : (peer.username.isNotEmpty && peer.hostname.isNotEmpty
+            ? '${peer.username}@${peer.hostname}'
+            : (peer.hostname.isNotEmpty ? peer.hostname : peer.id));
+    final online = peer.online;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      child: Row(
+        children: [
+          // Device
+          Expanded(
+            flex: 3,
+            child: Row(
+              children: [
+                Container(
+                  width: 30,
+                  height: 30,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFEFF4FF),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Icon(_platformIcon(peer.platform),
+                      color: MyTheme.accent, size: 16),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    displayName,
+                    style: const TextStyle(
+                        fontSize: 13, fontWeight: FontWeight.w500),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          // Target ID
+          Expanded(
+            flex: 2,
+            child: Text(
+              peer.id,
+              style: const TextStyle(
+                  fontSize: 13, color: Color(0xFF374151)),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          // Connection type
+          Expanded(
+            flex: 2,
+            child: Text(
+              translate('Remote control'),
+              style: const TextStyle(
+                  fontSize: 13, color: Color(0xFF374151)),
+            ),
+          ),
+          // Status
+          Expanded(
+            flex: 1,
+            child: Row(
+              children: [
+                Container(
+                  width: 6,
+                  height: 6,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: online
+                        ? const Color(0xFF22C55E)
+                        : const Color(0xFFCBD5E1),
+                  ),
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  online ? translate('Online') : translate('Offline'),
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: online
+                        ? const Color(0xFF22C55E)
+                        : const Color(0xFF9CA3AF),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          // Connect time (not tracked)
+          const Expanded(
+            flex: 2,
+            child: Text('-',
+                style: TextStyle(
+                    fontSize: 13, color: Color(0xFF9CA3AF))),
+          ),
+          // Duration (not tracked)
+          const Expanded(
+            flex: 1,
+            child: Text('-',
+                style: TextStyle(
+                    fontSize: 13, color: Color(0xFF9CA3AF))),
+          ),
+          // Actions
+          SizedBox(
+            width: 160,
+            child: Row(
+              children: [
+                SizedBox(
+                  height: 28,
+                  child: ElevatedButton(
+                    onPressed: () => connect(context, peer.id),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: MyTheme.accent,
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                      padding:
+                          const EdgeInsets.symmetric(horizontal: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                    ),
+                    child: Text(
+                      translate('Reconnect'),
+                      style: const TextStyle(fontSize: 12),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                _recentRowDetailsButton(context, peer),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _recentRowDetailsButton(BuildContext context, Peer peer) {
+    return Builder(
+      builder: (btnContext) => Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(6),
+          onTap: () async {
+            final entries = await RecentPeerCard(peer: peer)
+                .buildPopupMenuEntry(context);
+            if (entries.isEmpty) return;
+            final pos = _menuPositionFromButton(btnContext);
+            await mod_menu.showMenu(
+              context: context,
+              position: pos,
+              items: entries,
+              elevation: 8,
+            );
+          },
+          child: Padding(
+            padding:
+                const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+            child: Text(
+              translate('Details'),
+              style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                  color: MyTheme.accent),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _confirmClearRecent(BuildContext context) async {
+    final peers = gFFI.recentPeersModel.peers.toList();
+    if (peers.isEmpty) return;
+    deleteConfirmDialog(() async {
+      for (final p in peers) {
+        await bind.mainRemovePeer(id: p.id);
+      }
+      bind.mainLoadRecentPeers();
+      showToast(translate('Successful'));
+    }, translate('Clear records'));
   }
 
   Widget _buildRecentPeersSection(BuildContext context) {
@@ -2081,6 +2582,10 @@ class _DesktopHomePageState extends State<DesktopHomePage>
     _updateTimer?.cancel();
     _selectedNav.dispose();
     _homeRemoteIdController.dispose();
+    _recentSearchCtrl.dispose();
+    _recentSearch.dispose();
+    _recentTimeFilter.dispose();
+    _recentTypeFilter.dispose();
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
