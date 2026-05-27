@@ -771,36 +771,44 @@ class _DesktopHomePageState extends State<DesktopHomePage>
   }
 
   Widget _peerCardMenuButton(BuildContext context, Peer peer) {
-    var offset = Offset.zero;
-    return Listener(
-      onPointerDown: (e) => offset = e.position,
-      onPointerUp: (_) async {
-        final entries =
-            await RecentPeerCard(peer: peer).buildPopupMenuEntry(context);
-        if (entries.isEmpty) return;
-        await mod_menu.showMenu(
-          context: context,
-          position: RelativeRect.fromLTRB(offset.dx, offset.dy, offset.dx, offset.dy),
-          items: entries,
-          elevation: 8,
+    return StatefulBuilder(
+      builder: (context, _) {
+        var offset = Offset.zero;
+        return Tooltip(
+          message: translate('More'),
+          child: Material(
+            color: Colors.white,
+            shape: RoundedRectangleBorder(
+              side: const BorderSide(color: Color(0xFFE5E7EB)),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: InkWell(
+              borderRadius: BorderRadius.circular(8),
+              onTapDown: (e) => offset = e.globalPosition,
+              onTap: () async {
+                final entries = await RecentPeerCard(peer: peer)
+                    .buildPopupMenuEntry(context);
+                if (entries.isEmpty) return;
+                await mod_menu.showMenu(
+                  context: context,
+                  position: RelativeRect.fromLTRB(
+                      offset.dx, offset.dy, offset.dx, offset.dy),
+                  items: entries,
+                  elevation: 8,
+                );
+              },
+              child: SizedBox(
+                height: 34,
+                width: 34,
+                child: Center(
+                  child: Icon(IconFont.more,
+                      size: 14, color: const Color(0xFF6B7280)),
+                ),
+              ),
+            ),
+          ),
         );
       },
-      child: Tooltip(
-        message: translate('More'),
-        child: Container(
-          height: 34,
-          width: 34,
-          decoration: BoxDecoration(
-            color: Colors.white,
-            border: Border.all(color: const Color(0xFFE5E7EB)),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Center(
-            child: Icon(IconFont.more,
-                size: 14, color: const Color(0xFF6B7280)),
-          ),
-        ),
-      ),
     );
   }
 
@@ -1085,16 +1093,8 @@ class _DesktopHomePageState extends State<DesktopHomePage>
         final isSelected =
             isMultiSelect && model.selectedPeers.any((p) => p.id == peer.id);
 
-        void handleTap() {
-          if (isMultiSelect) {
-            model.select(peer);
-          } else {
-            connect(context, peer.id);
-          }
-        }
-
         return GestureDetector(
-          onTap: handleTap,
+          onTap: isMultiSelect ? () => model.select(peer) : null,
           child: Stack(
             clipBehavior: Clip.none,
             children: [
