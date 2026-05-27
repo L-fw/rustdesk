@@ -2,6 +2,9 @@
 pub static ref T: std::collections::HashMap<&'static str, &'static str> =
     [
         ("desk_tip", "Your desktop can be accessed with this ID and password."),
+        ("Local ID", "Local ID"),
+        ("local_id_tip", "Your local ID. Share it with others so they can connect to you remotely."),
+        ("one_time_password_tip", "A temporary password. Click the refresh button to regenerate it."),
         ("connecting_status", "Connecting to the Gamwing network..."),
         ("not_ready_status", "Not ready. Please check your connection"),
         ("ID/Relay Server", "ID/Relay server"),

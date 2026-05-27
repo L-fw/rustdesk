@@ -10,6 +10,7 @@ import 'package:flutter_hbb/common/app_auth_service.dart';
 import 'package:flutter_hbb/common/formatter/id_formatter.dart';
 import 'package:flutter_hbb/common/widgets/animated_rotation_widget.dart';
 import 'package:flutter_hbb/common/widgets/custom_password.dart';
+import 'package:flutter_hbb/common/widgets/dialog.dart';
 import 'package:flutter_hbb/common/widgets/peer_card.dart';
 import 'package:flutter_hbb/common/widgets/peer_tab_page.dart';
 import 'package:flutter_hbb/common/widgets/peers_view.dart';
@@ -576,14 +577,17 @@ class _DesktopHomePageState extends State<DesktopHomePage>
               children: [
                 Row(
                   children: [
-                    Text(translate('ID'),
+                    Text(translate('Local ID'),
                         style: const TextStyle(
                             fontSize: 14,
                             color: Color(0xFF374151),
                             fontWeight: FontWeight.w600)),
                     const SizedBox(width: 4),
-                    const Icon(Icons.info_outline,
-                        size: 14, color: Color(0xFF9CA3AF)),
+                    Tooltip(
+                      message: translate('local_id_tip'),
+                      child: const Icon(Icons.info_outline,
+                          size: 14, color: Color(0xFF9CA3AF)),
+                    ),
                   ],
                 ),
                 const SizedBox(height: 6),
@@ -610,8 +614,11 @@ class _DesktopHomePageState extends State<DesktopHomePage>
                         style: const TextStyle(
                             fontSize: 12, color: Color(0xFF6B7280))),
                     const SizedBox(width: 4),
-                    const Icon(Icons.info_outline,
-                        size: 12, color: Color(0xFF9CA3AF)),
+                    Tooltip(
+                      message: translate('one_time_password_tip'),
+                      child: const Icon(Icons.info_outline,
+                          size: 12, color: Color(0xFF9CA3AF)),
+                    ),
                   ],
                 ),
                 const SizedBox(height: 6),
@@ -724,25 +731,35 @@ class _DesktopHomePageState extends State<DesktopHomePage>
                           p.hostname.toLowerCase().contains(query) ||
                           p.alias.toLowerCase().contains(query);
                     }).toList();
+              // Keep the peer tab model's cached list in sync with what we
+              // actually render so "Select All" and the selected-count match.
+              Provider.of<PeerTabModel>(context, listen: false)
+                  .setCurrentTabCachedPeers(filtered);
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    children: [
-                      Text(translate('Recent sessions'),
-                          style: const TextStyle(
-                              fontSize: 16, fontWeight: FontWeight.w700)),
-                      const SizedBox(width: 6),
-                      Text('(${filtered.length})',
-                          style: const TextStyle(
-                              fontSize: 14, color: Color(0xFF6B7280))),
-                      const Spacer(),
-                      const PeerSearchBar(),
-                      const SizedBox(width: 8),
-                      _multiSelectToggle(context),
-                      const SizedBox(width: 4),
-                      const PeerViewDropdown(),
-                    ],
+                  Consumer<PeerTabModel>(
+                    builder: (context, m, _) => m.multiSelectionMode
+                        ? _buildMultiSelectActionBar(context, m, filtered)
+                        : Row(
+                            children: [
+                              Text(translate('Recent sessions'),
+                                  style: const TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w700)),
+                              const SizedBox(width: 6),
+                              Text('(${filtered.length})',
+                                  style: const TextStyle(
+                                      fontSize: 14,
+                                      color: Color(0xFF6B7280))),
+                              const Spacer(),
+                              const PeerSearchBar(),
+                              const SizedBox(width: 8),
+                              _multiSelectToggle(context),
+                              const SizedBox(width: 4),
+                              const PeerViewDropdown(),
+                            ],
+                          ),
                   ),
                   const SizedBox(height: 12),
                   if (filtered.isEmpty)
@@ -772,6 +789,139 @@ class _DesktopHomePageState extends State<DesktopHomePage>
               );
             });
           },
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMultiSelectActionBar(
+      BuildContext context, PeerTabModel model, List<Peer> visible) {
+    final selectedCount = model.selectedPeers.length;
+    final hasSelection = selectedCount > 0;
+    final allSelected = selectedCount > 0 && selectedCount >= visible.length;
+
+    Future<void> doDelete() async {
+      final peers = model.selectedPeers.toList();
+      deleteConfirmDialog(() async {
+        for (var p in peers) {
+          await bind.mainRemovePeer(id: p.id);
+        }
+        bind.mainLoadRecentPeers();
+        model.setMultiSelectionMode(false);
+        showToast(translate('Successful'));
+      }, translate('Delete'));
+    }
+
+    Future<void> doAddToFav() async {
+      final peers = model.selectedPeers.toList();
+      final favs = (await bind.mainGetFav()).toList();
+      for (var p in peers) {
+        if (!favs.contains(p.id)) favs.add(p.id);
+      }
+      await bind.mainStoreFav(favs: favs);
+      model.setMultiSelectionMode(false);
+      showToast(translate('Successful'));
+    }
+
+    void toggleSelectAll() {
+      if (allSelected) {
+        for (final p in visible.toList()) {
+          if (model.isPeerSelected(p.id)) model.select(p);
+        }
+      } else {
+        model.selectAll();
+      }
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: const Color(0xFFEFF4FF),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: MyTheme.accent.withOpacity(0.25)),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.check_circle_outline,
+              size: 18, color: MyTheme.accent),
+          const SizedBox(width: 8),
+          Text(
+            '$selectedCount ${translate('Selected')}',
+            style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: MyTheme.accent),
+          ),
+          const Spacer(),
+          _actionBarButton(
+            icon: allSelected ? Icons.deselect : Icons.select_all,
+            label: allSelected
+                ? translate('Unselect All')
+                : translate('Select All'),
+            onTap: visible.isEmpty ? null : toggleSelectAll,
+          ),
+          const SizedBox(width: 6),
+          _actionBarButton(
+            icon: Icons.star_border,
+            label: translate('Add to Favorites'),
+            onTap: hasSelection ? doAddToFav : null,
+          ),
+          const SizedBox(width: 6),
+          _actionBarButton(
+            icon: Icons.delete_outline,
+            label: translate('Delete'),
+            color: Colors.red.shade600,
+            onTap: hasSelection ? doDelete : null,
+          ),
+          const SizedBox(width: 6),
+          _actionBarButton(
+            icon: Icons.close,
+            label: translate('Close'),
+            onTap: () => model.setMultiSelectionMode(false),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _actionBarButton({
+    required IconData icon,
+    required String label,
+    VoidCallback? onTap,
+    Color? color,
+  }) {
+    final enabled = onTap != null;
+    final fg = enabled
+        ? (color ?? const Color(0xFF374151))
+        : const Color(0xFF9CA3AF);
+    return Tooltip(
+      message: label,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(6),
+          child: Container(
+            padding:
+                const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(6),
+              border: Border.all(color: const Color(0xFFE5E7EB)),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(icon, size: 16, color: fg),
+                const SizedBox(width: 4),
+                Text(label,
+                    style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                        color: fg)),
+              ],
+            ),
+          ),
         ),
       ),
     );
@@ -875,28 +1025,32 @@ class _DesktopHomePageState extends State<DesktopHomePage>
                               color: MyTheme.accent, size: 22),
                         ),
                         const Spacer(),
-                        // Leave room for the checkbox when in multi-select
-                        if (isMultiSelect) const SizedBox(width: 28),
-                        Container(
-                          width: 7,
-                          height: 7,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: online
-                                ? const Color(0xFF22C55E)
-                                : const Color(0xFFCBD5E1),
+                        // Hide the online indicator while the checkbox sits at
+                        // the top-right to avoid visual overlap.
+                        if (!isMultiSelect) ...[
+                          Container(
+                            width: 7,
+                            height: 7,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: online
+                                  ? const Color(0xFF22C55E)
+                                  : const Color(0xFFCBD5E1),
+                            ),
                           ),
-                        ),
-                        const SizedBox(width: 6),
-                        Text(
-                          online ? translate('Online') : translate('Offline'),
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: online
-                                ? const Color(0xFF22C55E)
-                                : const Color(0xFF9CA3AF),
+                          const SizedBox(width: 6),
+                          Text(
+                            online
+                                ? translate('Online')
+                                : translate('Offline'),
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: online
+                                  ? const Color(0xFF22C55E)
+                                  : const Color(0xFF9CA3AF),
+                            ),
                           ),
-                        ),
+                        ],
                       ],
                     ),
                     const SizedBox(height: 14),
@@ -927,63 +1081,43 @@ class _DesktopHomePageState extends State<DesktopHomePage>
                           fontSize: 12, color: Color(0xFF6B7280)),
                     ),
                     const SizedBox(height: 12),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: SizedBox(
-                            height: 34,
-                            child: ElevatedButton(
-                              onPressed: isMultiSelect
-                                  ? () => model.select(peer)
-                                  : () => connect(context, peer.id),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: isSelected
-                                    ? MyTheme.accent.withOpacity(0.85)
-                                    : MyTheme.accent,
-                                foregroundColor: Colors.white,
-                                elevation: 0,
-                                padding: EdgeInsets.zero,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                              ),
-                              child: Text(
-                                isMultiSelect
-                                    ? (isSelected
-                                        ? translate('Selected')
-                                        : translate('Select'))
-                                    : translate('Connect'),
-                                style: const TextStyle(fontSize: 13),
-                              ),
-                            ),
+                    SizedBox(
+                      height: 34,
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: isMultiSelect
+                            ? () => model.select(peer)
+                            : () => connect(context, peer.id),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: isMultiSelect
+                              ? (isSelected
+                                  ? MyTheme.accent
+                                  : Colors.white)
+                              : MyTheme.accent,
+                          foregroundColor: isMultiSelect
+                              ? (isSelected
+                                  ? Colors.white
+                                  : MyTheme.accent)
+                              : Colors.white,
+                          elevation: 0,
+                          padding: EdgeInsets.zero,
+                          side: isMultiSelect && !isSelected
+                              ? BorderSide(
+                                  color: MyTheme.accent.withOpacity(0.4))
+                              : BorderSide.none,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
                           ),
                         ),
-                        // Exit multi-select mode button (only on selected cards)
-                        if (isMultiSelect && isSelected) ...[
-                          const SizedBox(width: 8),
-                          SizedBox(
-                            height: 34,
-                            width: 34,
-                            child: Tooltip(
-                              message: translate('Cancel'),
-                              child: OutlinedButton(
-                                onPressed: () =>
-                                    model.setMultiSelectionMode(false),
-                                style: OutlinedButton.styleFrom(
-                                  padding: EdgeInsets.zero,
-                                  side: const BorderSide(
-                                      color: Color(0xFFE5E7EB)),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                ),
-                                child: const Icon(Icons.close,
-                                    size: 16, color: Color(0xFF6B7280)),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ],
+                        child: Text(
+                          isMultiSelect
+                              ? (isSelected
+                                  ? translate('Selected')
+                                  : translate('Select'))
+                              : translate('Connect'),
+                          style: const TextStyle(fontSize: 13),
+                        ),
+                      ),
                     ),
                   ],
                 ),
