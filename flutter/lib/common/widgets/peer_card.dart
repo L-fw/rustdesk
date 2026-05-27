@@ -535,6 +535,12 @@ abstract class BasePeerCard extends StatelessWidget {
           .expand((i) => i)
           .toList();
 
+  /// Public accessor so external widgets (e.g. the home page's custom peer
+  /// card) can reuse the same context menu items.
+  Future<List<mod_menu.PopupMenuEntry<String>>> buildPopupMenuEntry(
+          BuildContext context) =>
+      _buildPopupMenuEntry(context);
+
   @protected
   Future<List<MenuEntryBase<String>>> _buildMenuItems(BuildContext context);
 

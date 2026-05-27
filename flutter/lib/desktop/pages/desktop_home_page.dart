@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 import 'dart:convert';
+import 'dart:math';
 
 import 'package:auto_size_text/auto_size_text.dart';
 import 'package:flutter/material.dart';
@@ -19,6 +20,9 @@ import 'package:flutter_hbb/consts.dart';
 import 'package:flutter_hbb/desktop/pages/connection_page.dart';
 import 'package:flutter_hbb/desktop/pages/desktop_setting_page.dart';
 import 'package:flutter_hbb/desktop/pages/desktop_tab_page.dart';
+import 'package:flutter_hbb/desktop/widgets/popup_menu.dart';
+import 'package:flutter_hbb/desktop/widgets/material_mod_popup_menu.dart'
+    as mod_menu;
 import 'package:flutter_hbb/desktop/widgets/update_progress.dart';
 import 'package:flutter_hbb/models/peer_model.dart';
 import 'package:flutter_hbb/models/platform_model.dart';
@@ -72,6 +76,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
   final ValueNotifier<String> _selectedNav = ValueNotifier('home');
   final IDTextEditingController _homeRemoteIdController =
       IDTextEditingController();
+  final RxBool _connectMenuOpen = false.obs;
 
   @override
   Widget build(BuildContext context) {
@@ -520,7 +525,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
               SizedBox(
                 height: 46,
                 child: ElevatedButton(
-                  onPressed: _doConnect,
+                  onPressed: () => _doConnect(),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: MyTheme.accent,
                     foregroundColor: Colors.white,
@@ -538,6 +543,8 @@ class _DesktopHomePageState extends State<DesktopHomePage>
                   ),
                 ),
               ),
+              const SizedBox(width: 8),
+              _buildConnectMenuButton(context),
             ],
           ),
         ],
@@ -545,10 +552,81 @@ class _DesktopHomePageState extends State<DesktopHomePage>
     );
   }
 
-  void _doConnect() {
+  void _doConnect({bool isFileTransfer = false}) {
     final id = _homeRemoteIdController.id;
     if (id.isEmpty) return;
-    connect(context, id);
+    connect(context, id, isFileTransfer: isFileTransfer);
+  }
+
+  Widget _buildConnectMenuButton(BuildContext context) {
+    return Container(
+      height: 46,
+      width: 46,
+      decoration: BoxDecoration(
+        border: Border.all(color: const Color(0xFFE5E7EB)),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Tooltip(
+        message: translate('More'),
+        child: StatefulBuilder(
+          builder: (context, _) {
+            var offset = Offset.zero;
+            return Obx(() => InkWell(
+                  borderRadius: BorderRadius.circular(8),
+                  onTapDown: (e) => offset = e.globalPosition,
+                  onTap: () async {
+                    _connectMenuOpen.value = true;
+                    final x = offset.dx;
+                    final y = offset.dy;
+                    await mod_menu
+                        .showMenu(
+                          context: context,
+                          position: RelativeRect.fromLTRB(x, y, x, y),
+                          elevation: 8,
+                          items: [
+                            (
+                              'Transfer file',
+                              () => _doConnect(isFileTransfer: true),
+                            ),
+                          ]
+                              .map((e) => MenuEntryButton<String>(
+                                    childBuilder: (TextStyle? style) => Text(
+                                      translate(e.$1),
+                                      style: style,
+                                    ),
+                                    proc: () => e.$2(),
+                                    padding: EdgeInsets.symmetric(
+                                        horizontal: kDesktopMenuPadding.left),
+                                    dismissOnClicked: true,
+                                  ))
+                              .map((e) => e.build(
+                                  context,
+                                  const MenuConfig(
+                                      commonColor:
+                                          CustomPopupMenuTheme.commonColor,
+                                      height: CustomPopupMenuTheme.height,
+                                      dividerHeight:
+                                          CustomPopupMenuTheme.dividerHeight)))
+                              .expand((i) => i)
+                              .toList(),
+                        )
+                        .then((_) => _connectMenuOpen.value = false);
+                  },
+                  child: Center(
+                    child: _connectMenuOpen.value
+                        ? Transform.rotate(
+                            angle: pi,
+                            child: Icon(IconFont.more,
+                                size: 16, color: const Color(0xFF6B7280)),
+                          )
+                        : Icon(IconFont.more,
+                            size: 16, color: const Color(0xFF6B7280)),
+                  ),
+                ));
+          },
+        ),
+      ),
+    );
   }
 
   Widget _buildLocalDeviceCard(BuildContext context) {
@@ -688,6 +766,40 @@ class _DesktopHomePageState extends State<DesktopHomePage>
             ),
           );
         },
+      ),
+    );
+  }
+
+  Widget _peerCardMenuButton(BuildContext context, Peer peer) {
+    var offset = Offset.zero;
+    return Listener(
+      onPointerDown: (e) => offset = e.position,
+      onPointerUp: (_) async {
+        final entries =
+            await RecentPeerCard(peer: peer).buildPopupMenuEntry(context);
+        if (entries.isEmpty) return;
+        await mod_menu.showMenu(
+          context: context,
+          position: RelativeRect.fromLTRB(offset.dx, offset.dy, offset.dx, offset.dy),
+          items: entries,
+          elevation: 8,
+        );
+      },
+      child: Tooltip(
+        message: translate('More'),
+        child: Container(
+          height: 34,
+          width: 34,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            border: Border.all(color: const Color(0xFFE5E7EB)),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Center(
+            child: Icon(IconFont.more,
+                size: 14, color: const Color(0xFF6B7280)),
+          ),
+        ),
       ),
     );
   }
@@ -1083,40 +1195,49 @@ class _DesktopHomePageState extends State<DesktopHomePage>
                     const SizedBox(height: 12),
                     SizedBox(
                       height: 34,
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        onPressed: isMultiSelect
-                            ? () => model.select(peer)
-                            : () => connect(context, peer.id),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: isMultiSelect
-                              ? (isSelected
-                                  ? MyTheme.accent
-                                  : Colors.white)
-                              : MyTheme.accent,
-                          foregroundColor: isMultiSelect
-                              ? (isSelected
-                                  ? Colors.white
-                                  : MyTheme.accent)
-                              : Colors.white,
-                          elevation: 0,
-                          padding: EdgeInsets.zero,
-                          side: isMultiSelect && !isSelected
-                              ? BorderSide(
-                                  color: MyTheme.accent.withOpacity(0.4))
-                              : BorderSide.none,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: ElevatedButton(
+                              onPressed: isMultiSelect
+                                  ? () => model.select(peer)
+                                  : () => connect(context, peer.id),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: isMultiSelect
+                                    ? (isSelected
+                                        ? MyTheme.accent
+                                        : Colors.white)
+                                    : MyTheme.accent,
+                                foregroundColor: isMultiSelect
+                                    ? (isSelected
+                                        ? Colors.white
+                                        : MyTheme.accent)
+                                    : Colors.white,
+                                elevation: 0,
+                                padding: EdgeInsets.zero,
+                                side: isMultiSelect && !isSelected
+                                    ? BorderSide(
+                                        color: MyTheme.accent.withOpacity(0.4))
+                                    : BorderSide.none,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                              ),
+                              child: Text(
+                                isMultiSelect
+                                    ? (isSelected
+                                        ? translate('Selected')
+                                        : translate('Select'))
+                                    : translate('Connect'),
+                                style: const TextStyle(fontSize: 13),
+                              ),
+                            ),
                           ),
-                        ),
-                        child: Text(
-                          isMultiSelect
-                              ? (isSelected
-                                  ? translate('Selected')
-                                  : translate('Select'))
-                              : translate('Connect'),
-                          style: const TextStyle(fontSize: 13),
-                        ),
+                          if (!isMultiSelect) ...[
+                            const SizedBox(width: 6),
+                            _peerCardMenuButton(context, peer),
+                          ],
+                        ],
                       ),
                     ),
                   ],
