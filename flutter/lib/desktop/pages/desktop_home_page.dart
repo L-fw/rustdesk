@@ -560,6 +560,10 @@ class _DesktopHomePageState extends State<DesktopHomePage>
   void _doConnect({bool isFileTransfer = false}) {
     final id = _homeRemoteIdController.id;
     if (id.isEmpty) return;
+    bind.mainSetLocalOption(
+      key: '$_kRecentConnectPrefix$id',
+      value: DateTime.now().millisecondsSinceEpoch.toString(),
+    );
     connect(context, id, isFileTransfer: isFileTransfer);
   }
 
@@ -875,7 +879,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
                           children: [
                             _recentSessionsHeader(context, filtered.length),
                             const SizedBox(height: 14),
-                            _recentSessionsToolbar(context),
+                            _recentSessionsToolbar(context, filtered.length),
                             const SizedBox(height: 14),
                             Expanded(
                               child: _recentSessionsTable(context, filtered),
@@ -929,21 +933,14 @@ class _DesktopHomePageState extends State<DesktopHomePage>
           '($count)',
           style: const TextStyle(fontSize: 15, color: Color(0xFF6B7280)),
         ),
-        const Spacer(),
-        _outlineButton(
-          icon: Icons.delete_outline,
-          label: translate('Clear records'),
-          onTap: count == 0 ? null : () => _confirmClearRecent(context),
-        ),
       ],
     );
   }
 
-  Widget _recentSessionsToolbar(BuildContext context) {
+  Widget _recentSessionsToolbar(BuildContext context, int count) {
     return Row(
       children: [
         Expanded(
-          flex: 3,
           child: Container(
             height: 38,
             decoration: BoxDecoration(
@@ -989,6 +986,12 @@ class _DesktopHomePageState extends State<DesktopHomePage>
             ('desktop', translate('Desktop')),
             ('mobile', translate('Mobile')),
           ],
+        ),
+        const SizedBox(width: 12),
+        _outlineButton(
+          icon: Icons.delete_outline,
+          label: translate('Clear records'),
+          onTap: count == 0 ? null : () => _confirmClearRecent(context),
         ),
       ],
     );
@@ -1248,19 +1251,27 @@ class _DesktopHomePageState extends State<DesktopHomePage>
               ],
             ),
           ),
-          // Connect time (not tracked)
-          const Expanded(
+          // Connect time
+          Expanded(
             flex: 2,
-            child: Text('-',
-                style: TextStyle(
-                    fontSize: 13, color: Color(0xFF9CA3AF))),
+            child: Text(
+              _formatConnectTime(peer.id),
+              style: const TextStyle(
+                  fontSize: 13, color: Color(0xFF374151)),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
           ),
-          // Duration (not tracked)
-          const Expanded(
+          // Duration (elapsed since last connect)
+          Expanded(
             flex: 1,
-            child: Text('-',
-                style: TextStyle(
-                    fontSize: 13, color: Color(0xFF9CA3AF))),
+            child: Text(
+              _formatDuration(peer.id),
+              style: const TextStyle(
+                  fontSize: 13, color: Color(0xFF374151)),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
           ),
           // Actions
           SizedBox(
@@ -1270,7 +1281,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
                 SizedBox(
                   height: 28,
                   child: ElevatedButton(
-                    onPressed: () => connect(context, peer.id),
+                    onPressed: () => _connectFromRecent(context, peer.id),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: MyTheme.accent,
                       foregroundColor: Colors.white,
@@ -1331,12 +1342,52 @@ class _DesktopHomePageState extends State<DesktopHomePage>
     );
   }
 
+  static const String _kRecentConnectPrefix = 'recent-connect-at-';
+
+  int? _getStoredConnectTs(String peerId) {
+    final v = bind.mainGetLocalOption(key: '$_kRecentConnectPrefix$peerId');
+    if (v.isEmpty) return null;
+    return int.tryParse(v);
+  }
+
+  String _formatConnectTime(String peerId) {
+    final ts = _getStoredConnectTs(peerId);
+    if (ts == null) return translate('No record');
+    final dt = DateTime.fromMillisecondsSinceEpoch(ts);
+    String two(int v) => v.toString().padLeft(2, '0');
+    return '${dt.year}-${two(dt.month)}-${two(dt.day)} '
+        '${two(dt.hour)}:${two(dt.minute)}';
+  }
+
+  String _formatDuration(String peerId) {
+    final ts = _getStoredConnectTs(peerId);
+    if (ts == null) return translate('No record');
+    final secs = (DateTime.now().millisecondsSinceEpoch - ts) ~/ 1000;
+    if (secs < 0) return translate('No record');
+    final h = secs ~/ 3600;
+    final m = (secs % 3600) ~/ 60;
+    final s = secs % 60;
+    String two(int v) => v.toString().padLeft(2, '0');
+    return '${two(h)}:${two(m)}:${two(s)}';
+  }
+
+  void _connectFromRecent(BuildContext context, String peerId) {
+    bind.mainSetLocalOption(
+      key: '$_kRecentConnectPrefix$peerId',
+      value: DateTime.now().millisecondsSinceEpoch.toString(),
+    );
+    connect(context, peerId);
+    setState(() {});
+  }
+
   Future<void> _confirmClearRecent(BuildContext context) async {
     final peers = gFFI.recentPeersModel.peers.toList();
     if (peers.isEmpty) return;
     deleteConfirmDialog(() async {
       for (final p in peers) {
         await bind.mainRemovePeer(id: p.id);
+        await bind.mainSetLocalOption(
+            key: '$_kRecentConnectPrefix${p.id}', value: '');
       }
       bind.mainLoadRecentPeers();
       showToast(translate('Successful'));
@@ -1711,7 +1762,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
                             child: ElevatedButton(
                               onPressed: isMultiSelect
                                   ? () => model.select(peer)
-                                  : () => connect(context, peer.id),
+                                  : () => _connectFromRecent(context, peer.id),
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: isMultiSelect
                                     ? (isSelected
@@ -2407,6 +2458,11 @@ class _DesktopHomePageState extends State<DesktopHomePage>
           watchIsCanRecordAudio = false;
           setState(() {});
         }
+      }
+      // Tick once a second to refresh the elapsed-duration column on the
+      // recent sessions page.
+      if (_selectedNav.value == 'recent' && mounted) {
+        setState(() {});
       }
     });
     Get.put<RxBool>(svcStopped, tag: 'stop-service');
