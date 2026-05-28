@@ -84,6 +84,12 @@ class _DesktopHomePageState extends State<DesktopHomePage>
   final ValueNotifier<String> _recentTimeFilter = ValueNotifier('all');
   final ValueNotifier<String> _recentTypeFilter = ValueNotifier('all');
 
+  // Favorites page state
+  final TextEditingController _favSearchCtrl = TextEditingController();
+  final ValueNotifier<String> _favSearch = ValueNotifier('');
+  final ValueNotifier<String> _favGroupFilter = ValueNotifier('all');
+  final ValueNotifier<String> _favTypeFilter = ValueNotifier('all');
+
   @override
   Widget build(BuildContext context) {
     super.build(context);
@@ -387,8 +393,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
           } else if (selected == 'recent') {
             body = _buildRecentSessionsPage(context);
           } else if (selected == 'favorites') {
-            body =
-                _comingSoonPanel(translate('Favorites'), Icons.star_border);
+            body = _buildFavoritesPage(context);
           } else if (selected == 'file') {
             body = _comingSoonPanel(
                 translate('File Transfer'), Icons.folder_outlined);
@@ -1848,6 +1853,412 @@ class _DesktopHomePageState extends State<DesktopHomePage>
   }
 
   // ---------------------------------------------------------------------------
+  // Favorites: grid-of-cards page
+  // ---------------------------------------------------------------------------
+
+  static const List<Color> _kFavCardColors = [
+    Color(0xFF22D3EE), // cyan
+    Color(0xFFFB923C), // orange
+    Color(0xFFA78BFA), // purple
+    Color(0xFF60A5FA), // blue
+    Color(0xFF34D399), // green
+    Color(0xFFF472B6), // pink
+    Color(0xFFFBBF24), // amber
+    Color(0xFF94A3B8), // slate
+  ];
+
+  Color _favCardColor(String peerId) {
+    if (peerId.isEmpty) return _kFavCardColors[0];
+    final h = peerId.codeUnits.fold<int>(0, (a, b) => (a + b) & 0x7fffffff);
+    return _kFavCardColors[h % _kFavCardColors.length];
+  }
+
+  Widget _buildFavoritesPage(BuildContext context) {
+    return ChangeNotifierProvider.value(
+      value: gFFI.favoritePeersModel,
+      child: Consumer<Peers>(
+        builder: (_, peers, __) {
+          bind.mainLoadFavPeers();
+          return ValueListenableBuilder<String>(
+            valueListenable: _favSearch,
+            builder: (_, query, __) {
+              return ValueListenableBuilder<String>(
+                valueListenable: _favGroupFilter,
+                builder: (_, groupFilter, __) {
+                  return ValueListenableBuilder<String>(
+                    valueListenable: _favTypeFilter,
+                    builder: (_, typeFilter, __) {
+                      final filtered = _filterFavPeers(
+                          peers.peers, query, groupFilter, typeFilter);
+                      return Padding(
+                        padding: const EdgeInsets.all(20),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _favHeader(context, filtered.length),
+                            const SizedBox(height: 14),
+                            _favToolbar(context, filtered.length),
+                            const SizedBox(height: 14),
+                            Expanded(
+                              child: _favBody(context, filtered),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  );
+                },
+              );
+            },
+          );
+        },
+      ),
+    );
+  }
+
+  List<Peer> _filterFavPeers(
+      List<Peer> all, String query, String groupFilter, String typeFilter) {
+    final q = query.trim().toLowerCase();
+    return all.where((p) {
+      if (q.isNotEmpty) {
+        final matches = p.id.toLowerCase().contains(q) ||
+            p.alias.toLowerCase().contains(q) ||
+            p.hostname.toLowerCase().contains(q) ||
+            p.username.toLowerCase().contains(q);
+        if (!matches) return false;
+      }
+      if (groupFilter == 'online' && !p.online) return false;
+      if (groupFilter == 'offline' && p.online) return false;
+      if (typeFilter != 'all') {
+        final plat = p.platform.toLowerCase();
+        final isMobile = plat.contains('android') || plat.contains('ios');
+        if (typeFilter == 'mobile' && !isMobile) return false;
+        if (typeFilter == 'desktop' && isMobile) return false;
+      }
+      return true;
+    }).toList();
+  }
+
+  Widget _favHeader(BuildContext context, int count) {
+    return Row(
+      children: [
+        Text(
+          translate('Favorites'),
+          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+        ),
+        const SizedBox(width: 8),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+          decoration: BoxDecoration(
+            color: const Color(0xFFEFF4FF),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Text(
+            '$count',
+            style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: MyTheme.accent),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _favToolbar(BuildContext context, int count) {
+    return Row(
+      children: [
+        _favChip('all', translate('All')),
+        const SizedBox(width: 8),
+        _favChip('online', translate('Online')),
+        const SizedBox(width: 8),
+        _favChip('offline', translate('Offline')),
+        const Spacer(),
+        SizedBox(
+          width: 220,
+          height: 38,
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: const Color(0xFFE5E7EB)),
+            ),
+            child: TextField(
+              controller: _favSearchCtrl,
+              style: const TextStyle(fontSize: 13),
+              onChanged: (v) => _favSearch.value = v,
+              decoration: InputDecoration(
+                isDense: true,
+                hintText: translate('Search'),
+                hintStyle:
+                    const TextStyle(color: Color(0xFF9CA3AF), fontSize: 13),
+                prefixIcon: const Icon(Icons.search,
+                    size: 18, color: Color(0xFF9CA3AF)),
+                prefixIconConstraints:
+                    const BoxConstraints(minWidth: 36, minHeight: 36),
+                border: InputBorder.none,
+                contentPadding:
+                    const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(width: 12),
+        _filterDropdown(
+          value: _favTypeFilter,
+          items: [
+            ('all', translate('All types')),
+            ('desktop', translate('Desktop')),
+            ('mobile', translate('Mobile')),
+          ],
+        ),
+        const SizedBox(width: 12),
+        _favPrimaryButton(
+          icon: Icons.add,
+          label: translate('Add to Favorites'),
+          onTap: () => _selectedNav.value = 'recent',
+        ),
+      ],
+    );
+  }
+
+  Widget _favChip(String key, String label) {
+    return ValueListenableBuilder<String>(
+      valueListenable: _favGroupFilter,
+      builder: (_, current, __) {
+        final selected = current == key;
+        return Material(
+          color: Colors.transparent,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(8),
+            onTap: () => _favGroupFilter.value = key,
+            child: Container(
+              height: 32,
+              padding: const EdgeInsets.symmetric(horizontal: 14),
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: selected ? MyTheme.accent : Colors.white,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: selected ? MyTheme.accent : const Color(0xFFE5E7EB),
+                ),
+              ),
+              child: Text(
+                label,
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                  color: selected ? Colors.white : const Color(0xFF374151),
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _favPrimaryButton({
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+  }) {
+    return Material(
+      color: MyTheme.accent,
+      borderRadius: BorderRadius.circular(8),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(8),
+        onTap: onTap,
+        child: Container(
+          height: 38,
+          padding: const EdgeInsets.symmetric(horizontal: 14),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, size: 16, color: Colors.white),
+              const SizedBox(width: 6),
+              Text(
+                label,
+                style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.white),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _favBody(BuildContext context, List<Peer> peers) {
+    if (peers.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.star_border,
+                size: 56, color: const Color(0xFFCBD5E1)),
+            const SizedBox(height: 14),
+            Text(
+              translate('No favorites yet'),
+              style: const TextStyle(
+                  fontSize: 14, color: Color(0xFF6B7280)),
+            ),
+          ],
+        ),
+      );
+    }
+    return LayoutBuilder(
+      builder: (_, constraints) {
+        const minCardWidth = 240.0;
+        const spacing = 16.0;
+        int cols = ((constraints.maxWidth + spacing) / (minCardWidth + spacing))
+            .floor();
+        if (cols < 1) cols = 1;
+        final cardWidth =
+            (constraints.maxWidth - spacing * (cols - 1)) / cols;
+        return SingleChildScrollView(
+          child: Wrap(
+            spacing: spacing,
+            runSpacing: spacing,
+            children: peers
+                .map((p) => SizedBox(
+                      width: cardWidth,
+                      child: _favCard(context, p),
+                    ))
+                .toList(),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _favCard(BuildContext context, Peer peer) {
+    final displayName = peer.alias.isNotEmpty
+        ? peer.alias
+        : (peer.username.isNotEmpty && peer.hostname.isNotEmpty
+            ? '${peer.username}@${peer.hostname}'
+            : (peer.hostname.isNotEmpty ? peer.hostname : peer.id));
+    final color = _favCardColor(peer.id);
+    final online = peer.online;
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: color.withOpacity(0.15),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(_platformIcon(peer.platform),
+                    color: color, size: 24),
+              ),
+              const Spacer(),
+              const Icon(Icons.star,
+                  color: Color(0xFFFBBF24), size: 20),
+            ],
+          ),
+          const SizedBox(height: 14),
+          Text(
+            displayName,
+            style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+          const SizedBox(height: 4),
+          Text(
+            peer.id,
+            style: const TextStyle(fontSize: 12, color: Color(0xFF9CA3AF)),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+          const SizedBox(height: 14),
+          Row(
+            children: [
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: online
+                      ? const Color(0xFFDCFCE7)
+                      : const Color(0xFFF3F4F6),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 6,
+                      height: 6,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: online
+                            ? const Color(0xFF22C55E)
+                            : const Color(0xFFCBD5E1),
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      online ? translate('Online') : translate('Offline'),
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w500,
+                        color: online
+                            ? const Color(0xFF15803D)
+                            : const Color(0xFF6B7280),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const Spacer(),
+              SizedBox(
+                height: 30,
+                child: ElevatedButton(
+                  onPressed: () => _connectFromRecent(context, peer.id),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: MyTheme.accent,
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                  ),
+                  child: Text(
+                    translate('Connect'),
+                    style: const TextStyle(
+                        fontSize: 12, fontWeight: FontWeight.w600),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ---------------------------------------------------------------------------
   // Legacy ID/password board kept for compatibility; no longer used in build.
   // ---------------------------------------------------------------------------
 
@@ -2642,6 +3053,10 @@ class _DesktopHomePageState extends State<DesktopHomePage>
     _recentSearch.dispose();
     _recentTimeFilter.dispose();
     _recentTypeFilter.dispose();
+    _favSearchCtrl.dispose();
+    _favSearch.dispose();
+    _favGroupFilter.dispose();
+    _favTypeFilter.dispose();
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
