@@ -88,7 +88,7 @@ class _DesktopTabPageState extends State<DesktopTabPage> {
     if (!bind.isIncomingOnly()) {
       WidgetsBinding.instance.addPostFrameCallback((_) async {
         // 将主页/设置页所在的主窗口固定为 1200x615，且不可调整大小
-        const fixedSize = Size(1080, 615);
+        const fixedSize = Size(1060, 615);
         await windowManager.setMinimumSize(fixedSize);
         await windowManager.setMaximumSize(fixedSize);
         await windowManager.setSize(fixedSize);
