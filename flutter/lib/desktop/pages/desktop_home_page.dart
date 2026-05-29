@@ -295,7 +295,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
                   fontWeight:
                       isSelected ? FontWeight.w600 : FontWeight.w500,
                   color: isSelected
-                      ? MyTheme.accent
+                      ? Colors.black
                       : const Color(0xFF1F2937),
                 ),
               ),
@@ -1119,12 +1119,12 @@ class _DesktopHomePageState extends State<DesktopHomePage>
 
   Widget _recentTableHeader() {
     const style = TextStyle(
-      fontSize: 12,
+      fontSize: 13,
       fontWeight: FontWeight.w600,
       color: Color(0xFF6B7280),
     );
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       decoration: const BoxDecoration(
         color: Color(0xFFF9FAFB),
         borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
@@ -1177,7 +1177,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
     final online = peer.online;
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       child: Row(
         children: [
           // Device
@@ -1186,21 +1186,23 @@ class _DesktopHomePageState extends State<DesktopHomePage>
             child: Row(
               children: [
                 Container(
-                  width: 30,
-                  height: 30,
+                  width: 36,
+                  height: 36,
                   decoration: BoxDecoration(
-                    color: const Color(0xFFEFF4FF),
-                    borderRadius: BorderRadius.circular(6),
+                    color: MyTheme.accent,
+                    borderRadius: BorderRadius.circular(8),
                   ),
                   child: Icon(_platformIcon(peer.platform),
-                      color: MyTheme.accent, size: 16),
+                      color: Colors.white, size: 20),
                 ),
-                const SizedBox(width: 10),
+                const SizedBox(width: 12),
                 Expanded(
                   child: Text(
                     displayName,
                     style: const TextStyle(
-                        fontSize: 13, fontWeight: FontWeight.w500),
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF1F2937)),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -1212,7 +1214,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
           Expanded(
             flex: 2,
             child: Text(
-              peer.id,
+              _formatPeerId(peer.id),
               style: const TextStyle(
                   fontSize: 13, color: Color(0xFF374151)),
               maxLines: 1,
@@ -1234,8 +1236,8 @@ class _DesktopHomePageState extends State<DesktopHomePage>
             child: Row(
               children: [
                 Container(
-                  width: 6,
-                  height: 6,
+                  width: 7,
+                  height: 7,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     color: online
@@ -1247,7 +1249,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
                 Text(
                   online ? translate('Online') : translate('Offline'),
                   style: TextStyle(
-                    fontSize: 12,
+                    fontSize: 13,
                     color: online
                         ? const Color(0xFF22C55E)
                         : const Color(0xFF9CA3AF),
@@ -1284,7 +1286,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
             child: Row(
               children: [
                 SizedBox(
-                  height: 28,
+                  height: 32,
                   child: ElevatedButton(
                     onPressed: () => _connectFromRecent(context, peer.id),
                     style: ElevatedButton.styleFrom(
@@ -1292,14 +1294,15 @@ class _DesktopHomePageState extends State<DesktopHomePage>
                       foregroundColor: Colors.white,
                       elevation: 0,
                       padding:
-                          const EdgeInsets.symmetric(horizontal: 12),
+                          const EdgeInsets.symmetric(horizontal: 16),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(6),
+                        borderRadius: BorderRadius.circular(8),
                       ),
                     ),
                     child: Text(
                       translate('Reconnect'),
-                      style: const TextStyle(fontSize: 12),
+                      style: const TextStyle(
+                          fontSize: 13, fontWeight: FontWeight.w500),
                     ),
                   ),
                 ),
@@ -1313,13 +1316,23 @@ class _DesktopHomePageState extends State<DesktopHomePage>
     );
   }
 
+  // Group the peer id into blocks of 3 digits for readability (e.g. 252 844 127).
+  String _formatPeerId(String id) {
+    if (id.isEmpty || id.contains(RegExp(r'[^0-9]'))) return id;
+    final buf = StringBuffer();
+    for (int i = 0; i < id.length; i++) {
+      if (i > 0 && (id.length - i) % 3 == 0) buf.write(' ');
+      buf.write(id[i]);
+    }
+    return buf.toString();
+  }
+
   Widget _recentRowDetailsButton(BuildContext context, Peer peer) {
     return Builder(
-      builder: (btnContext) => Material(
-        color: Colors.transparent,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(6),
-          onTap: () async {
+      builder: (btnContext) => SizedBox(
+        height: 32,
+        child: OutlinedButton(
+          onPressed: () async {
             final entries = await RecentPeerCard(peer: peer)
                 .buildPopupMenuEntry(context);
             if (entries.isEmpty) return;
@@ -1331,16 +1344,18 @@ class _DesktopHomePageState extends State<DesktopHomePage>
               elevation: 8,
             );
           },
-          child: Padding(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
-            child: Text(
-              translate('Details'),
-              style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w500,
-                  color: MyTheme.accent),
+          style: OutlinedButton.styleFrom(
+            foregroundColor: const Color(0xFF374151),
+            side: const BorderSide(color: Color(0xFFE5E7EB)),
+            padding: const EdgeInsets.symmetric(horizontal: 14),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
             ),
+          ),
+          child: Text(
+            translate('Details'),
+            style: const TextStyle(
+                fontSize: 13, fontWeight: FontWeight.w500),
           ),
         ),
       ),
