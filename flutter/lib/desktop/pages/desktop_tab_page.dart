@@ -87,9 +87,13 @@ class _DesktopTabPageState extends State<DesktopTabPage> {
     // HardwareKeyboard.instance.addHandler(_handleKeyEvent);
     if (!bind.isIncomingOnly()) {
       WidgetsBinding.instance.addPostFrameCallback((_) async {
-        await windowManager.setResizable(true);
-        const minSize = Size(600, 480);
-        await windowManager.setMinimumSize(minSize);
+        // 将主页/设置页所在的主窗口固定为 1024x615，且不可调整大小
+        const fixedSize = Size(1024, 615);
+        await windowManager.setMinimumSize(fixedSize);
+        await windowManager.setMaximumSize(fixedSize);
+        await windowManager.setSize(fixedSize);
+        await windowManager.setResizable(false);
+        await windowManager.center();
       });
     }
   }
@@ -120,6 +124,7 @@ class _DesktopTabPageState extends State<DesktopTabPage> {
             body: DesktopTab(
               controller: tabController,
               showTabItems: false,
+              showMaximize: false,
               tail: Offstage(
                 offstage: bind.isIncomingOnly() || bind.isDisableSettings(),
                 child: ActionIcon(
