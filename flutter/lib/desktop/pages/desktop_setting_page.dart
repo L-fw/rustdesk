@@ -322,7 +322,7 @@ class _DesktopSettingPageState extends State<DesktopSettingPage>
   Widget build(BuildContext context) {
     super.build(context);
     return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.background,
+      backgroundColor: const Color(0xFFF3F5F8),
       body: ConstrainedBox(
         constraints: const BoxConstraints(
           minWidth: 600,
@@ -330,8 +330,14 @@ class _DesktopSettingPageState extends State<DesktopSettingPage>
         ),
         child: _buildBlock(
           children: <Widget>[
-            SizedBox(
+            Container(
               width: _kTabWidth,
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                border: Border(
+                  right: BorderSide(color: Color(0xFFEDEFF3), width: 1),
+                ),
+              ),
               child: Stack(
                 children: [
                   Column(
@@ -351,10 +357,9 @@ class _DesktopSettingPageState extends State<DesktopSettingPage>
                 ],
               ),
             ),
-            const VerticalDivider(width: 1),
             Expanded(
               child: Container(
-                color: Theme.of(context).scaffoldBackgroundColor,
+                color: const Color(0xFFF3F5F8),
                 child: PageView(
                   controller: controller,
                   physics: NeverScrollableScrollPhysics(),
@@ -386,9 +391,10 @@ class _DesktopSettingPageState extends State<DesktopSettingPage>
             width: double.infinity,
             padding: const EdgeInsets.symmetric(vertical: 14),
             decoration: BoxDecoration(
-              color: hover.value
-                  ? Theme.of(context).colorScheme.primary.withOpacity(0.12)
-                  : Theme.of(context).colorScheme.background,
+              color: hover.value ? const Color(0xFFEFF4FF) : Colors.white,
+              border: const Border(
+                top: BorderSide(color: Color(0xFFEDEFF3), width: 1),
+              ),
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -396,13 +402,8 @@ class _DesktopSettingPageState extends State<DesktopSettingPage>
                 Icon(
                   Icons.home_outlined,
                   size: 20,
-                  color: hover.value
-                      ? Theme.of(context).colorScheme.primary
-                      : Theme.of(context)
-                          .textTheme
-                          .bodyMedium
-                          ?.color
-                          ?.withOpacity(0.6),
+                  color:
+                      hover.value ? MyTheme.accent : const Color(0xFF6B7280),
                 ),
                 const SizedBox(width: 8),
                 Text(
@@ -411,12 +412,8 @@ class _DesktopSettingPageState extends State<DesktopSettingPage>
                     fontSize: 14,
                     fontWeight: FontWeight.w500,
                     color: hover.value
-                        ? Theme.of(context).colorScheme.primary
-                        : Theme.of(context)
-                            .textTheme
-                            .bodyMedium
-                            ?.color
-                            ?.withOpacity(0.6),
+                        ? MyTheme.accent
+                        : const Color(0xFF1F2937),
                   ),
                 ),
               ],
@@ -474,13 +471,13 @@ class _DesktopSettingPageState extends State<DesktopSettingPage>
 
   Widget _categoryHeader(String category) {
     return Padding(
-      padding: const EdgeInsets.only(left: 20, top: 16, bottom: 6),
+      padding: const EdgeInsets.only(left: 26, top: 16, bottom: 6),
       child: Text(
         translate(category),
-        style: TextStyle(
+        style: const TextStyle(
           fontSize: 12,
           fontWeight: FontWeight.w500,
-          color: Theme.of(context).textTheme.bodySmall?.color?.withOpacity(0.5) ?? Colors.grey,
+          color: Color(0xFF9CA3AF),
         ),
       ),
     );
@@ -507,46 +504,43 @@ class _DesktopSettingPageState extends State<DesktopSettingPage>
   Widget _listItem({required _TabInfo tab}) {
     return Obx(() {
       bool selected = tab.key == selectedTab.value;
-      final selectedBgColor = _accentColor.withOpacity(0.08);
-      final hoverColor = _accentColor.withOpacity(0.04);
-      return Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 1),
-        child: Material(
-          color: selected ? selectedBgColor : Colors.transparent,
+      return Material(
+        color: Colors.transparent,
+        child: InkWell(
           borderRadius: BorderRadius.circular(8),
-          child: InkWell(
-            borderRadius: BorderRadius.circular(8),
-            hoverColor: hoverColor,
-            onTap: () {
-              if (selectedTab.value != tab.key) {
-                int index = DesktopSettingPage.tabKeys.indexOf(tab.key);
-                if (index == -1) {
-                  return;
-                }
-                controller.jumpToPage(index);
+          onTap: () {
+            if (selectedTab.value != tab.key) {
+              int index = DesktopSettingPage.tabKeys.indexOf(tab.key);
+              if (index == -1) {
+                return;
               }
-              selectedTab.value = tab.key;
-            },
-            child: Container(
-              height: _kTabHeight,
-              padding: const EdgeInsets.symmetric(horizontal: 10),
-              child: Row(children: [
-                Icon(
-                  selected ? tab.selected : tab.unselected,
-                  color: selected ? _accentColor : Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.6),
-                  size: 20,
-                ),
-                const SizedBox(width: 10),
-                Text(
-                  translate(tab.label),
-                  style: TextStyle(
-                    color: selected ? _accentColor : null,
-                    fontWeight: selected ? FontWeight.w500 : FontWeight.w400,
-                    fontSize: 14,
-                  ),
-                ),
-              ]),
+              controller.jumpToPage(index);
+            }
+            selectedTab.value = tab.key;
+          },
+          child: Container(
+            margin: const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            decoration: BoxDecoration(
+              color: selected ? const Color(0xFFEFF4FF) : Colors.transparent,
+              borderRadius: BorderRadius.circular(8),
             ),
+            child: Row(children: [
+              Icon(
+                selected ? tab.selected : tab.unselected,
+                size: 19,
+                color: selected ? MyTheme.accent : const Color(0xFF6B7280),
+              ),
+              const SizedBox(width: 12),
+              Text(
+                translate(tab.label),
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
+                  color: selected ? Colors.black : const Color(0xFF1F2937),
+                ),
+              ),
+            ]),
           ),
         ),
       );
