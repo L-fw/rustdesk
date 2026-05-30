@@ -84,6 +84,12 @@ class _DesktopHomePageState extends State<DesktopHomePage>
   final ValueNotifier<String> _recentTimeFilter = ValueNotifier('all');
   final ValueNotifier<String> _recentTypeFilter = ValueNotifier('all');
 
+  // My devices page state
+  final TextEditingController _devicesSearchCtrl = TextEditingController();
+  final ValueNotifier<String> _devicesSearch = ValueNotifier('');
+  final ValueNotifier<String> _devicesTimeFilter = ValueNotifier('all');
+  final ValueNotifier<String> _devicesTypeFilter = ValueNotifier('all');
+
   // Favorites page state
   final TextEditingController _favSearchCtrl = TextEditingController();
   final ValueNotifier<String> _favSearch = ValueNotifier('');
@@ -388,8 +394,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
         builder: (_, selected, __) {
           Widget body;
           if (selected == 'devices') {
-            body = _comingSoonPanel(
-                translate('My devices'), Icons.desktop_windows_outlined);
+            body = _buildMyDevicesPage(context);
           } else if (selected == 'recent') {
             body = _buildRecentSessionsPage(context);
           } else if (selected == 'favorites') {
@@ -1412,6 +1417,290 @@ class _DesktopHomePageState extends State<DesktopHomePage>
       bind.mainLoadRecentPeers();
       showToast(translate('Successful'));
     }, translate('Clear records'));
+  }
+
+  // ---------------------------------------------------------------------------
+  // My devices: table-style page (same layout as Recent sessions, but without
+  // the clear-records button; the table drops connection type / status /
+  // connect time / duration / actions and adds device type & last login time).
+  // ---------------------------------------------------------------------------
+
+  Widget _buildMyDevicesPage(BuildContext context) {
+    return ChangeNotifierProvider.value(
+      value: gFFI.recentPeersModel,
+      child: Consumer<Peers>(
+        builder: (_, peers, __) {
+          bind.mainLoadRecentPeers();
+          return ValueListenableBuilder<String>(
+            valueListenable: _devicesSearch,
+            builder: (_, query, __) {
+              return ValueListenableBuilder<String>(
+                valueListenable: _devicesTimeFilter,
+                builder: (_, timeFilter, __) {
+                  return ValueListenableBuilder<String>(
+                    valueListenable: _devicesTypeFilter,
+                    builder: (_, typeFilter, __) {
+                      final filtered = _filterRecentPeers(
+                          peers.peers, query, timeFilter, typeFilter);
+                      return Padding(
+                        padding: const EdgeInsets.all(20),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _myDevicesHeader(context, filtered.length),
+                            const SizedBox(height: 14),
+                            _myDevicesToolbar(context),
+                            const SizedBox(height: 14),
+                            Expanded(
+                              child: _myDevicesTable(context, filtered),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  );
+                },
+              );
+            },
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _myDevicesHeader(BuildContext context, int count) {
+    return Row(
+      children: [
+        Text(
+          translate('My devices'),
+          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+        ),
+        const SizedBox(width: 8),
+        Text(
+          '($count)',
+          style: const TextStyle(fontSize: 15, color: Color(0xFF6B7280)),
+        ),
+      ],
+    );
+  }
+
+  Widget _myDevicesToolbar(BuildContext context) {
+    return Row(
+      children: [
+        Expanded(
+          child: Container(
+            height: 38,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: const Color(0xFFE5E7EB)),
+            ),
+            child: TextField(
+              controller: _devicesSearchCtrl,
+              style: const TextStyle(fontSize: 13),
+              onChanged: (v) => _devicesSearch.value = v,
+              decoration: InputDecoration(
+                isDense: true,
+                hintText: translate('Search device or ID'),
+                hintStyle: const TextStyle(
+                    color: Color(0xFF9CA3AF), fontSize: 13),
+                prefixIcon: const Icon(Icons.search,
+                    size: 18, color: Color(0xFF9CA3AF)),
+                prefixIconConstraints:
+                    const BoxConstraints(minWidth: 36, minHeight: 36),
+                border: InputBorder.none,
+                contentPadding:
+                    const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(width: 12),
+        _filterDropdown(
+          value: _devicesTimeFilter,
+          items: [
+            ('all', translate('All time')),
+            ('today', translate('Today')),
+            ('week', translate('This week')),
+            ('month', translate('This month')),
+          ],
+        ),
+        const SizedBox(width: 12),
+        _filterDropdown(
+          value: _devicesTypeFilter,
+          items: [
+            ('all', translate('All types')),
+            ('desktop', translate('Desktop')),
+            ('mobile', translate('Mobile')),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _myDevicesTable(BuildContext context, List<Peer> peers) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          _myDevicesTableHeader(),
+          const Divider(height: 1, color: Color(0xFFEDEFF3)),
+          Expanded(
+            child: peers.isEmpty
+                ? Center(
+                    child: Text(
+                      translate('No devices'),
+                      style: const TextStyle(color: Color(0xFF9CA3AF)),
+                    ),
+                  )
+                : ListView.separated(
+                    padding: EdgeInsets.zero,
+                    itemCount: peers.length + 1,
+                    separatorBuilder: (_, __) => const Divider(
+                        height: 1, color: Color(0xFFF3F4F6)),
+                    itemBuilder: (_, i) {
+                      if (i == peers.length) return _recentTableFooter();
+                      return _myDevicesTableRow(context, peers[i]);
+                    },
+                  ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _myDevicesTableHeader() {
+    const style = TextStyle(
+      fontSize: 13,
+      fontWeight: FontWeight.w600,
+      color: Color(0xFF6B7280),
+    );
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      decoration: const BoxDecoration(
+        color: Color(0xFFF9FAFB),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
+      ),
+      child: Row(
+        children: [
+          Expanded(flex: 3, child: Text(translate('Device'), style: style)),
+          Expanded(flex: 2, child: Text(translate('Target ID'), style: style)),
+          Expanded(
+              flex: 2, child: Text(translate('Device type'), style: style)),
+          Expanded(
+              flex: 2,
+              child: Text(translate('Last login time'), style: style)),
+        ],
+      ),
+    );
+  }
+
+  Widget _myDevicesTableRow(BuildContext context, Peer peer) {
+    final displayName = peer.alias.isNotEmpty
+        ? peer.alias
+        : (peer.username.isNotEmpty && peer.hostname.isNotEmpty
+            ? '${peer.username}@${peer.hostname}'
+            : (peer.hostname.isNotEmpty ? peer.hostname : peer.id));
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      child: Row(
+        children: [
+          // Device
+          Expanded(
+            flex: 3,
+            child: Row(
+              children: [
+                Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    color: MyTheme.accent,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(_platformIcon(peer.platform),
+                      color: Colors.white, size: 20),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    displayName,
+                    style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF1F2937)),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          // Target ID
+          Expanded(
+            flex: 2,
+            child: Text(
+              _formatPeerId(peer.id),
+              style: const TextStyle(fontSize: 13, color: Color(0xFF374151)),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          // Device type
+          Expanded(
+            flex: 2,
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFEFF4FF),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Text(
+                  _deviceTypeLabel(peer.platform),
+                  style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                      color: MyTheme.accent),
+                ),
+              ),
+            ),
+          ),
+          // Last login time
+          Expanded(
+            flex: 2,
+            child: Text(
+              _formatConnectTime(peer.id),
+              style: const TextStyle(fontSize: 13, color: Color(0xFF374151)),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _deviceTypeLabel(String platform) {
+    final p = platform.toLowerCase();
+    if (p.contains('windows')) return 'Windows';
+    if (p.contains('android')) return 'Android';
+    if (p.contains('mac') || p.contains('osx')) return 'macOS';
+    if (p.contains('linux')) return 'Linux';
+    if (p.contains('ios')) return 'iOS';
+    return platform.isEmpty ? translate('Unknown') : platform;
   }
 
   Widget _buildRecentPeersSection(BuildContext context) {
@@ -3068,6 +3357,10 @@ class _DesktopHomePageState extends State<DesktopHomePage>
     _recentSearch.dispose();
     _recentTimeFilter.dispose();
     _recentTypeFilter.dispose();
+    _devicesSearchCtrl.dispose();
+    _devicesSearch.dispose();
+    _devicesTimeFilter.dispose();
+    _devicesTypeFilter.dispose();
     _favSearchCtrl.dispose();
     _favSearch.dispose();
     _favGroupFilter.dispose();

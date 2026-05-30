@@ -384,6 +384,9 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
         ("home_control_remote_tip", "Enter the remote device ID to start a remote session"),
         ("No recent sessions", "No recent sessions"),
         ("No matching devices", "No matching devices"),
+        ("Device type", "Device type"),
+        ("Last login time", "Last login time"),
+        ("No devices", "No devices"),
         ("Unknown", "Unknown"),
     ].iter().cloned().collect();
 }

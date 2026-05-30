@@ -879,6 +879,9 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
         ("home_control_remote_tip", "输入对方设备 ID，立即发起远程连接"),
         ("No recent sessions", "暂无最近连接"),
         ("No matching devices", "未找到匹配的设备"),
+        ("Device type", "设备类型"),
+        ("Last login time", "最后登录时间"),
+        ("No devices", "暂无设备"),
         ("Unknown", "未知"),
     ].iter().cloned().collect();
 }
