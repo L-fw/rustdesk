@@ -35,6 +35,7 @@ import 'terms_of_service.dart' as terms_pages;
 import 'login_tab_page.dart';
 
 const double _kTabWidth = 220;
+const double _kEmbeddedTabWidth = 172;
 const double _kTabHeight = 42;
 const double _kCardFixedWidth = 540;
 const double _kCardLeftMargin = 15;
@@ -63,8 +64,10 @@ enum SettingsTabKey {
   safety,
   network,
   display,
+  remoteControl,
   plugin,
   account,
+  advanced,
   update,
   printer,
   releases,
@@ -73,6 +76,9 @@ enum SettingsTabKey {
 
 class DesktopSettingPage extends StatefulWidget {
   final SettingsTabKey initialTabkey;
+  // When true, render without the Scaffold/logo header/home button so the page
+  // can be embedded as a sub-page of the desktop home page (shared sidebar).
+  final bool embedded;
   static final List<SettingsTabKey> tabKeys = [
     SettingsTabKey.general,
     if (!isWeb &&
@@ -85,9 +91,11 @@ class DesktopSettingPage extends StatefulWidget {
         bind.mainGetBuildinOption(key: kOptionHideNetworkSetting) != 'Y')
       SettingsTabKey.network,
     if (!bind.isIncomingOnly()) SettingsTabKey.display,
+    if (!bind.isIncomingOnly()) SettingsTabKey.remoteControl,
     if (!isWeb && !bind.isIncomingOnly() && bind.pluginFeatureIsEnabled())
       SettingsTabKey.plugin,
     if (!bind.isDisableAccount()) SettingsTabKey.account,
+    if (!isWeb) SettingsTabKey.advanced,
     SettingsTabKey.update,
     if (isWindows &&
         !isDesktop &&
@@ -99,7 +107,9 @@ class DesktopSettingPage extends StatefulWidget {
 
   static SettingsTabKey? pendingTabKey;
 
-  DesktopSettingPage({Key? key, required this.initialTabkey}) : super(key: key);
+  DesktopSettingPage(
+      {Key? key, required this.initialTabkey, this.embedded = false})
+      : super(key: key);
 
   @override
   State<DesktopSettingPage> createState() =>
@@ -221,6 +231,11 @@ class _DesktopSettingPageState extends State<DesktopSettingPage>
               Icons.desktop_windows_outlined, Icons.desktop_windows,
               category: 'Common'));
           break;
+        case SettingsTabKey.remoteControl:
+          settingTabs.add(_TabInfo(tab, 'Remote control',
+              Icons.cast_outlined, Icons.cast,
+              category: 'Common'));
+          break;
         case SettingsTabKey.plugin:
           settingTabs.add(_TabInfo(
               tab, 'Plugin', Icons.extension_outlined, Icons.extension,
@@ -229,6 +244,11 @@ class _DesktopSettingPageState extends State<DesktopSettingPage>
         case SettingsTabKey.account:
           settingTabs.add(
               _TabInfo(tab, 'Account', Icons.person_outline, Icons.person,
+              category: 'Common'));
+          break;
+        case SettingsTabKey.advanced:
+          settingTabs.add(_TabInfo(tab, 'Advanced features',
+              Icons.auto_awesome_outlined, Icons.auto_awesome,
               category: 'Common'));
           break;
         case SettingsTabKey.update:
@@ -272,11 +292,17 @@ class _DesktopSettingPageState extends State<DesktopSettingPage>
         case SettingsTabKey.display:
           children.add(const _Display());
           break;
+        case SettingsTabKey.remoteControl:
+          children.add(const _RemoteControl());
+          break;
         case SettingsTabKey.plugin:
           children.add(const _Plugin());
           break;
         case SettingsTabKey.account:
           children.add(const _Account());
+          break;
+        case SettingsTabKey.advanced:
+          children.add(const _Advanced());
           break;
         case SettingsTabKey.update:
           children.add(const _Update());
@@ -321,6 +347,63 @@ class _DesktopSettingPageState extends State<DesktopSettingPage>
   @override
   Widget build(BuildContext context) {
     super.build(context);
+    final embedded = widget.embedded;
+    final sidebar = Container(
+      width: embedded ? _kEmbeddedTabWidth : _kTabWidth,
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        border: Border(
+          right: BorderSide(color: Color(0xFFEDEFF3), width: 1),
+        ),
+      ),
+      child: embedded
+          ? Column(
+              children: [
+                _embeddedHeader(context),
+                Flexible(child: _listView(tabs: _settingTabs())),
+                const SizedBox(height: 8),
+              ],
+            )
+          : Stack(
+              children: [
+                Column(
+                  children: [
+                    _header(context),
+                    Flexible(child: _listView(tabs: _settingTabs())),
+                    // 为底部返回按钮留出空间
+                    const SizedBox(height: 57),
+                  ],
+                ),
+                Positioned(
+                  bottom: 0,
+                  left: 0,
+                  right: 0,
+                  child: _buildHomeButton(context),
+                ),
+              ],
+            ),
+    );
+    final content = _buildBlock(
+      children: <Widget>[
+        sidebar,
+        Expanded(
+          child: Container(
+            color: const Color(0xFFF3F5F8),
+            child: PageView(
+              controller: controller,
+              physics: NeverScrollableScrollPhysics(),
+              children: _children(),
+            ),
+          ),
+        )
+      ],
+    );
+    if (embedded) {
+      return Container(
+        color: const Color(0xFFF3F5F8),
+        child: content,
+      );
+    }
     return Scaffold(
       backgroundColor: const Color(0xFFF3F5F8),
       body: ConstrainedBox(
@@ -328,47 +411,18 @@ class _DesktopSettingPageState extends State<DesktopSettingPage>
           minWidth: 600,
           minHeight: 480,
         ),
-        child: _buildBlock(
-          children: <Widget>[
-            Container(
-              width: _kTabWidth,
-              decoration: const BoxDecoration(
-                color: Colors.white,
-                border: Border(
-                  right: BorderSide(color: Color(0xFFEDEFF3), width: 1),
-                ),
-              ),
-              child: Stack(
-                children: [
-                  Column(
-                    children: [
-                      _header(context),
-                      Flexible(child: _listView(tabs: _settingTabs())),
-                      // 为底部返回按钮留出空间
-                      const SizedBox(height: 57),
-                    ],
-                  ),
-                  Positioned(
-                    bottom: 0,
-                    left: 0,
-                    right: 0,
-                    child: _buildHomeButton(context),
-                  ),
-                ],
-              ),
-            ),
-            Expanded(
-              child: Container(
-                color: const Color(0xFFF3F5F8),
-                child: PageView(
-                  controller: controller,
-                  physics: NeverScrollableScrollPhysics(),
-                  children: _children(),
-                ),
-              ),
-            )
-          ],
-        ),
+        child: content,
+      ),
+    );
+  }
+
+  Widget _embeddedHeader(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(22, 22, 16, 14),
+      child: Text(
+        translate('Settings'),
+        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
       ),
     );
   }
@@ -569,11 +623,11 @@ class _GeneralState extends State<_General> {
       controller: scrollController,
       children: [
         if (!isWeb) service(),
-        theme(),
-        _Card(title: 'Language', children: [language()]),
+        language(),
+        if (!isWeb) monitoredDevices(),
+        if (!isWeb) record(context),
         if (!isWeb) hwcodec(),
         if (!isWeb) audio(context),
-        if (!isWeb) record(context),
         if (!isWeb) WaylandCard(),
         other()
       ],
@@ -588,7 +642,7 @@ class _GeneralState extends State<_General> {
     }
 
     final isOptFixed = isOptionFixed(kCommConfKeyTheme);
-    return _Card(title: 'Theme', children: [
+    return _GCard(icon: Icons.palette_outlined, title: 'Theme', children: [
       _Radio<String>(context,
           value: 'light',
           groupValue: current,
@@ -612,18 +666,42 @@ class _GeneralState extends State<_General> {
       return const Offstage();
     }
 
-    return _Card(title: 'Service', children: [
-      Obx(() => _Button(serviceStop.value ? 'Start' : 'Stop', () {
-            () async {
-              serviceBtnEnabled.value = false;
-              await start_service(serviceStop.value);
-              // enable the button after 1 second
-              Future.delayed(const Duration(seconds: 1), () {
-                serviceBtnEnabled.value = true;
-              });
-            }();
-          }, enabled: serviceBtnEnabled.value))
-    ]);
+    return Obx(() {
+      final stopped = serviceStop.value;
+      return _GCard(
+        icon: Icons.dns_outlined,
+        title: 'Service',
+        subtitle: stopped ? 'Service is not running' : 'Service is running',
+        trailing: SizedBox(
+          height: 40,
+          child: ElevatedButton(
+            onPressed: serviceBtnEnabled.value
+                ? () async {
+                    serviceBtnEnabled.value = false;
+                    await start_service(serviceStop.value);
+                    // enable the button after 1 second
+                    Future.delayed(const Duration(seconds: 1), () {
+                      serviceBtnEnabled.value = true;
+                    });
+                  }
+                : null,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: MyTheme.accent,
+              foregroundColor: Colors.white,
+              elevation: 0,
+              padding: const EdgeInsets.symmetric(horizontal: 22),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8)),
+            ),
+            child: Text(
+              translate(stopped ? 'Start service' : 'Stop service'),
+              style:
+                  const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+            ),
+          ),
+        ),
+      );
+    });
   }
 
   Widget other() {
@@ -727,7 +805,7 @@ class _GeneralState extends State<_General> {
           context, 'Allow linux headless', kOptionAllowLinuxHeadless));
     }
 
-    return _Card(title: 'Other', children: children);
+    return _GCard(icon: Icons.tune_outlined, title: 'Other', children: children);
   }
 
   Widget wallpaper() {
@@ -774,7 +852,8 @@ class _GeneralState extends State<_General> {
     final vram = bind.mainHasVram();
     return Offstage(
       offstage: !(hwcodec || vram),
-      child: _Card(title: 'Hardware Codec', children: [
+      child: _GCard(
+          icon: Icons.memory_outlined, title: 'Hardware Codec', children: [
         _OptionCheckBox(
           context,
           'Enable hardware codec',
@@ -795,16 +874,22 @@ class _GeneralState extends State<_General> {
     }
 
     builder(devices, currentDevice, setDevice) {
-      final child = ComboBox(
-        keys: devices,
-        values: devices,
-        initialKey: currentDevice,
-        onChanged: (key) async {
-          setDevice(key);
-          setState(() {});
-        },
-      ).marginOnly(left: _kContentHMargin);
-      return _Card(title: 'Audio Input Device', children: [child]);
+      final child = SizedBox(
+        width: 220,
+        child: ComboBox(
+          keys: devices,
+          values: devices,
+          initialKey: currentDevice,
+          onChanged: (key) async {
+            setDevice(key);
+            setState(() {});
+          },
+        ),
+      );
+      return _GCard(
+          icon: Icons.mic_none_outlined,
+          title: 'Audio Input Device',
+          trailing: child);
     }
 
     return AudioInput(builder: builder, isCm: false, isVoiceCall: false);
@@ -831,7 +916,11 @@ class _GeneralState extends State<_General> {
       String root_dir = map['root_dir']!;
       bool root_dir_exists = map['root_dir_exists']!;
       bool user_dir_exists = map['user_dir_exists']!;
-      return _Card(title: 'Recording', children: [
+      return _GCard(
+          icon: Icons.videocam_outlined,
+          title: 'Recording',
+          subtitle: 'recording_card_tip',
+          children: [
         if (!bind.isOutgoingOnly())
           _OptionCheckBox(context, 'Automatically record incoming sessions',
               kOptionAllowAutoRecordIncoming),
@@ -924,19 +1013,46 @@ class _GeneralState extends State<_General> {
         currentKey = defaultOptionLang;
       }
       final isOptFixed = isOptionFixed(kCommConfKeyLang);
-      return ComboBox(
-        keys: keys,
-        values: values,
-        initialKey: currentKey,
-        onChanged: (key) async {
-          await bind.mainSetLocalOption(key: kCommConfKeyLang, value: key);
-          if (isWeb) reloadCurrentWindow();
-          if (!isWeb) reloadAllWindows();
-          if (!isWeb) bind.mainChangeLanguage(lang: key);
-        },
-        enabled: !isOptFixed,
-      ).marginOnly(left: _kContentHMargin);
+      return _GCard(
+        icon: Icons.language_outlined,
+        title: 'Language and region',
+        subtitle: 'language_region_tip',
+        trailing: SizedBox(
+          width: 180,
+          child: ComboBox(
+            keys: keys,
+            values: values,
+            initialKey: currentKey,
+            onChanged: (key) async {
+              await bind.mainSetLocalOption(key: kCommConfKeyLang, value: key);
+              if (isWeb) reloadCurrentWindow();
+              if (!isWeb) reloadAllWindows();
+              if (!isWeb) bind.mainChangeLanguage(lang: key);
+            },
+            enabled: !isOptFixed,
+          ),
+        ),
+      );
     });
+  }
+
+  Widget monitoredDevices() {
+    // Placeholder card to match the design; currently only exposes the
+    // "system monitor" scope. Wire up a real option/backend when available.
+    return _GCard(
+      icon: Icons.monitor_heart_outlined,
+      title: 'Monitored devices',
+      subtitle: 'monitored_devices_tip',
+      trailing: SizedBox(
+        width: 180,
+        child: ComboBox(
+          keys: const ['system'],
+          values: [translate('System monitor')],
+          initialKey: 'system',
+          onChanged: (_) {},
+        ),
+      ),
+    );
   }
 }
 
@@ -1028,7 +1144,10 @@ class _SafetyState extends State<_Safety> with AutomaticKeepAliveClientMixin {
           break;
       }
 
-      return _Card(title: 'Permissions', children: [
+      return _GCard(
+          icon: Icons.verified_user_outlined,
+          title: 'Permissions',
+          children: [
         ComboBox(
             keys: [
               defaultOptionAccessMode,
@@ -1211,7 +1330,10 @@ class _SafetyState extends State<_Safety> with AutomaticKeepAliveClientMixin {
           final usePassword = model.approveMode != 'click';
 
           final isApproveModeFixed = isOptionFixed(kOptionApproveMode);
-          return _Card(title: 'Password', children: [
+          return _GCard(
+              icon: Icons.password_outlined,
+              title: 'Password',
+              children: [
             ComboBox(
               enabled: !locked && !isApproveModeFixed,
               keys: modeKeys,
@@ -1244,7 +1366,10 @@ class _SafetyState extends State<_Safety> with AutomaticKeepAliveClientMixin {
 
   Widget more(BuildContext context) {
     bool enabled = !locked;
-    return _Card(title: 'Security', children: [
+    return _GCard(
+        icon: Icons.shield_outlined,
+        title: 'Security',
+        children: [
       shareRdp(context, enabled),
       _OptionCheckBox(context, 'Deny LAN discovery', 'enable-lan-discovery',
           reverse: true, enabled: enabled),
@@ -1691,14 +1816,37 @@ class _DisplayState extends State<_Display> {
   Widget build(BuildContext context) {
     final scrollController = ScrollController();
     return ListView(controller: scrollController, children: [
+      theme(context),
       viewStyle(context),
       scrollStyle(context),
-      imageQuality(context),
-      codec(context),
-      if (isDesktop) trackpadSpeed(context),
-      if (!isWeb) privacyModeImpl(context),
-      other(context),
     ]).marginOnly(bottom: _kListViewBottomMargin);
+  }
+
+  Widget theme(BuildContext context) {
+    final current = MyTheme.getThemeModePreference().toShortString();
+    onChanged(String value) async {
+      await MyTheme.changeDarkMode(MyTheme.themeModeFromString(value));
+      setState(() {});
+    }
+
+    final isOptFixed = isOptionFixed(kCommConfKeyTheme);
+    return _GCard(icon: Icons.palette_outlined, title: 'Theme', children: [
+      _Radio<String>(context,
+          value: 'light',
+          groupValue: current,
+          label: 'Light',
+          onChanged: isOptFixed ? null : onChanged),
+      _Radio<String>(context,
+          value: 'dark',
+          groupValue: current,
+          label: 'Dark',
+          onChanged: isOptFixed ? null : onChanged),
+      _Radio<String>(context,
+          value: 'system',
+          groupValue: current,
+          label: 'Follow System',
+          onChanged: isOptFixed ? null : onChanged),
+    ]);
   }
 
   Widget viewStyle(BuildContext context) {
@@ -1709,7 +1857,10 @@ class _DisplayState extends State<_Display> {
     }
 
     final groupValue = bind.mainGetUserDefaultOption(key: kOptionViewStyle);
-    return _Card(title: 'Default View Style', children: [
+    return _GCard(
+        icon: Icons.aspect_ratio_outlined,
+        title: 'Default View Style',
+        children: [
       _Radio(context,
           value: kRemoteViewStyleOriginal,
           groupValue: groupValue,
@@ -1739,7 +1890,10 @@ class _DisplayState extends State<_Display> {
       setState(() {});
     }
 
-    return _Card(title: 'Default Scroll Style', children: [
+    return _GCard(
+        icon: Icons.swap_vert_outlined,
+        title: 'Default Scroll Style',
+        children: [
       _Radio(context,
           value: kRemoteScrollStyleAuto,
           groupValue: groupValue,
@@ -1770,6 +1924,27 @@ class _DisplayState extends State<_Display> {
     ]);
   }
 
+}
+
+class _RemoteControl extends StatefulWidget {
+  const _RemoteControl({Key? key}) : super(key: key);
+
+  @override
+  State<_RemoteControl> createState() => _RemoteControlState();
+}
+
+class _RemoteControlState extends State<_RemoteControl> {
+  @override
+  Widget build(BuildContext context) {
+    final scrollController = ScrollController();
+    return ListView(controller: scrollController, children: [
+      imageQuality(context),
+      codec(context),
+      if (isDesktop) trackpadSpeed(context),
+      other(context),
+    ]).marginOnly(bottom: _kListViewBottomMargin);
+  }
+
   Widget imageQuality(BuildContext context) {
     onChanged(String value) async {
       await bind.mainSetUserDefaultOption(
@@ -1779,7 +1954,10 @@ class _DisplayState extends State<_Display> {
 
     final isOptFixed = isOptionFixed(kOptionImageQuality);
     final groupValue = bind.mainGetUserDefaultOption(key: kOptionImageQuality);
-    return _Card(title: 'Default Image Quality', children: [
+    return _GCard(
+        icon: Icons.high_quality_outlined,
+        title: 'Default Image Quality',
+        children: [
       _Radio(context,
           value: kRemoteImageQualityBest,
           groupValue: groupValue,
@@ -1819,7 +1997,10 @@ class _DisplayState extends State<_Display> {
       // But it may also be ok to take effect in the next connection.
     }
 
-    return _Card(title: 'Default trackpad speed', children: [
+    return _GCard(
+        icon: Icons.mouse_outlined,
+        title: 'Default trackpad speed',
+        children: [
       TrackpadSpeedWidget(
         value: curSpeed,
         onDebouncer: onDebouncer,
@@ -1859,7 +2040,10 @@ class _DisplayState extends State<_Display> {
     } catch (e) {
       debugPrint("failed to parse supported hwdecodings, err=$e");
     }
-    return _Card(title: 'Default Codec', children: [
+    return _GCard(
+        icon: Icons.video_settings_outlined,
+        title: 'Default Codec',
+        children: [
       _Radio(context,
           value: 'auto',
           groupValue: groupValue,
@@ -1918,7 +2102,10 @@ class _DisplayState extends State<_Display> {
   Widget other(BuildContext context) {
     final children =
         otherDefaultSettings().map((e) => otherRow(e.$1, e.$2)).toList();
-    return _Card(title: 'Other Default Options', children: children);
+    return _GCard(
+        icon: Icons.content_paste_outlined,
+        title: 'Other Default Options',
+        children: children);
   }
 }
 
@@ -1970,8 +2157,8 @@ class _AccountState extends State<_Account> {
         ),
         if (!kAppModeShareOnly) ...[
           _userInfoCard(context),
+          _accountSecurityCard(context),
           _accountActionsCard(context),
-          _accountDangerCard(context),
         ],
       ],
     ).marginOnly(bottom: _kListViewBottomMargin);
@@ -1980,12 +2167,12 @@ class _AccountState extends State<_Account> {
   /// 用户信息卡片（仅显示用户名与手机号）
   Widget _userInfoCard(BuildContext context) {
     if (_loadingUserInfo) {
-      return _Card(
-        title: '',
-        children: [
+      return _GCard(
+        icon: Icons.account_circle_outlined,
+        title: 'Account Info',
+        children: const [
           Padding(
-            padding: const EdgeInsets.symmetric(
-                horizontal: _kContentHMargin, vertical: 20),
+            padding: EdgeInsets.symmetric(vertical: 16),
             child: Center(
               child: SizedBox(
                 width: 24,
@@ -2012,12 +2199,23 @@ class _AccountState extends State<_Account> {
         ?.withOpacity(0.6) ??
         Colors.grey;
 
-    return _Card(
-      title: '',
+    return _GCard(
+      icon: Icons.account_circle_outlined,
+      title: 'Account Info',
+      trailing: OutlinedButton.icon(
+        onPressed: () {},
+        icon: const Icon(Icons.edit_outlined, size: 16),
+        label: Text(translate('Edit profile')),
+        style: OutlinedButton.styleFrom(
+          foregroundColor: _accentColor,
+          side: BorderSide(color: _accentColor.withOpacity(0.5)),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        ),
+      ),
       children: [
         Padding(
-          padding: const EdgeInsets.symmetric(
-              horizontal: _kContentHMargin, vertical: 14),
+          padding: const EdgeInsets.symmetric(vertical: 4),
           child: Row(
             children: [
               // 头像圆圈
@@ -2207,9 +2405,10 @@ class _AccountState extends State<_Account> {
     }
   }
 
-  Widget _accountActionsCard(BuildContext context) {
-    return _Card(
-      title: '',
+  Widget _accountSecurityCard(BuildContext context) {
+    return _GCard(
+      icon: Icons.security_outlined,
+      title: 'Account Security',
       children: [
         _accountActionTile(
           context,
@@ -2219,25 +2418,235 @@ class _AccountState extends State<_Account> {
           subtitle: translate('Update your account password'),
           onTap: () => _doChangePassword(),
         ),
+        _accountActionTile(
+          context,
+          icon: Icons.email_outlined,
+          iconColor: Colors.orange,
+          label: 'Bind Email',
+          subtitle: translate('Bind an email to secure your account'),
+          onTap: () {},
+        ),
       ],
     );
   }
 
-  Widget _accountDangerCard(BuildContext context) {
-    return _Card(
-      title: '',
+  Widget _accountActionsCard(BuildContext context) {
+    return _GCard(
+      icon: Icons.manage_accounts_outlined,
+      title: 'Account Actions',
       children: [
-        _accountActionTile(
-          context,
-          icon: Icons.logout,
-          iconColor: Colors.red,
-          label: 'Logout',
-          subtitle: translate('Sign out of your account'),
-          labelColor: Colors.red,
-          onTap: () => _doLogout(),
+        Padding(
+          padding: const EdgeInsets.only(top: 4),
+          child: Row(
+            children: [
+              OutlinedButton(
+                onPressed: () => _doLogout(),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: const Color(0xFF374151),
+                  side: const BorderSide(color: Color(0xFFE5E7EB)),
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 20, vertical: 14),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8)),
+                ),
+                child: Text(translate('Logout')),
+              ),
+              const SizedBox(width: 12),
+              ElevatedButton(
+                onPressed: () {},
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFEF4444),
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 20, vertical: 14),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8)),
+                ),
+                child: Text(translate('Deregister account')),
+              ),
+            ],
+          ),
         ),
       ],
     );
+  }
+}
+
+class _Advanced extends StatefulWidget {
+  const _Advanced({Key? key}) : super(key: key);
+
+  @override
+  State<_Advanced> createState() => _AdvancedState();
+}
+
+class _AdvancedState extends State<_Advanced> {
+  // Local-only state for toggles that are not wired to a backend yet (UI only).
+  final Map<String, bool> _uiOnly = {};
+
+  Widget _switchTile({
+    required IconData icon,
+    required Color iconColor,
+    required String label,
+    required String subtitle,
+    required bool value,
+    required ValueChanged<bool>? onChanged,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Row(
+        children: [
+          Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              color: iconColor.withOpacity(0.12),
+              borderRadius: BorderRadius.circular(9),
+            ),
+            child: Icon(icon, size: 19, color: iconColor),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(translate(label),
+                    style: const TextStyle(
+                        fontSize: 14, fontWeight: FontWeight.w600)),
+                const SizedBox(height: 2),
+                Text(translate(subtitle),
+                    style: const TextStyle(
+                        fontSize: 12, color: Color(0xFF9CA3AF))),
+              ],
+            ),
+          ),
+          Switch(value: value, onChanged: onChanged),
+        ],
+      ),
+    );
+  }
+
+  Widget _optionTile({
+    required IconData icon,
+    required Color iconColor,
+    required String label,
+    required String subtitle,
+    required String key,
+    bool isServer = true,
+  }) {
+    final value =
+        isServer ? mainGetBoolOptionSync(key) : mainGetLocalBoolOptionSync(key);
+    final isOptFixed = isOptionFixed(key);
+    return _switchTile(
+      icon: icon,
+      iconColor: iconColor,
+      label: label,
+      subtitle: subtitle,
+      value: value,
+      onChanged: isOptFixed
+          ? null
+          : (b) async {
+              if (isServer) {
+                await mainSetBoolOption(key, b);
+              } else {
+                await mainSetLocalBoolOption(key, b);
+              }
+              setState(() {});
+            },
+    );
+  }
+
+  Widget _uiOnlyTile({
+    required IconData icon,
+    required Color iconColor,
+    required String label,
+    required String subtitle,
+    required String id,
+    bool defaultValue = false,
+  }) {
+    final value = _uiOnly[id] ?? defaultValue;
+    return _switchTile(
+      icon: icon,
+      iconColor: iconColor,
+      label: label,
+      subtitle: subtitle,
+      value: value,
+      onChanged: (b) => setState(() => _uiOnly[id] = b),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final scrollController = ScrollController();
+    final tiles = <Widget>[
+      _optionTile(
+        icon: Icons.speed_outlined,
+        iconColor: Colors.green,
+        label: 'Adaptive bitrate',
+        subtitle: 'adaptive_bitrate_tip',
+        key: kOptionEnableAbr,
+      ),
+      if (isWindows)
+        _optionTile(
+          icon: Icons.videocam_outlined,
+          iconColor: Colors.blue,
+          label: 'Capture screen using DirectX',
+          subtitle: 'directx_capture_tip',
+          key: kOptionDirectxCapture,
+        ),
+      _uiOnlyTile(
+        icon: Icons.web_asset_outlined,
+        iconColor: Colors.indigo,
+        label: 'Window toolbar',
+        subtitle: 'window_toolbar_tip',
+        id: 'window_toolbar',
+        defaultValue: true,
+      ),
+      _uiOnlyTile(
+        icon: Icons.keyboard_outlined,
+        iconColor: Colors.teal,
+        label: 'Input enhancement',
+        subtitle: 'input_enhancement_tip',
+        id: 'input_enhancement',
+        defaultValue: true,
+      ),
+      if (!isWeb)
+        _optionTile(
+          icon: Icons.wallpaper_outlined,
+          iconColor: Colors.purple,
+          label: 'Remove wallpaper during incoming sessions',
+          subtitle: 'remove_wallpaper_tip',
+          key: kOptionAllowRemoveWallpaper,
+        ),
+      _optionTile(
+        icon: Icons.system_update_outlined,
+        iconColor: Colors.orange,
+        label: 'Check for software update on startup',
+        subtitle: 'check_update_tip',
+        key: kOptionEnableCheckUpdate,
+        isServer: false,
+      ),
+      _optionTile(
+        icon: Icons.bolt_outlined,
+        iconColor: Colors.amber,
+        label: 'Enable UDP hole punching',
+        subtitle: 'udp_punch_tip',
+        key: kOptionEnableUdpPunch,
+        isServer: false,
+      ),
+    ];
+
+    return ListView(
+      controller: scrollController,
+      children: [
+        _GCard(
+          icon: Icons.auto_awesome_outlined,
+          title: 'Advanced features',
+          subtitle: 'advanced_features_tip',
+          children: tiles,
+        ),
+      ],
+    ).marginOnly(bottom: _kListViewBottomMargin);
   }
 }
 
@@ -3032,6 +3441,84 @@ Widget _Card(
         ),
       ),
     ],
+  );
+}
+
+// Image-style card used by the General settings page: a white rounded card
+// with a colored icon, title, optional subtitle and an optional trailing
+// control (or a vertical body of [children]).
+// ignore: non_constant_identifier_names
+Widget _GCard({
+  required IconData icon,
+  required String title,
+  String? subtitle,
+  Widget? trailing,
+  List<Widget> children = const [],
+  Color iconColor = _accentColor,
+}) {
+  return Container(
+    width: double.infinity,
+    margin: const EdgeInsets.fromLTRB(_kCardLeftMargin, 15, _kContentHMargin, 0),
+    padding: const EdgeInsets.all(18),
+    decoration: BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(12),
+      boxShadow: [
+        BoxShadow(
+          color: Colors.black.withOpacity(0.03),
+          blurRadius: 10,
+          offset: const Offset(0, 2),
+        ),
+      ],
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: iconColor.withOpacity(0.12),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(icon, color: iconColor, size: 21),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    translate(title),
+                    style: const TextStyle(
+                        fontSize: 16, fontWeight: FontWeight.w600),
+                  ),
+                  if (subtitle != null && subtitle.isNotEmpty) ...[
+                    const SizedBox(height: 3),
+                    Text(
+                      translate(subtitle),
+                      style: const TextStyle(
+                          fontSize: 12, color: Color(0xFF9CA3AF)),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            if (trailing != null)
+              Padding(
+                padding: const EdgeInsets.only(left: 12),
+                child: trailing,
+              ),
+          ],
+        ),
+        if (children.isNotEmpty) ...[
+          const Divider(height: 28, color: Color(0xFFF0F1F4)),
+          ...children,
+        ],
+      ],
+    ),
   );
 }
 

@@ -74,6 +74,9 @@ class _DesktopHomePageState extends State<DesktopHomePage>
 
   // New layout state
   final ValueNotifier<String> _selectedNav = ValueNotifier('home');
+  // Which settings sub-tab to show when the embedded settings page is selected.
+  final ValueNotifier<SettingsTabKey> _settingsTabKey =
+      ValueNotifier(SettingsTabKey.general);
   final IDTextEditingController _homeRemoteIdController =
       IDTextEditingController();
   final RxBool _connectMenuOpen = false.obs;
@@ -158,7 +161,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
       return GestureDetector(
         onTap: bind.isDisableAccount()
             ? null
-            : () => DesktopSettingPage.switch2page(SettingsTabKey.account),
+            : () => _openSettings(SettingsTabKey.account),
         child: MouseRegion(
           cursor: bind.isDisableAccount()
               ? MouseCursor.defer
@@ -234,6 +237,29 @@ class _DesktopHomePageState extends State<DesktopHomePage>
     });
   }
 
+  // Show the settings as a sub-page of the home page (shared sidebar) instead
+  // of opening it in a separate tab.
+  void _openSettings([SettingsTabKey? key]) {
+    final target = key ??
+        (DesktopSettingPage.tabKeys.isNotEmpty
+            ? DesktopSettingPage.tabKeys.first
+            : SettingsTabKey.general);
+    _settingsTabKey.value = target;
+    _selectedNav.value = 'settings';
+  }
+
+  Widget _buildSettingsPage(BuildContext context) {
+    return ValueListenableBuilder<SettingsTabKey>(
+      valueListenable: _settingsTabKey,
+      builder: (_, tabKey, __) => DesktopSettingPage(
+        // Re-create the page when the target tab changes so it opens on it.
+        key: ValueKey('embedded-settings-$tabKey'),
+        initialTabkey: tabKey,
+        embedded: true,
+      ),
+    );
+  }
+
   Widget _buildSidebarNav(BuildContext context) {
     return ValueListenableBuilder<String>(
       valueListenable: _selectedNav,
@@ -268,9 +294,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
         borderRadius: BorderRadius.circular(8),
         onTap: () {
           if (key == 'settings') {
-            if (DesktopSettingPage.tabKeys.isNotEmpty) {
-              DesktopSettingPage.switch2page(DesktopSettingPage.tabKeys[0]);
-            }
+            _openSettings();
             return;
           }
           _selectedNav.value = key;
@@ -402,6 +426,8 @@ class _DesktopHomePageState extends State<DesktopHomePage>
           } else if (selected == 'file') {
             body = _comingSoonPanel(
                 translate('File Transfer'), Icons.folder_outlined);
+          } else if (selected == 'settings') {
+            body = _buildSettingsPage(context);
           } else {
             body = _homeRightPane(context);
           }
@@ -2768,8 +2794,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
                             if (value == 'refresh') {
                               bind.mainUpdateTemporaryPassword();
                             } else if (value == 'edit') {
-                              DesktopSettingPage.switch2page(
-                                  SettingsTabKey.safety);
+                              _openSettings(SettingsTabKey.safety);
                             }
                           },
                         ),
@@ -2805,7 +2830,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
             padding: const EdgeInsets.symmetric(vertical: 6),
             child: GestureDetector(
               onTap: bind.isDisableAccount() ? null : () {
-                DesktopSettingPage.switch2page(SettingsTabKey.account);
+                _openSettings(SettingsTabKey.account);
               },
               child: MouseRegion(
                 cursor: bind.isDisableAccount() ? MouseCursor.defer : SystemMouseCursors.click,
