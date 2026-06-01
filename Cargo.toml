@@ -215,9 +215,9 @@ libxdo-sys = { path = "libs/libxdo-sys-stub" }
 
 [package.metadata.winres]
 LegalCopyright = "Copyright © 2025 Purslane Ltd. All rights reserved."
-ProductName = "Gamwing"
+ProductName = "LinkEase"
 FileDescription = "RustDesk Remote Desktop"
-OriginalFilename = "Gamwing.exe"
+OriginalFilename = "LinkEase.exe"
 
 [target.'cfg(target_os="windows")'.build-dependencies]
 winres = "0.1"
