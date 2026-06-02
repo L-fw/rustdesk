@@ -2299,180 +2299,331 @@ class _Advanced extends StatefulWidget {
 }
 
 class _AdvancedState extends State<_Advanced> {
+  // A single toggle row: colored icon + title + description + switch.
+  Widget _toggleRow({
+    required IconData icon,
+    required Color iconColor,
+    required String title,
+    required String subtitle,
+    required bool value,
+    required ValueChanged<bool>? onChanged,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 13, horizontal: 2),
+      child: Row(
+        children: [
+          Container(
+            width: 38,
+            height: 38,
+            decoration: BoxDecoration(
+              color: iconColor.withOpacity(0.12),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(icon, size: 20, color: iconColor),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(translate(title),
+                    style: const TextStyle(
+                        fontSize: 14, fontWeight: FontWeight.w600)),
+                const SizedBox(height: 3),
+                Text(translate(subtitle),
+                    style: const TextStyle(
+                        fontSize: 12, color: Color(0xFF9CA3AF))),
+              ],
+            ),
+          ),
+          const SizedBox(width: 12),
+          Switch(
+            value: value,
+            activeColor: MyTheme.accent,
+            onChanged: onChanged,
+          ),
+        ],
+      ),
+    );
+  }
+
+  // A toggle row bound to a config option (server or local).
+  Widget _optionToggle({
+    required IconData icon,
+    required Color iconColor,
+    required String title,
+    required String subtitle,
+    required String key,
+    bool isServer = true,
+    bool Function()? optGetter,
+    Future<void> Function(String, bool)? optSetter,
+    void Function(bool)? update,
+  }) {
+    final value = optGetter != null
+        ? optGetter()
+        : (isServer
+            ? mainGetBoolOptionSync(key)
+            : mainGetLocalBoolOptionSync(key));
+    final isOptFixed = isOptionFixed(key);
+    return _toggleRow(
+      icon: icon,
+      iconColor: iconColor,
+      title: title,
+      subtitle: subtitle,
+      value: value,
+      onChanged: isOptFixed
+          ? null
+          : (b) async {
+              final setter = optSetter ??
+                  (isServer ? mainSetBoolOption : mainSetLocalBoolOption);
+              await setter(key, b);
+              update?.call(b);
+              setState(() {});
+            },
+    );
+  }
+
+  Widget _wallpaperToggle() {
+    return futureBuilder(
+      future: bind.mainSupportRemoveWallpaper(),
+      hasData: (support) {
+        if (support is bool && support) {
+          return _optionToggle(
+            icon: Icons.wallpaper_outlined,
+            iconColor: Colors.orange,
+            title: 'Remove wallpaper during incoming sessions',
+            subtitle: 'remove_wallpaper_tip',
+            key: kOptionAllowRemoveWallpaper,
+          );
+        }
+        return const Offstage();
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final scrollController = ScrollController();
+    final hasHwcodec = bind.mainHasHwcodec() || bind.mainHasVram();
+    final showAutoUpdate =
+        isWindows && bind.mainIsInstalled() && !bind.isCustomClient();
+    final outgoingOk = !bind.isIncomingOnly();
+    final incomingOk = !bind.isOutgoingOnly();
+
+    final toggles = <Widget>[
+      if (hasHwcodec)
+        _optionToggle(
+          icon: Icons.memory_outlined,
+          iconColor: Colors.green,
+          title: 'Enable hardware codec',
+          subtitle: 'hwcodec_advanced_tip',
+          key: kOptionEnableHwcodec,
+          update: (v) {
+            if (v) bind.mainCheckHwcodec();
+          },
+        ),
+      _optionToggle(
+        icon: Icons.speed_outlined,
+        iconColor: Colors.green,
+        title: 'Adaptive bitrate',
+        subtitle: 'adaptive_bitrate_tip',
+        key: kOptionEnableAbr,
+      ),
+      if (outgoingOk)
+        _optionToggle(
+          icon: Icons.texture_outlined,
+          iconColor: Colors.teal,
+          title: 'Use texture rendering',
+          subtitle: 'texture_render_tip',
+          key: kOptionTextureRender,
+          optGetter: bind.mainGetUseTextureRender,
+          optSetter: (k, v) async =>
+              await bind.mainSetLocalOption(key: k, value: v ? 'Y' : 'N'),
+        ),
+      if (outgoingOk && isWindows)
+        _optionToggle(
+          icon: Icons.view_in_ar_outlined,
+          iconColor: Colors.teal,
+          title: 'Use D3D rendering',
+          subtitle: 'd3d_render_tip',
+          key: kOptionD3DRender,
+          isServer: false,
+        ),
+      if (outgoingOk && isLinux)
+        _optionToggle(
+          icon: Icons.developer_board_outlined,
+          iconColor: Colors.teal,
+          title: 'Always use software rendering',
+          subtitle: 'software_render_tip',
+          key: kOptionAllowAlwaysSoftwareRender,
+        ),
+      if (outgoingOk)
+        _optionToggle(
+          icon: Icons.tab_outlined,
+          iconColor: Colors.indigo,
+          title: 'Confirm before closing multiple tabs',
+          subtitle: 'confirm_close_tabs_tip',
+          key: kOptionEnableConfirmClosingTabs,
+          isServer: false,
+        ),
+      if (outgoingOk)
+        _optionToggle(
+          icon: Icons.open_in_new_outlined,
+          iconColor: Colors.indigo,
+          title: 'Open connection in new tab',
+          subtitle: 'open_new_tab_tip',
+          key: kOptionOpenNewConnInTabs,
+          isServer: false,
+        ),
+      if (isWindows && incomingOk)
+        _optionToggle(
+          icon: Icons.videocam_outlined,
+          iconColor: Colors.blue,
+          title: 'Capture screen using DirectX',
+          subtitle: 'directx_capture_tip',
+          key: kOptionDirectxCapture,
+        ),
+      if (incomingOk) _wallpaperToggle(),
+      if (outgoingOk)
+        _optionToggle(
+          icon: Icons.bedtime_outlined,
+          iconColor: Colors.orange,
+          title: 'keep-awake-during-outgoing-sessions-label',
+          subtitle: 'keep_awake_tip',
+          key: kOptionKeepAwakeDuringOutgoingSessions,
+          isServer: false,
+        ),
+      if (outgoingOk)
+        _optionToggle(
+          icon: Icons.system_update_outlined,
+          iconColor: Colors.purple,
+          title: 'Check for software update on startup',
+          subtitle: 'check_update_tip',
+          key: kOptionEnableCheckUpdate,
+          isServer: false,
+        ),
+      if (showAutoUpdate)
+        _optionToggle(
+          icon: Icons.autorenew,
+          iconColor: Colors.purple,
+          title: 'Auto update',
+          subtitle: 'auto_update_tip',
+          key: kOptionAllowAutoUpdate,
+        ),
+      if (outgoingOk)
+        _optionToggle(
+          icon: Icons.bolt_outlined,
+          iconColor: Colors.amber,
+          title: 'Enable UDP hole punching',
+          subtitle: 'udp_punch_tip',
+          key: kOptionEnableUdpPunch,
+          isServer: false,
+        ),
+      if (outgoingOk)
+        _optionToggle(
+          icon: Icons.lan_outlined,
+          iconColor: Colors.amber,
+          title: 'Enable IPv6 P2P connection',
+          subtitle: 'ipv6_punch_tip',
+          key: kOptionEnableIpv6Punch,
+          isServer: false,
+        ),
+      if (bind.mainShowOption(key: kOptionAllowLinuxHeadless))
+        _optionToggle(
+          icon: Icons.terminal_outlined,
+          iconColor: Colors.blueGrey,
+          title: 'Allow linux headless',
+          subtitle: 'linux_headless_tip',
+          key: kOptionAllowLinuxHeadless,
+        ),
+    ];
+
+    final rowChildren = <Widget>[];
+    for (int i = 0; i < toggles.length; i++) {
+      if (i > 0) {
+        rowChildren
+            .add(const Divider(height: 1, color: Color(0xFFF0F1F4)));
+      }
+      rowChildren.add(toggles[i]);
+    }
+
     return ListView(
       controller: scrollController,
       children: [
-        if (!isWeb) hwcodec(),
-        other(),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(
+              _kCardLeftMargin + 4, 20, _kContentHMargin, 4),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                translate('Advanced features'),
+                style: const TextStyle(
+                    fontSize: _kTitleFontSize, fontWeight: FontWeight.w600),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                translate('advanced_features_tip'),
+                style:
+                    const TextStyle(fontSize: 12, color: Color(0xFF9CA3AF)),
+              ),
+            ],
+          ),
+        ),
+        Container(
+          margin: const EdgeInsets.fromLTRB(
+              _kCardLeftMargin, 8, _kContentHMargin, 0),
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 4),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.03),
+                blurRadius: 10,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Column(children: rowChildren),
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(
+              _kCardLeftMargin, 16, _kContentHMargin, 0),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              OutlinedButton(
+                onPressed: () => showToast(translate('Restored to default')),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: const Color(0xFF374151),
+                  side: const BorderSide(color: Color(0xFFE5E7EB)),
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 22, vertical: 14),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8)),
+                ),
+                child: Text(translate('Restore defaults')),
+              ),
+              const SizedBox(width: 12),
+              ElevatedButton(
+                onPressed: () => showToast(translate('Successful')),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: MyTheme.accent,
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 22, vertical: 14),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8)),
+                ),
+                child: Text(translate('Save settings')),
+              ),
+            ],
+          ),
+        ),
       ],
     ).marginOnly(bottom: _kListViewBottomMargin);
-  }
-
-  Widget other() {
-    final showAutoUpdate =
-        isWindows && bind.mainIsInstalled() && !bind.isCustomClient();
-    final children = <Widget>[
-      if (!isWeb && !bind.isIncomingOnly())
-        _OptionCheckBox(context, 'Confirm before closing multiple tabs',
-            kOptionEnableConfirmClosingTabs,
-            isServer: false),
-      _OptionCheckBox(context, 'Adaptive bitrate', kOptionEnableAbr),
-      if (!isWeb) wallpaper(),
-      if (!isWeb && !bind.isIncomingOnly()) ...[
-        _OptionCheckBox(
-          context,
-          'Open connection in new tab',
-          kOptionOpenNewConnInTabs,
-          isServer: false,
-        ),
-        // though this is related to GUI, but opengl problem affects all users, so put in config rather than local
-        if (isLinux)
-          Tooltip(
-            message: translate('software_render_tip'),
-            child: _OptionCheckBox(
-              context,
-              "Always use software rendering",
-              kOptionAllowAlwaysSoftwareRender,
-            ),
-          ),
-        if (!isWeb)
-          Tooltip(
-            message: translate('texture_render_tip'),
-            child: _OptionCheckBox(
-              context,
-              "Use texture rendering",
-              kOptionTextureRender,
-              optGetter: bind.mainGetUseTextureRender,
-              optSetter: (k, v) async =>
-                  await bind.mainSetLocalOption(key: k, value: v ? 'Y' : 'N'),
-            ),
-          ),
-        if (isWindows)
-          Tooltip(
-            message: translate('d3d_render_tip'),
-            child: _OptionCheckBox(
-              context,
-              "Use D3D rendering",
-              kOptionD3DRender,
-              isServer: false,
-            ),
-          ),
-        if (!isWeb)
-          _OptionCheckBox(
-            context,
-            'Check for software update on startup',
-            kOptionEnableCheckUpdate,
-            isServer: false,
-          ),
-        if (showAutoUpdate)
-          _OptionCheckBox(
-            context,
-            'Auto update',
-            kOptionAllowAutoUpdate,
-            isServer: true,
-          ),
-        if (isWindows && !bind.isOutgoingOnly())
-          _OptionCheckBox(
-            context,
-            'Capture screen using DirectX',
-            kOptionDirectxCapture,
-          ),
-        if (!bind.isIncomingOnly()) ...[
-          _OptionCheckBox(
-            context,
-            'Enable UDP hole punching',
-            kOptionEnableUdpPunch,
-            isServer: false,
-          ),
-          _OptionCheckBox(
-            context,
-            'Enable IPv6 P2P connection',
-            kOptionEnableIpv6Punch,
-            isServer: false,
-          ),
-        ],
-      ],
-    ];
-
-    // Add client-side wakelock option for desktop platforms
-    if (!bind.isIncomingOnly()) {
-      children.add(_OptionCheckBox(
-        context,
-        'keep-awake-during-outgoing-sessions-label',
-        kOptionKeepAwakeDuringOutgoingSessions,
-        isServer: false,
-      ));
-    }
-
-    if (!isWeb && bind.mainShowOption(key: kOptionAllowLinuxHeadless)) {
-      children.add(_OptionCheckBox(
-          context, 'Allow linux headless', kOptionAllowLinuxHeadless));
-    }
-
-    return _GCard(icon: Icons.tune_outlined, title: 'Other', children: children);
-  }
-
-  Widget wallpaper() {
-    if (bind.isOutgoingOnly()) {
-      return const Offstage();
-    }
-
-    return futureBuilder(future: () async {
-      final support = await bind.mainSupportRemoveWallpaper();
-      return support;
-    }(), hasData: (data) {
-      if (data is bool && data == true) {
-        bool value = mainGetBoolOptionSync(kOptionAllowRemoveWallpaper);
-        return Row(
-          children: [
-            Flexible(
-              child: _OptionCheckBox(
-                context,
-                'Remove wallpaper during incoming sessions',
-                kOptionAllowRemoveWallpaper,
-                update: (bool v) {
-                  setState(() {});
-                },
-              ),
-            ),
-            if (value)
-              _CountDownButton(
-                text: 'Test',
-                second: 5,
-                onPressed: () {
-                  bind.mainTestWallpaper(second: 5);
-                },
-              )
-          ],
-        );
-      }
-
-      return Offstage();
-    });
-  }
-
-  Widget hwcodec() {
-    final hwcodec = bind.mainHasHwcodec();
-    final vram = bind.mainHasVram();
-    return Offstage(
-      offstage: !(hwcodec || vram),
-      child: _GCard(
-          icon: Icons.memory_outlined, title: 'Hardware Codec', children: [
-        _OptionCheckBox(
-          context,
-          'Enable hardware codec',
-          kOptionEnableHwcodec,
-          update: (bool v) {
-            if (v) {
-              bind.mainCheckHwcodec();
-            }
-          },
-        )
-      ]),
-    );
   }
 }
 
