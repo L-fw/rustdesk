@@ -1759,7 +1759,6 @@ class _RemoteControlState extends State<_RemoteControl> {
       imageQuality(context),
       codec(context),
       if (isDesktop) trackpadSpeed(context),
-      other(context),
     ]).marginOnly(bottom: _kListViewBottomMargin);
   }
 
@@ -1886,45 +1885,6 @@ class _RemoteControlState extends State<_RemoteControl> {
     ]);
   }
 
-  Widget privacyModeImpl(BuildContext context) {
-    return Offstage();
-  }
-
-  Widget otherRow(String label, String key) {
-    final value = bind.mainGetUserDefaultOption(key: key) == 'Y';
-    final isOptFixed = isOptionFixed(key);
-    onChanged(bool b) async {
-      await bind.mainSetUserDefaultOption(
-          key: key,
-          value: b
-              ? 'Y'
-              : (key == kOptionEnableFileCopyPaste ? 'N' : defaultOptionNo));
-      setState(() {});
-    }
-
-    return GestureDetector(
-        child: Row(
-          children: [
-            Checkbox(
-                    value: value,
-                    onChanged: isOptFixed ? null : (_) => onChanged(!value))
-                .marginOnly(right: 5),
-            Expanded(
-              child: Text(translate(label)),
-            )
-          ],
-        ).marginOnly(left: _kCheckBoxLeftMargin),
-        onTap: isOptFixed ? null : () => onChanged(!value));
-  }
-
-  Widget other(BuildContext context) {
-    final children =
-        otherDefaultSettings().map((e) => otherRow(e.$1, e.$2)).toList();
-    return _GCard(
-        icon: Icons.content_paste_outlined,
-        title: 'Other Default Options',
-        children: children);
-  }
 }
 
 class _Account extends StatefulWidget {
@@ -2299,12 +2259,12 @@ class _Advanced extends StatefulWidget {
 }
 
 class _AdvancedState extends State<_Advanced> {
-  // A single toggle row: colored icon + title + description + switch.
+  // A single toggle row: colored icon + title + optional description + switch.
   Widget _toggleRow({
     required IconData icon,
     required Color iconColor,
     required String title,
-    required String subtitle,
+    String? subtitle,
     required bool value,
     required ValueChanged<bool>? onChanged,
   }) {
@@ -2329,10 +2289,12 @@ class _AdvancedState extends State<_Advanced> {
                 Text(translate(title),
                     style: const TextStyle(
                         fontSize: 14, fontWeight: FontWeight.w600)),
-                const SizedBox(height: 3),
-                Text(translate(subtitle),
-                    style: const TextStyle(
-                        fontSize: 12, color: Color(0xFF9CA3AF))),
+                if (subtitle != null && subtitle.isNotEmpty) ...[
+                  const SizedBox(height: 3),
+                  Text(translate(subtitle),
+                      style: const TextStyle(
+                          fontSize: 12, color: Color(0xFF9CA3AF))),
+                ],
               ],
             ),
           ),
@@ -2352,7 +2314,7 @@ class _AdvancedState extends State<_Advanced> {
     required IconData icon,
     required Color iconColor,
     required String title,
-    required String subtitle,
+    String? subtitle,
     required String key,
     bool isServer = true,
     bool Function()? optGetter,
@@ -2383,6 +2345,39 @@ class _AdvancedState extends State<_Advanced> {
     );
   }
 
+  // A toggle row bound to a per-session "user default" option (moved here from
+  // the Remote control panel's "Other default options").
+  Widget _defaultOptionToggle({
+    required IconData icon,
+    required Color iconColor,
+    required String title,
+    String? subtitle,
+    required String key,
+  }) {
+    final value = bind.mainGetUserDefaultOption(key: key) == 'Y';
+    final isOptFixed = isOptionFixed(key);
+    return _toggleRow(
+      icon: icon,
+      iconColor: iconColor,
+      title: title,
+      subtitle: subtitle,
+      value: value,
+      onChanged: isOptFixed
+          ? null
+          : (b) async {
+              await bind.mainSetUserDefaultOption(
+                key: key,
+                value: b
+                    ? 'Y'
+                    : (key == kOptionEnableFileCopyPaste
+                        ? 'N'
+                        : defaultOptionNo),
+              );
+              setState(() {});
+            },
+    );
+  }
+
   Widget _wallpaperToggle() {
     return futureBuilder(
       future: bind.mainSupportRemoveWallpaper(),
@@ -2401,6 +2396,47 @@ class _AdvancedState extends State<_Advanced> {
     );
   }
 
+  Widget _categoryHeader(String title) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+          _kCardLeftMargin + 4, 18, _kContentHMargin, 6),
+      child: Text(
+        translate(title),
+        style: const TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: Color(0xFF6B7280)),
+      ),
+    );
+  }
+
+  Widget _card(List<Widget> toggles) {
+    final rowChildren = <Widget>[];
+    for (int i = 0; i < toggles.length; i++) {
+      if (i > 0) {
+        rowChildren.add(const Divider(height: 1, color: Color(0xFFF0F1F4)));
+      }
+      rowChildren.add(toggles[i]);
+    }
+    return Container(
+      margin:
+          const EdgeInsets.fromLTRB(_kCardLeftMargin, 0, _kContentHMargin, 0),
+      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 4),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(children: rowChildren),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final scrollController = ScrollController();
@@ -2409,8 +2445,38 @@ class _AdvancedState extends State<_Advanced> {
         isWindows && bind.mainIsInstalled() && !bind.isCustomClient();
     final outgoingOk = !bind.isIncomingOnly();
     final incomingOk = !bind.isOutgoingOnly();
+    final desktop = isDesktop;
 
-    final toggles = <Widget>[
+    final children = <Widget>[
+      Padding(
+        padding: const EdgeInsets.fromLTRB(
+            _kCardLeftMargin + 4, 20, _kContentHMargin, 0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              translate('Advanced features'),
+              style: const TextStyle(
+                  fontSize: _kTitleFontSize, fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              translate('advanced_features_tip'),
+              style: const TextStyle(fontSize: 12, color: Color(0xFF9CA3AF)),
+            ),
+          ],
+        ),
+      ),
+    ];
+
+    void section(String title, List<Widget> toggles) {
+      if (toggles.isEmpty) return;
+      children.add(_categoryHeader(title));
+      children.add(_card(toggles));
+    }
+
+    // 设备性能优化
+    section('Device performance', [
       if (hasHwcodec)
         _optionToggle(
           icon: Icons.memory_outlined,
@@ -2457,6 +2523,34 @@ class _AdvancedState extends State<_Advanced> {
           subtitle: 'software_render_tip',
           key: kOptionAllowAlwaysSoftwareRender,
         ),
+      if (isWindows && incomingOk)
+        _optionToggle(
+          icon: Icons.videocam_outlined,
+          iconColor: Colors.blue,
+          title: 'Capture screen using DirectX',
+          subtitle: 'directx_capture_tip',
+          key: kOptionDirectxCapture,
+        ),
+    ]);
+
+    // 窗口工具栏
+    section('Window toolbar', [
+      if (desktop)
+        _defaultOptionToggle(
+          icon: Icons.monitor_outlined,
+          iconColor: Colors.blue,
+          title: 'Show monitors in toolbar',
+          subtitle: 'adv_show_monitors_sub',
+          key: kKeyShowMonitorsToolbar,
+        ),
+      if (desktop)
+        _defaultOptionToggle(
+          icon: Icons.unfold_less,
+          iconColor: Colors.blue,
+          title: 'Collapse toolbar',
+          subtitle: 'adv_collapse_toolbar_sub',
+          key: kOptionCollapseToolbar,
+        ),
       if (outgoingOk)
         _optionToggle(
           icon: Icons.tab_outlined,
@@ -2475,13 +2569,107 @@ class _AdvancedState extends State<_Advanced> {
           key: kOptionOpenNewConnInTabs,
           isServer: false,
         ),
-      if (isWindows && incomingOk)
-        _optionToggle(
-          icon: Icons.videocam_outlined,
-          iconColor: Colors.blue,
-          title: 'Capture screen using DirectX',
-          subtitle: 'directx_capture_tip',
-          key: kOptionDirectxCapture,
+    ]);
+
+    // 输入增强
+    section('Input enhancement', [
+      _defaultOptionToggle(
+        icon: Icons.swap_vert,
+        iconColor: Colors.teal,
+        title: 'Reverse mouse wheel',
+        subtitle: 'adv_reverse_wheel_sub',
+        key: kKeyReverseMouseWheel,
+      ),
+      _defaultOptionToggle(
+        icon: Icons.swap_horiz,
+        iconColor: Colors.teal,
+        title: 'swap-left-right-mouse',
+        subtitle: 'adv_swap_mouse_sub',
+        key: kOptionSwapLeftRightMouse,
+      ),
+    ]);
+
+    // 显示与隐私
+    section('Display and privacy', [
+      _defaultOptionToggle(
+        icon: Icons.visibility_outlined,
+        iconColor: Colors.orange,
+        title: 'View Mode',
+        subtitle: 'adv_view_mode_sub',
+        key: kOptionViewOnly,
+      ),
+      _defaultOptionToggle(
+        icon: Icons.mouse_outlined,
+        iconColor: Colors.orange,
+        title: 'Show remote cursor',
+        subtitle: 'adv_show_cursor_sub',
+        key: kOptionShowRemoteCursor,
+      ),
+      _defaultOptionToggle(
+        icon: Icons.analytics_outlined,
+        iconColor: Colors.orange,
+        title: 'Show quality monitor',
+        subtitle: 'adv_quality_monitor_sub',
+        key: kOptionShowQualityMonitor,
+      ),
+      _defaultOptionToggle(
+        icon: Icons.volume_off_outlined,
+        iconColor: Colors.orange,
+        title: 'Mute',
+        subtitle: 'adv_mute_sub',
+        key: kOptionDisableAudio,
+      ),
+      if (desktop)
+        _defaultOptionToggle(
+          icon: Icons.file_copy_outlined,
+          iconColor: Colors.orange,
+          title: 'Enable file copy and paste',
+          subtitle: 'adv_file_copy_sub',
+          key: kOptionEnableFileCopyPaste,
+        ),
+      _defaultOptionToggle(
+        icon: Icons.content_paste_off_outlined,
+        iconColor: Colors.orange,
+        title: 'Disable clipboard',
+        subtitle: 'adv_disable_clipboard_sub',
+        key: kOptionDisableClipboard,
+      ),
+      _defaultOptionToggle(
+        icon: Icons.lock_clock_outlined,
+        iconColor: Colors.orange,
+        title: 'Lock after session end',
+        subtitle: 'adv_lock_after_sub',
+        key: kOptionLockAfterSessionEnd,
+      ),
+      _defaultOptionToggle(
+        icon: Icons.visibility_off_outlined,
+        iconColor: Colors.orange,
+        title: 'Privacy mode',
+        subtitle: 'adv_privacy_mode_sub',
+        key: kOptionPrivacyMode,
+      ),
+      _defaultOptionToggle(
+        icon: Icons.palette_outlined,
+        iconColor: Colors.orange,
+        title: 'True color (4:4:4)',
+        subtitle: 'adv_true_color_sub',
+        key: kOptionI444,
+      ),
+      if (desktop)
+        _defaultOptionToggle(
+          icon: Icons.web_asset_outlined,
+          iconColor: Colors.orange,
+          title: 'Show displays as individual windows',
+          subtitle: 'adv_individual_windows_sub',
+          key: kKeyShowDisplaysAsIndividualWindows,
+        ),
+      if (desktop)
+        _defaultOptionToggle(
+          icon: Icons.desktop_windows_outlined,
+          iconColor: Colors.orange,
+          title: 'Use all my displays for the remote session',
+          subtitle: 'adv_all_displays_sub',
+          key: kKeyUseAllMyDisplaysForTheRemoteSession,
         ),
       if (incomingOk) _wallpaperToggle(),
       if (outgoingOk)
@@ -2493,6 +2681,10 @@ class _AdvancedState extends State<_Advanced> {
           key: kOptionKeepAwakeDuringOutgoingSessions,
           isServer: false,
         ),
+    ]);
+
+    // 实用功能
+    section('Utility features', [
       if (outgoingOk)
         _optionToggle(
           icon: Icons.system_update_outlined,
@@ -2536,93 +2728,49 @@ class _AdvancedState extends State<_Advanced> {
           subtitle: 'linux_headless_tip',
           key: kOptionAllowLinuxHeadless,
         ),
-    ];
+    ]);
 
-    final rowChildren = <Widget>[];
-    for (int i = 0; i < toggles.length; i++) {
-      if (i > 0) {
-        rowChildren
-            .add(const Divider(height: 1, color: Color(0xFFF0F1F4)));
-      }
-      rowChildren.add(toggles[i]);
-    }
+    children.add(
+      Padding(
+        padding:
+            const EdgeInsets.fromLTRB(_kCardLeftMargin, 16, _kContentHMargin, 0),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.end,
+          children: [
+            OutlinedButton(
+              onPressed: () => showToast(translate('Restored to default')),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: const Color(0xFF374151),
+                side: const BorderSide(color: Color(0xFFE5E7EB)),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 22, vertical: 14),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8)),
+              ),
+              child: Text(translate('Restore defaults')),
+            ),
+            const SizedBox(width: 12),
+            ElevatedButton(
+              onPressed: () => showToast(translate('Successful')),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: MyTheme.accent,
+                foregroundColor: Colors.white,
+                elevation: 0,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 22, vertical: 14),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8)),
+              ),
+              child: Text(translate('Save settings')),
+            ),
+          ],
+        ),
+      ),
+    );
 
     return ListView(
       controller: scrollController,
-      children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(
-              _kCardLeftMargin + 4, 20, _kContentHMargin, 4),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                translate('Advanced features'),
-                style: const TextStyle(
-                    fontSize: _kTitleFontSize, fontWeight: FontWeight.w600),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                translate('advanced_features_tip'),
-                style:
-                    const TextStyle(fontSize: 12, color: Color(0xFF9CA3AF)),
-              ),
-            ],
-          ),
-        ),
-        Container(
-          margin: const EdgeInsets.fromLTRB(
-              _kCardLeftMargin, 8, _kContentHMargin, 0),
-          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 4),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.03),
-                blurRadius: 10,
-                offset: const Offset(0, 2),
-              ),
-            ],
-          ),
-          child: Column(children: rowChildren),
-        ),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(
-              _kCardLeftMargin, 16, _kContentHMargin, 0),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              OutlinedButton(
-                onPressed: () => showToast(translate('Restored to default')),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: const Color(0xFF374151),
-                  side: const BorderSide(color: Color(0xFFE5E7EB)),
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 22, vertical: 14),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8)),
-                ),
-                child: Text(translate('Restore defaults')),
-              ),
-              const SizedBox(width: 12),
-              ElevatedButton(
-                onPressed: () => showToast(translate('Successful')),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: MyTheme.accent,
-                  foregroundColor: Colors.white,
-                  elevation: 0,
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 22, vertical: 14),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8)),
-                ),
-                child: Text(translate('Save settings')),
-              ),
-            ],
-          ),
-        ),
-      ],
+      children: children,
     ).marginOnly(bottom: _kListViewBottomMargin);
   }
 }

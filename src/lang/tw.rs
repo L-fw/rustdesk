@@ -883,6 +883,6 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
         ("No devices", "暫無裝置"),
         ("Unknown", "未知"),
         ("Language and region", "語言與地區"),
-        ("Advanced features", "收藏"),
+        ("Advanced features", "進階功能"),
     ].iter().cloned().collect();
 }
