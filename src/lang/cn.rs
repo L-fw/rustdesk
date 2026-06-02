@@ -2,6 +2,11 @@ lazy_static::lazy_static! {
 pub static ref T: std::collections::HashMap<&'static str, &'static str> =
     [
         ("LinkEase", "佳影"),
+        ("security_settings_banner_tip", "安全设置已开启，您的远程连接受到保护"),
+        ("Access Control", "访问控制"),
+        ("Access Credentials", "访问权限"),
+        ("Connection Protection", "连接保护"),
+        ("Enabled", "已开启"),
         ("Status", "状态"),
         ("Your Desktop", "你的桌面"),
         ("Local ID", "本机ID"),

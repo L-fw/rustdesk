@@ -1,6 +1,11 @@
 ﻿lazy_static::lazy_static! {
 pub static ref T: std::collections::HashMap<&'static str, &'static str> =
     [
+        ("security_settings_banner_tip", "Security settings are enabled, your remote connections are protected."),
+        ("Access Control", "Access Control"),
+        ("Access Credentials", "Access Credentials"),
+        ("Connection Protection", "Connection Protection"),
+        ("Enabled", "Enabled"),
         ("recording_card_tip", "Automatically record remote sessions and save them locally."),
         ("display_settings_tip", "Configure the theme, default view style and scroll style."),
         ("Language and region", "Language and region"),

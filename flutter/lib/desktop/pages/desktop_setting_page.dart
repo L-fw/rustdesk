@@ -893,6 +893,7 @@ class _SafetyState extends State<_Safety> with AutomaticKeepAliveClientMixin {
         controller: scrollController,
         child: Column(
           children: [
+            _securityBanner(),
             _lock(locked, 'Unlock Security Settings', () {
               locked = false;
               setState(() => {});
@@ -910,6 +911,84 @@ class _SafetyState extends State<_Safety> with AutomaticKeepAliveClientMixin {
             ),
           ],
         )).marginOnly(bottom: _kListViewBottomMargin);
+  }
+
+  // Blue status banner shown at the top of the Security page (matching the
+  // "8.2-设置-安全" mockup): a shield icon, a short tip and a status pill on
+  // the right that doubles as the unlock action when settings are locked.
+  Widget _securityBanner() {
+    return Container(
+      width: double.infinity,
+      margin:
+          const EdgeInsets.fromLTRB(_kCardLeftMargin, 15, _kContentHMargin, 0),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      decoration: BoxDecoration(
+        color: const Color(0xFFEAF1FF),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFD3E1FF)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 34,
+            height: 34,
+            decoration: BoxDecoration(
+              color: _accentColor.withOpacity(0.15),
+              borderRadius: BorderRadius.circular(9),
+            ),
+            child: const Icon(Icons.verified_user, color: _accentColor, size: 19),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              translate('security_settings_banner_tip'),
+              style: const TextStyle(fontSize: 13, color: Color(0xFF374151)),
+            ),
+          ),
+          const SizedBox(width: 12),
+          InkWell(
+            borderRadius: BorderRadius.circular(20),
+            onTap: locked ? _unlock : null,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+              decoration: BoxDecoration(
+                color: _accentColor.withOpacity(0.12),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: _accentColor.withOpacity(0.5)),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(locked ? Icons.lock_outline : Icons.check_circle_outline,
+                      size: 15, color: _accentColor),
+                  const SizedBox(width: 5),
+                  Text(
+                    translate(locked ? 'Unlock Security Settings' : 'Enabled'),
+                    style: const TextStyle(
+                        fontSize: 12,
+                        color: _accentColor,
+                        fontWeight: FontWeight.w600),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Unlock the security settings, sharing the same permission/PIN check as the
+  // [_lock] card below the banner.
+  Future<void> _unlock() async {
+    final unlockPin = bind.mainGetUnlockPin();
+    onUnlock() => setState(() => locked = false);
+    if (unlockPin.isEmpty || isUnlockPinDisabled()) {
+      final checked = await callMainCheckSuperUserPermission();
+      if (checked) onUnlock();
+    } else {
+      checkUnlockPinDialog(unlockPin, onUnlock);
+    }
   }
 
   Widget tfa() {
@@ -957,7 +1036,8 @@ class _SafetyState extends State<_Safety> with AutomaticKeepAliveClientMixin {
 
       return _GCard(
           icon: Icons.verified_user_outlined,
-          title: 'Permissions',
+          iconColor: const Color(0xFF22C55E),
+          title: 'Access Control',
           children: [
         ComboBox(
             keys: [
@@ -975,41 +1055,36 @@ class _SafetyState extends State<_Safety> with AutomaticKeepAliveClientMixin {
             onChanged: (mode) async {
               await bind.mainSetOption(key: kOptionAccessMode, value: mode);
               setState(() {});
-            }).marginOnly(left: _kContentHMargin),
-        Column(
-          children: [
-            _OptionCheckBox(
-                context, 'Enable keyboard/mouse', kOptionEnableKeyboard,
+            }).marginOnly(left: _kCheckBoxLeftMargin),
+        _twoColumnGrid([
+          _OptionCheckBox(
+              context, 'Enable keyboard/mouse', kOptionEnableKeyboard,
+              enabled: enabled, fakeValue: fakeValue),
+          _OptionCheckBox(context, 'Enable clipboard', kOptionEnableClipboard,
+              enabled: enabled, fakeValue: fakeValue),
+          _OptionCheckBox(
+              context, 'Enable file transfer', kOptionEnableFileTransfer,
+              enabled: enabled, fakeValue: fakeValue),
+          _OptionCheckBox(context, 'Enable audio', kOptionEnableAudio,
+              enabled: enabled, fakeValue: fakeValue),
+          _OptionCheckBox(context, 'Enable camera', kOptionEnableCamera,
+              enabled: enabled, fakeValue: fakeValue),
+          _OptionCheckBox(context, 'Enable TCP tunneling', kOptionEnableTunnel,
+              enabled: enabled, fakeValue: fakeValue),
+          _OptionCheckBox(
+              context, 'Enable remote restart', kOptionEnableRemoteRestart,
+              enabled: enabled, fakeValue: fakeValue),
+          _OptionCheckBox(
+              context, 'Enable recording session', kOptionEnableRecordSession,
+              enabled: enabled, fakeValue: fakeValue),
+          if (isWindows)
+            _OptionCheckBox(context, 'Enable blocking user input',
+                kOptionEnableBlockInput,
                 enabled: enabled, fakeValue: fakeValue),
-
-            _OptionCheckBox(context, 'Enable clipboard', kOptionEnableClipboard,
-                enabled: enabled, fakeValue: fakeValue),
-            _OptionCheckBox(
-                context, 'Enable file transfer', kOptionEnableFileTransfer,
-                enabled: enabled, fakeValue: fakeValue),
-            _OptionCheckBox(context, 'Enable audio', kOptionEnableAudio,
-                enabled: enabled, fakeValue: fakeValue),
-            _OptionCheckBox(context, 'Enable camera', kOptionEnableCamera,
-                enabled: enabled, fakeValue: fakeValue),
-
-            _OptionCheckBox(
-                context, 'Enable TCP tunneling', kOptionEnableTunnel,
-                enabled: enabled, fakeValue: fakeValue),
-            _OptionCheckBox(
-                context, 'Enable remote restart', kOptionEnableRemoteRestart,
-                enabled: enabled, fakeValue: fakeValue),
-            _OptionCheckBox(
-                context, 'Enable recording session', kOptionEnableRecordSession,
-                enabled: enabled, fakeValue: fakeValue),
-            if (isWindows)
-              _OptionCheckBox(context, 'Enable blocking user input',
-                  kOptionEnableBlockInput,
-                  enabled: enabled, fakeValue: fakeValue),
-            _OptionCheckBox(context, 'Enable remote configuration modification',
-                kOptionAllowRemoteConfigModification,
-                enabled: enabled, fakeValue: fakeValue),
-          ],
-        ),
+          _OptionCheckBox(context, 'Enable remote configuration modification',
+              kOptionAllowRemoteConfigModification,
+              enabled: enabled, fakeValue: fakeValue),
+        ]),
       ]);
     }
 
@@ -1142,8 +1217,9 @@ class _SafetyState extends State<_Safety> with AutomaticKeepAliveClientMixin {
 
           final isApproveModeFixed = isOptionFixed(kOptionApproveMode);
           return _GCard(
-              icon: Icons.password_outlined,
-              title: 'Password',
+              icon: Icons.vpn_key_outlined,
+              iconColor: const Color(0xFF8B5CF6),
+              title: 'Access Credentials',
               children: [
             ComboBox(
               enabled: !locked && !isApproveModeFixed,
@@ -1179,19 +1255,20 @@ class _SafetyState extends State<_Safety> with AutomaticKeepAliveClientMixin {
     bool enabled = !locked;
     return _GCard(
         icon: Icons.shield_outlined,
-        title: 'Security',
+        iconColor: _accentColor,
+        title: 'Connection Protection',
         children: [
       shareRdp(context, enabled),
-      _OptionCheckBox(context, 'Deny LAN discovery', 'enable-lan-discovery',
+      _OptionSwitch(context, 'Deny LAN discovery', 'enable-lan-discovery',
           reverse: true, enabled: enabled),
       ...directIp(context),
       whitelist(),
       ...autoDisconnect(context),
-      _OptionCheckBox(context, 'keep-awake-during-incoming-sessions-label',
+      _OptionSwitch(context, 'keep-awake-during-incoming-sessions-label',
           kOptionKeepAwakeDuringIncomingSessions,
           reverse: false, enabled: enabled),
       if (bind.mainIsInstalled())
-        _OptionCheckBox(context, 'allow-only-conn-window-open-tip',
+        _OptionSwitch(context, 'allow-only-conn-window-open-tip',
             'allow-only-conn-window-open',
             reverse: false, enabled: enabled),
       if (bind.mainIsInstalled() && !isUnlockPinDisabled()) unlockPin()
@@ -1207,21 +1284,8 @@ class _SafetyState extends State<_Safety> with AutomaticKeepAliveClientMixin {
     bool value = bind.mainIsShareRdp();
     return Offstage(
       offstage: !(isWindows && bind.mainIsInstalled()),
-      child: GestureDetector(
-          child: Row(
-            children: [
-              Checkbox(
-                      value: value,
-                      onChanged: enabled ? (_) => onChanged(!value) : null)
-                  .marginOnly(right: 5),
-              Expanded(
-                child: Text(translate('Enable RDP session sharing'),
-                    style:
-                        TextStyle(color: disabledTextColor(context, enabled))),
-              )
-            ],
-          ).marginOnly(left: _kCheckBoxLeftMargin),
-          onTap: enabled ? () => onChanged(!value) : null),
+      child: _switchRow(context, 'Enable RDP session sharing', value,
+          enabled ? (v) => onChanged(v) : null),
     );
   }
 
@@ -1243,39 +1307,20 @@ class _SafetyState extends State<_Safety> with AutomaticKeepAliveClientMixin {
       }
 
       final isOptFixed = isOptionFixed(kOptionWhitelist);
-      return GestureDetector(
-        child: Tooltip(
-          message: translate('whitelist_tip'),
-          child: Obx(() => Row(
-                children: [
-                  Checkbox(
-                          value: hasWhitelist.value,
-                          onChanged: enabled && !isOptFixed ? onChanged : null)
-                      .marginOnly(right: 5),
-                  Offstage(
-                    offstage: !hasWhitelist.value,
-                    child: MouseRegion(
-                      child: const Icon(Icons.warning_amber_rounded,
-                              color: Color.fromARGB(255, 255, 204, 0))
-                          .marginOnly(right: 5),
-                      cursor: SystemMouseCursors.click,
-                    ),
-                  ),
-                  Expanded(
-                      child: Text(
-                    translate('Use IP Whitelisting'),
-                    style:
-                        TextStyle(color: disabledTextColor(context, enabled)),
-                  ))
-                ],
-              )),
-        ),
-        onTap: enabled
-            ? () {
-                onChanged(!hasWhitelist.value);
-              }
-            : null,
-      ).marginOnly(left: _kCheckBoxLeftMargin);
+      return Tooltip(
+        message: translate('whitelist_tip'),
+        child: Obx(() => _switchRow(
+              context,
+              'Use IP Whitelisting',
+              hasWhitelist.value,
+              enabled && !isOptFixed ? (v) => onChanged(v) : null,
+              leading: hasWhitelist.value
+                  ? const Icon(Icons.warning_amber_rounded,
+                          color: Color.fromARGB(255, 255, 204, 0), size: 18)
+                      .marginOnly(right: 8)
+                  : null,
+            )),
+      );
     }
 
     return tmpWrapper();
@@ -1326,7 +1371,7 @@ class _SafetyState extends State<_Safety> with AutomaticKeepAliveClientMixin {
     update(bool v) => setState(() {});
     RxBool applyEnabled = false.obs;
     return [
-      _OptionCheckBox(
+      _OptionSwitch(
           context, 'auto_disconnect_option_tip', kOptionAllowAutoDisconnect,
           update: update, enabled: !locked),
       () {
@@ -1393,26 +1438,12 @@ class _SafetyState extends State<_Safety> with AutomaticKeepAliveClientMixin {
     }
 
     final isOptFixed = isOptionFixed(kOptionWhitelist);
-    return GestureDetector(
-      child: Obx(() => Row(
-            children: [
-              Checkbox(
-                      value: unlockPin.isNotEmpty,
-                      onChanged: enabled && !isOptFixed ? onChanged : null)
-                  .marginOnly(right: 5),
-              Expanded(
-                  child: Text(
-                translate('Unlock with PIN'),
-                style: TextStyle(color: disabledTextColor(context, enabled)),
-              ))
-            ],
-          )),
-      onTap: enabled
-          ? () {
-              onChanged(!unlockPin.isNotEmpty);
-            }
-          : null,
-    ).marginOnly(left: _kCheckBoxLeftMargin);
+    return Obx(() => _switchRow(
+          context,
+          'Unlock with PIN',
+          unlockPin.isNotEmpty,
+          enabled && !isOptFixed ? (v) => onChanged(v) : null,
+        ));
   }
 }
 
@@ -3754,6 +3785,104 @@ Widget _OptionCheckBox(
           }
         : null,
   );
+}
+
+// A label + trailing iOS-style switch row used by the redesigned Security
+// page: text on the left, a [Switch] on the right. Mirrors the visual style
+// of the "8.2-设置-安全" mockup where connection-protection options are toggles.
+Widget _switchRow(
+  BuildContext context,
+  String label,
+  bool value,
+  Function(bool)? onChanged, {
+  Widget? leading,
+}) {
+  return GestureDetector(
+    behavior: HitTestBehavior.opaque,
+    onTap: onChanged != null ? () => onChanged(!value) : null,
+    child: Row(
+      children: [
+        if (leading != null) leading,
+        Expanded(
+          child: Text(
+            translate(label),
+            style: TextStyle(
+                fontSize: _kContentFontSize,
+                color: disabledTextColor(context, onChanged != null)),
+          ),
+        ),
+        const SizedBox(width: 12),
+        Transform.scale(
+          scale: 0.85,
+          child: Switch(
+            value: value,
+            activeColor: _accentColor,
+            onChanged: onChanged,
+          ),
+        ),
+      ],
+    ),
+  ).marginOnly(left: _kCheckBoxLeftMargin);
+}
+
+// Option-backed variant of [_switchRow]: reads/writes a boolean option key,
+// mirroring [_OptionCheckBox] semantics but rendered as a switch.
+// ignore: non_constant_identifier_names
+Widget _OptionSwitch(
+  BuildContext context,
+  String label,
+  String key, {
+  Function(bool)? update,
+  bool reverse = false,
+  bool enabled = true,
+  bool isServer = true,
+  String? tooltip,
+}) {
+  getOpt() =>
+      isServer ? mainGetBoolOptionSync(key) : mainGetLocalBoolOptionSync(key);
+  bool value = getOpt();
+  final isOptFixed = isOptionFixed(key);
+  if (reverse) value = !value;
+  final ref = value.obs;
+  onChanged(bool option) async {
+    if (reverse) option = !option;
+    final setter = isServer ? mainSetBoolOption : mainSetLocalBoolOption;
+    await setter(key, option);
+    final readOption = getOpt();
+    ref.value = reverse ? !readOption : readOption;
+    update?.call(readOption);
+  }
+
+  final row = Obx(() => _switchRow(
+        context,
+        label,
+        ref.value,
+        enabled && !isOptFixed ? (v) => onChanged(v) : null,
+      ));
+  if (tooltip != null) {
+    return Tooltip(message: translate(tooltip), child: row);
+  }
+  return row;
+}
+
+// Lays out [items] in a responsive two-column grid, matching the access-control
+// checkbox grid in the Security mockup.
+Widget _twoColumnGrid(List<Widget> items) {
+  final rows = <Widget>[];
+  for (int i = 0; i < items.length; i += 2) {
+    rows.add(Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(child: items[i]),
+        const SizedBox(width: 8),
+        Expanded(
+          child: i + 1 < items.length ? items[i + 1] : const SizedBox(),
+        ),
+      ],
+    ));
+    if (i + 2 < items.length) rows.add(const SizedBox(height: 6));
+  }
+  return Column(crossAxisAlignment: CrossAxisAlignment.start, children: rows);
 }
 
 // ignore: non_constant_identifier_names
