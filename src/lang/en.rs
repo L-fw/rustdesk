@@ -2,6 +2,7 @@
 pub static ref T: std::collections::HashMap<&'static str, &'static str> =
     [
         ("recording_card_tip", "Automatically record remote sessions and save them locally."),
+        ("display_settings_tip", "Configure the theme, default view style and scroll style."),
         ("Language and region", "Language and region"),
         ("language_region_tip", "Choose the display language of the app."),
         ("Monitored devices", "Monitored devices"),

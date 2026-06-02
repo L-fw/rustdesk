@@ -624,12 +624,9 @@ class _GeneralState extends State<_General> {
       children: [
         if (!isWeb) service(),
         language(),
-        if (!isWeb) monitoredDevices(),
         if (!isWeb) record(context),
-        if (!isWeb) hwcodec(),
         if (!isWeb) audio(context),
         if (!isWeb) WaylandCard(),
-        other()
       ],
     ).marginOnly(bottom: _kListViewBottomMargin);
   }
@@ -670,6 +667,7 @@ class _GeneralState extends State<_General> {
       final stopped = serviceStop.value;
       return _GCard(
         icon: Icons.dns_outlined,
+        iconColor: const Color(0xFF22C55E),
         title: 'Service',
         subtitle: stopped ? 'Service is not running' : 'Service is running',
         trailing: SizedBox(
@@ -685,14 +683,7 @@ class _GeneralState extends State<_General> {
                     });
                   }
                 : null,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: MyTheme.accent,
-              foregroundColor: Colors.white,
-              elevation: 0,
-              padding: const EdgeInsets.symmetric(horizontal: 22),
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8)),
-            ),
+            style: _gCardButtonStyle,
             child: Text(
               translate(stopped ? 'Start service' : 'Stop service'),
               style:
@@ -702,170 +693,6 @@ class _GeneralState extends State<_General> {
         ),
       );
     });
-  }
-
-  Widget other() {
-    final showAutoUpdate =
-        isWindows && bind.mainIsInstalled() && !bind.isCustomClient();
-    final children = <Widget>[
-      if (!isWeb && !bind.isIncomingOnly())
-        _OptionCheckBox(context, 'Confirm before closing multiple tabs',
-            kOptionEnableConfirmClosingTabs,
-            isServer: false),
-      _OptionCheckBox(context, 'Adaptive bitrate', kOptionEnableAbr),
-      if (!isWeb) wallpaper(),
-      if (!isWeb && !bind.isIncomingOnly()) ...[
-        _OptionCheckBox(
-          context,
-          'Open connection in new tab',
-          kOptionOpenNewConnInTabs,
-          isServer: false,
-        ),
-        // though this is related to GUI, but opengl problem affects all users, so put in config rather than local
-        if (isLinux)
-          Tooltip(
-            message: translate('software_render_tip'),
-            child: _OptionCheckBox(
-              context,
-              "Always use software rendering",
-              kOptionAllowAlwaysSoftwareRender,
-            ),
-          ),
-        if (!isWeb)
-          Tooltip(
-            message: translate('texture_render_tip'),
-            child: _OptionCheckBox(
-              context,
-              "Use texture rendering",
-              kOptionTextureRender,
-              optGetter: bind.mainGetUseTextureRender,
-              optSetter: (k, v) async =>
-                  await bind.mainSetLocalOption(key: k, value: v ? 'Y' : 'N'),
-            ),
-          ),
-        if (isWindows)
-          Tooltip(
-            message: translate('d3d_render_tip'),
-            child: _OptionCheckBox(
-              context,
-              "Use D3D rendering",
-              kOptionD3DRender,
-              isServer: false,
-            ),
-          ),
-        if (!isWeb)
-          _OptionCheckBox(
-            context,
-            'Check for software update on startup',
-            kOptionEnableCheckUpdate,
-            isServer: false,
-          ),
-        if (showAutoUpdate)
-          _OptionCheckBox(
-            context,
-            'Auto update',
-            kOptionAllowAutoUpdate,
-            isServer: true,
-          ),
-        if (isWindows && !bind.isOutgoingOnly())
-          _OptionCheckBox(
-            context,
-            'Capture screen using DirectX',
-            kOptionDirectxCapture,
-          ),
-        if (!bind.isIncomingOnly()) ...[
-          _OptionCheckBox(
-            context,
-            'Enable UDP hole punching',
-            kOptionEnableUdpPunch,
-            isServer: false,
-          ),
-          _OptionCheckBox(
-            context,
-            'Enable IPv6 P2P connection',
-            kOptionEnableIpv6Punch,
-            isServer: false,
-          ),
-        ],
-      ],
-    ];
-
-    // Add client-side wakelock option for desktop platforms
-    if (!bind.isIncomingOnly()) {
-      children.add(_OptionCheckBox(
-        context,
-        'keep-awake-during-outgoing-sessions-label',
-        kOptionKeepAwakeDuringOutgoingSessions,
-        isServer: false,
-      ));
-    }
-
-    if (!isWeb && bind.mainShowOption(key: kOptionAllowLinuxHeadless)) {
-      children.add(_OptionCheckBox(
-          context, 'Allow linux headless', kOptionAllowLinuxHeadless));
-    }
-
-    return _GCard(icon: Icons.tune_outlined, title: 'Other', children: children);
-  }
-
-  Widget wallpaper() {
-    if (bind.isOutgoingOnly()) {
-      return const Offstage();
-    }
-
-    return futureBuilder(future: () async {
-      final support = await bind.mainSupportRemoveWallpaper();
-      return support;
-    }(), hasData: (data) {
-      if (data is bool && data == true) {
-        bool value = mainGetBoolOptionSync(kOptionAllowRemoveWallpaper);
-        return Row(
-          children: [
-            Flexible(
-              child: _OptionCheckBox(
-                context,
-                'Remove wallpaper during incoming sessions',
-                kOptionAllowRemoveWallpaper,
-                update: (bool v) {
-                  setState(() {});
-                },
-              ),
-            ),
-            if (value)
-              _CountDownButton(
-                text: 'Test',
-                second: 5,
-                onPressed: () {
-                  bind.mainTestWallpaper(second: 5);
-                },
-              )
-          ],
-        );
-      }
-
-      return Offstage();
-    });
-  }
-
-  Widget hwcodec() {
-    final hwcodec = bind.mainHasHwcodec();
-    final vram = bind.mainHasVram();
-    return Offstage(
-      offstage: !(hwcodec || vram),
-      child: _GCard(
-          icon: Icons.memory_outlined, title: 'Hardware Codec', children: [
-        _OptionCheckBox(
-          context,
-          'Enable hardware codec',
-          kOptionEnableHwcodec,
-          update: (bool v) {
-            if (v) {
-              bind.mainCheckHwcodec();
-            }
-          },
-        )
-      ]),
-    );
   }
 
   Widget audio(BuildContext context) {
@@ -888,6 +715,7 @@ class _GeneralState extends State<_General> {
       );
       return _GCard(
           icon: Icons.mic_none_outlined,
+          iconColor: const Color(0xFF8B5CF6),
           title: 'Audio Input Device',
           trailing: child);
     }
@@ -916,8 +744,39 @@ class _GeneralState extends State<_General> {
       String root_dir = map['root_dir']!;
       bool root_dir_exists = map['root_dir_exists']!;
       bool user_dir_exists = map['user_dir_exists']!;
+
+      // Unified directory row used inside the card body: a muted label, the
+      // (clickable) path, and an optional trailing control, all sharing the
+      // same left alignment as the checkboxes above.
+      Widget dirRow(String label, String dir, bool exists, {Widget? trailing}) {
+        return Row(
+          children: [
+            Text(
+              label,
+              style: const TextStyle(
+                  fontSize: _kContentFontSize, color: Color(0xFF6B7280)),
+            ),
+            Expanded(
+              child: GestureDetector(
+                onTap: exists ? () => launchUrl(Uri.file(dir)) : null,
+                child: Text(
+                  dir,
+                  softWrap: true,
+                  style: TextStyle(
+                    fontSize: _kContentFontSize,
+                    decoration: exists ? TextDecoration.underline : null,
+                  ),
+                ),
+              ).marginOnly(left: 8),
+            ),
+            if (trailing != null) trailing.marginOnly(left: 10),
+          ],
+        ).marginOnly(left: _kCheckBoxLeftMargin);
+      }
+
       return _GCard(
           icon: Icons.videocam_outlined,
+          iconColor: const Color(0xFFF59E0B),
           title: 'Recording',
           subtitle: 'recording_card_tip',
           children: [
@@ -929,69 +788,39 @@ class _GeneralState extends State<_General> {
               kOptionAllowAutoRecordOutgoing,
               isServer: false),
         if (showRootDir && !bind.isOutgoingOnly())
-          Row(
-            children: [
-              Text(
-                  '${translate(bind.isIncomingOnly() ? "Directory" : "Incoming")}:'),
-              Expanded(
-                child: GestureDetector(
-                    onTap: root_dir_exists
-                        ? () => launchUrl(Uri.file(root_dir))
-                        : null,
-                    child: Text(
-                      root_dir,
-                      softWrap: true,
-                      style: root_dir_exists
-                          ? const TextStyle(
-                              decoration: TextDecoration.underline)
-                          : null,
-                    )).marginOnly(left: 10),
-              ),
-            ],
-          ).marginOnly(left: _kContentHMargin),
+          dirRow(
+              '${translate(bind.isIncomingOnly() ? "Directory" : "Incoming")}:',
+              root_dir,
+              root_dir_exists),
         if (!(showRootDir && bind.isIncomingOnly()))
-          Row(
-            children: [
-              Text(
-                  '${translate((showRootDir && !bind.isOutgoingOnly()) ? "Outgoing" : "Directory")}:'),
-              Expanded(
-                child: GestureDetector(
-                    onTap: user_dir_exists
-                        ? () => launchUrl(Uri.file(user_dir))
-                        : null,
-                    child: Text(
-                      user_dir,
-                      softWrap: true,
-                      style: user_dir_exists
-                          ? const TextStyle(
-                              decoration: TextDecoration.underline)
-                          : null,
-                    )).marginOnly(left: 10),
-              ),
-              ElevatedButton(
-                      onPressed: isOptionFixed(kOptionVideoSaveDirectory)
-                          ? null
-                          : () async {
-                              String? initialDirectory;
-                              if (await Directory.fromUri(
-                                      Uri.directory(user_dir))
-                                  .exists()) {
-                                initialDirectory = user_dir;
-                              }
-                              String? selectedDirectory =
-                                  await FilePicker.platform.getDirectoryPath(
-                                      initialDirectory: initialDirectory);
-                              if (selectedDirectory != null) {
-                                await bind.mainSetLocalOption(
-                                    key: kOptionVideoSaveDirectory,
-                                    value: selectedDirectory);
-                                setState(() {});
-                              }
-                            },
-                      child: Text(translate('Change')))
-                  .marginOnly(left: 5),
-            ],
-          ).marginOnly(left: _kContentHMargin),
+          dirRow(
+            '${translate((showRootDir && !bind.isOutgoingOnly()) ? "Outgoing" : "Directory")}:',
+            user_dir,
+            user_dir_exists,
+            trailing: ElevatedButton(
+              onPressed: isOptionFixed(kOptionVideoSaveDirectory)
+                  ? null
+                  : () async {
+                      String? initialDirectory;
+                      if (await Directory.fromUri(Uri.directory(user_dir))
+                          .exists()) {
+                        initialDirectory = user_dir;
+                      }
+                      String? selectedDirectory = await FilePicker.platform
+                          .getDirectoryPath(initialDirectory: initialDirectory);
+                      if (selectedDirectory != null) {
+                        await bind.mainSetLocalOption(
+                            key: kOptionVideoSaveDirectory,
+                            value: selectedDirectory);
+                        setState(() {});
+                      }
+                    },
+              style: _gCardButtonStyle,
+              child: Text(translate('Change'),
+                  style: const TextStyle(
+                      fontSize: 14, fontWeight: FontWeight.w600)),
+            ),
+          ),
       ]);
     });
   }
@@ -1036,24 +865,6 @@ class _GeneralState extends State<_General> {
     });
   }
 
-  Widget monitoredDevices() {
-    // Placeholder card to match the design; currently only exposes the
-    // "system monitor" scope. Wire up a real option/backend when available.
-    return _GCard(
-      icon: Icons.monitor_heart_outlined,
-      title: 'Monitored devices',
-      subtitle: 'monitored_devices_tip',
-      trailing: SizedBox(
-        width: 180,
-        child: ComboBox(
-          keys: const ['system'],
-          values: [translate('System monitor')],
-          initialKey: 'system',
-          onChanged: (_) {},
-        ),
-      ),
-    );
-  }
 }
 
 enum _AccessMode {
@@ -1816,6 +1627,7 @@ class _DisplayState extends State<_Display> {
   Widget build(BuildContext context) {
     final scrollController = ScrollController();
     return ListView(controller: scrollController, children: [
+      _settingsPageHeader('Display', 'display_settings_tip'),
       theme(context),
       viewStyle(context),
       scrollStyle(context),
@@ -1830,7 +1642,11 @@ class _DisplayState extends State<_Display> {
     }
 
     final isOptFixed = isOptionFixed(kCommConfKeyTheme);
-    return _GCard(icon: Icons.palette_outlined, title: 'Theme', children: [
+    return _GCard(
+        icon: Icons.brightness_6_outlined,
+        iconColor: const Color(0xFF8B5CF6),
+        title: 'Theme',
+        children: [
       _Radio<String>(context,
           value: 'light',
           groupValue: current,
@@ -1859,6 +1675,7 @@ class _DisplayState extends State<_Display> {
     final groupValue = bind.mainGetUserDefaultOption(key: kOptionViewStyle);
     return _GCard(
         icon: Icons.aspect_ratio_outlined,
+        iconColor: const Color(0xFF3B82F6),
         title: 'Default View Style',
         children: [
       _Radio(context,
@@ -1892,6 +1709,7 @@ class _DisplayState extends State<_Display> {
 
     return _GCard(
         icon: Icons.swap_vert_outlined,
+        iconColor: const Color(0xFF22C55E),
         title: 'Default Scroll Style',
         children: [
       _Radio(context,
@@ -2481,172 +2299,180 @@ class _Advanced extends StatefulWidget {
 }
 
 class _AdvancedState extends State<_Advanced> {
-  // Local-only state for toggles that are not wired to a backend yet (UI only).
-  final Map<String, bool> _uiOnly = {};
-
-  Widget _switchTile({
-    required IconData icon,
-    required Color iconColor,
-    required String label,
-    required String subtitle,
-    required bool value,
-    required ValueChanged<bool>? onChanged,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
-      child: Row(
-        children: [
-          Container(
-            width: 36,
-            height: 36,
-            decoration: BoxDecoration(
-              color: iconColor.withOpacity(0.12),
-              borderRadius: BorderRadius.circular(9),
-            ),
-            child: Icon(icon, size: 19, color: iconColor),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(translate(label),
-                    style: const TextStyle(
-                        fontSize: 14, fontWeight: FontWeight.w600)),
-                const SizedBox(height: 2),
-                Text(translate(subtitle),
-                    style: const TextStyle(
-                        fontSize: 12, color: Color(0xFF9CA3AF))),
-              ],
-            ),
-          ),
-          Switch(value: value, onChanged: onChanged),
-        ],
-      ),
-    );
-  }
-
-  Widget _optionTile({
-    required IconData icon,
-    required Color iconColor,
-    required String label,
-    required String subtitle,
-    required String key,
-    bool isServer = true,
-  }) {
-    final value =
-        isServer ? mainGetBoolOptionSync(key) : mainGetLocalBoolOptionSync(key);
-    final isOptFixed = isOptionFixed(key);
-    return _switchTile(
-      icon: icon,
-      iconColor: iconColor,
-      label: label,
-      subtitle: subtitle,
-      value: value,
-      onChanged: isOptFixed
-          ? null
-          : (b) async {
-              if (isServer) {
-                await mainSetBoolOption(key, b);
-              } else {
-                await mainSetLocalBoolOption(key, b);
-              }
-              setState(() {});
-            },
-    );
-  }
-
-  Widget _uiOnlyTile({
-    required IconData icon,
-    required Color iconColor,
-    required String label,
-    required String subtitle,
-    required String id,
-    bool defaultValue = false,
-  }) {
-    final value = _uiOnly[id] ?? defaultValue;
-    return _switchTile(
-      icon: icon,
-      iconColor: iconColor,
-      label: label,
-      subtitle: subtitle,
-      value: value,
-      onChanged: (b) => setState(() => _uiOnly[id] = b),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final scrollController = ScrollController();
-    final tiles = <Widget>[
-      _optionTile(
-        icon: Icons.speed_outlined,
-        iconColor: Colors.green,
-        label: 'Adaptive bitrate',
-        subtitle: 'adaptive_bitrate_tip',
-        key: kOptionEnableAbr,
-      ),
-      if (isWindows)
-        _optionTile(
-          icon: Icons.videocam_outlined,
-          iconColor: Colors.blue,
-          label: 'Capture screen using DirectX',
-          subtitle: 'directx_capture_tip',
-          key: kOptionDirectxCapture,
-        ),
-      _uiOnlyTile(
-        icon: Icons.web_asset_outlined,
-        iconColor: Colors.indigo,
-        label: 'Window toolbar',
-        subtitle: 'window_toolbar_tip',
-        id: 'window_toolbar',
-        defaultValue: true,
-      ),
-      _uiOnlyTile(
-        icon: Icons.keyboard_outlined,
-        iconColor: Colors.teal,
-        label: 'Input enhancement',
-        subtitle: 'input_enhancement_tip',
-        id: 'input_enhancement',
-        defaultValue: true,
-      ),
-      if (!isWeb)
-        _optionTile(
-          icon: Icons.wallpaper_outlined,
-          iconColor: Colors.purple,
-          label: 'Remove wallpaper during incoming sessions',
-          subtitle: 'remove_wallpaper_tip',
-          key: kOptionAllowRemoveWallpaper,
-        ),
-      _optionTile(
-        icon: Icons.system_update_outlined,
-        iconColor: Colors.orange,
-        label: 'Check for software update on startup',
-        subtitle: 'check_update_tip',
-        key: kOptionEnableCheckUpdate,
-        isServer: false,
-      ),
-      _optionTile(
-        icon: Icons.bolt_outlined,
-        iconColor: Colors.amber,
-        label: 'Enable UDP hole punching',
-        subtitle: 'udp_punch_tip',
-        key: kOptionEnableUdpPunch,
-        isServer: false,
-      ),
-    ];
-
     return ListView(
       controller: scrollController,
       children: [
-        _GCard(
-          icon: Icons.auto_awesome_outlined,
-          title: 'Advanced features',
-          subtitle: 'advanced_features_tip',
-          children: tiles,
-        ),
+        if (!isWeb) hwcodec(),
+        other(),
       ],
     ).marginOnly(bottom: _kListViewBottomMargin);
+  }
+
+  Widget other() {
+    final showAutoUpdate =
+        isWindows && bind.mainIsInstalled() && !bind.isCustomClient();
+    final children = <Widget>[
+      if (!isWeb && !bind.isIncomingOnly())
+        _OptionCheckBox(context, 'Confirm before closing multiple tabs',
+            kOptionEnableConfirmClosingTabs,
+            isServer: false),
+      _OptionCheckBox(context, 'Adaptive bitrate', kOptionEnableAbr),
+      if (!isWeb) wallpaper(),
+      if (!isWeb && !bind.isIncomingOnly()) ...[
+        _OptionCheckBox(
+          context,
+          'Open connection in new tab',
+          kOptionOpenNewConnInTabs,
+          isServer: false,
+        ),
+        // though this is related to GUI, but opengl problem affects all users, so put in config rather than local
+        if (isLinux)
+          Tooltip(
+            message: translate('software_render_tip'),
+            child: _OptionCheckBox(
+              context,
+              "Always use software rendering",
+              kOptionAllowAlwaysSoftwareRender,
+            ),
+          ),
+        if (!isWeb)
+          Tooltip(
+            message: translate('texture_render_tip'),
+            child: _OptionCheckBox(
+              context,
+              "Use texture rendering",
+              kOptionTextureRender,
+              optGetter: bind.mainGetUseTextureRender,
+              optSetter: (k, v) async =>
+                  await bind.mainSetLocalOption(key: k, value: v ? 'Y' : 'N'),
+            ),
+          ),
+        if (isWindows)
+          Tooltip(
+            message: translate('d3d_render_tip'),
+            child: _OptionCheckBox(
+              context,
+              "Use D3D rendering",
+              kOptionD3DRender,
+              isServer: false,
+            ),
+          ),
+        if (!isWeb)
+          _OptionCheckBox(
+            context,
+            'Check for software update on startup',
+            kOptionEnableCheckUpdate,
+            isServer: false,
+          ),
+        if (showAutoUpdate)
+          _OptionCheckBox(
+            context,
+            'Auto update',
+            kOptionAllowAutoUpdate,
+            isServer: true,
+          ),
+        if (isWindows && !bind.isOutgoingOnly())
+          _OptionCheckBox(
+            context,
+            'Capture screen using DirectX',
+            kOptionDirectxCapture,
+          ),
+        if (!bind.isIncomingOnly()) ...[
+          _OptionCheckBox(
+            context,
+            'Enable UDP hole punching',
+            kOptionEnableUdpPunch,
+            isServer: false,
+          ),
+          _OptionCheckBox(
+            context,
+            'Enable IPv6 P2P connection',
+            kOptionEnableIpv6Punch,
+            isServer: false,
+          ),
+        ],
+      ],
+    ];
+
+    // Add client-side wakelock option for desktop platforms
+    if (!bind.isIncomingOnly()) {
+      children.add(_OptionCheckBox(
+        context,
+        'keep-awake-during-outgoing-sessions-label',
+        kOptionKeepAwakeDuringOutgoingSessions,
+        isServer: false,
+      ));
+    }
+
+    if (!isWeb && bind.mainShowOption(key: kOptionAllowLinuxHeadless)) {
+      children.add(_OptionCheckBox(
+          context, 'Allow linux headless', kOptionAllowLinuxHeadless));
+    }
+
+    return _GCard(icon: Icons.tune_outlined, title: 'Other', children: children);
+  }
+
+  Widget wallpaper() {
+    if (bind.isOutgoingOnly()) {
+      return const Offstage();
+    }
+
+    return futureBuilder(future: () async {
+      final support = await bind.mainSupportRemoveWallpaper();
+      return support;
+    }(), hasData: (data) {
+      if (data is bool && data == true) {
+        bool value = mainGetBoolOptionSync(kOptionAllowRemoveWallpaper);
+        return Row(
+          children: [
+            Flexible(
+              child: _OptionCheckBox(
+                context,
+                'Remove wallpaper during incoming sessions',
+                kOptionAllowRemoveWallpaper,
+                update: (bool v) {
+                  setState(() {});
+                },
+              ),
+            ),
+            if (value)
+              _CountDownButton(
+                text: 'Test',
+                second: 5,
+                onPressed: () {
+                  bind.mainTestWallpaper(second: 5);
+                },
+              )
+          ],
+        );
+      }
+
+      return Offstage();
+    });
+  }
+
+  Widget hwcodec() {
+    final hwcodec = bind.mainHasHwcodec();
+    final vram = bind.mainHasVram();
+    return Offstage(
+      offstage: !(hwcodec || vram),
+      child: _GCard(
+          icon: Icons.memory_outlined, title: 'Hardware Codec', children: [
+        _OptionCheckBox(
+          context,
+          'Enable hardware codec',
+          kOptionEnableHwcodec,
+          update: (bool v) {
+            if (v) {
+              bind.mainCheckHwcodec();
+            }
+          },
+        )
+      ]),
+    );
   }
 }
 
@@ -3444,10 +3270,44 @@ Widget _Card(
   );
 }
 
+// Shared accent button style for controls inside [_GCard] (e.g. the Service
+// start/stop button and the Recording "Change" button), so all card buttons
+// look identical.
+final ButtonStyle _gCardButtonStyle = ElevatedButton.styleFrom(
+  backgroundColor: MyTheme.accent,
+  foregroundColor: Colors.white,
+  elevation: 0,
+  padding: const EdgeInsets.symmetric(horizontal: 22),
+  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+);
+
 // Image-style card used by the General settings page: a white rounded card
 // with a colored icon, title, optional subtitle and an optional trailing
 // control (or a vertical body of [children]).
 // ignore: non_constant_identifier_names
+// A page-level header rendered at the top of a settings page: a bold title
+// with a muted descriptive subtitle below it.
+Widget _settingsPageHeader(String title, String subtitle) {
+  return Container(
+    width: double.infinity,
+    margin: const EdgeInsets.fromLTRB(_kCardLeftMargin, 18, _kContentHMargin, 0),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          translate(title),
+          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
+        ),
+        const SizedBox(height: 6),
+        Text(
+          translate(subtitle),
+          style: const TextStyle(fontSize: 13, color: Color(0xFF9CA3AF)),
+        ),
+      ],
+    ),
+  );
+}
+
 Widget _GCard({
   required IconData icon,
   required String title,
@@ -3515,7 +3375,10 @@ Widget _GCard({
         ),
         if (children.isNotEmpty) ...[
           const Divider(height: 28, color: Color(0xFFF0F1F4)),
-          ...children,
+          for (int i = 0; i < children.length; i++) ...[
+            if (i > 0) const SizedBox(height: 12),
+            children[i],
+          ],
         ],
       ],
     ),

@@ -382,6 +382,7 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
         ("Unpin Toolbar", "取消固定工具栏"),
         ("Recording", "录屏"),
         ("recording_card_tip", "自动录制远程会话并保存到本地"),
+        ("display_settings_tip", "设置主题外观、默认显示方式与滚动方式"),
         ("Language and region", "语言与地区"),
         ("language_region_tip", "选择应用界面显示的语言"),
         ("Monitored devices", "监控的设备"),
