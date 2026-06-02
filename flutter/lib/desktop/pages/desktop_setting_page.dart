@@ -2884,7 +2884,7 @@ class _Releases extends StatelessWidget {
             ),
             const SizedBox(height: 6),
             Text(
-              translate('Download different versions of Gamwing'), // ✅
+              translate('Download different versions of LinkEase'), // ✅
               style: TextStyle(
                 fontSize: 12,
                 color: Theme.of(context)

@@ -910,5 +910,6 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
         ("Last login time", "最后登录时间"),
         ("No devices", "暂无设备"),
         ("Unknown", "未知"),
+        ("Advanced features", "收藏"),
     ].iter().cloned().collect();
 }

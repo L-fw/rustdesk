@@ -882,5 +882,7 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
         ("Last login time", "最後登入時間"),
         ("No devices", "暫無裝置"),
         ("Unknown", "未知"),
+        ("Language and region", "語言與地區"),
+        ("Advanced features", "收藏"),
     ].iter().cloned().collect();
 }

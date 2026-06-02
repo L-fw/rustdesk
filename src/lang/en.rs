@@ -9,7 +9,7 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
         ("monitored_devices_tip", "Choose the scope of devices to monitor."),
         ("System monitor", "System monitor"),
         ("Remote control", "Remote control"),
-        ("Advanced features", "Advanced features"),
+        ("Advanced features", "Favorites"),
         ("advanced_features_tip", "Enable or tune advanced and experimental features."),
         ("Account Info", "Account info"),
         ("Account Security", "Account security"),
