@@ -733,7 +733,6 @@ class _DesktopRegisterPageState extends State<DesktopRegisterPage>
             ),
           ),
         ),
-      ),
     );
   }
 
