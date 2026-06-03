@@ -70,7 +70,6 @@ enum SettingsTabKey {
   advanced,
   update,
   printer,
-  releases,
   about,
 }
 
@@ -101,7 +100,6 @@ class DesktopSettingPage extends StatefulWidget {
         !isDesktop &&
         bind.mainGetBuildinOption(key: kOptionHideRemotePrinterSetting) != 'Y')
       SettingsTabKey.printer,
-    SettingsTabKey.releases,
     SettingsTabKey.about,
   ];
 
@@ -261,11 +259,6 @@ class _DesktopSettingPageState extends State<DesktopSettingPage>
               .add(_TabInfo(tab, 'Printer', Icons.print_outlined, Icons.print,
               category: 'Common'));
           break;
-        case SettingsTabKey.releases:
-          settingTabs.add(_TabInfo(tab, 'Releases',
-              Icons.download_outlined, Icons.download,
-              category: 'More'));
-          break;
         case SettingsTabKey.about:
           settingTabs
               .add(_TabInfo(tab, 'About', Icons.info_outline, Icons.info,
@@ -309,9 +302,6 @@ class _DesktopSettingPageState extends State<DesktopSettingPage>
           break;
         case SettingsTabKey.printer:
           children.add(const _Printer());
-          break;
-        case SettingsTabKey.releases:
-          children.add(const _Releases());
           break;
         case SettingsTabKey.about:
           children.add(const _About());
@@ -2912,6 +2902,66 @@ class _Update extends StatefulWidget {
 class _UpdateState extends State<_Update> {
   @override
   Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(32, 32, 32, 32),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _updateSection(context),
+            const SizedBox(height: 32),
+            Text(
+              translate('Releases'),
+              style: TextStyle(
+                fontSize: _kTitleFontSize,
+                fontWeight: FontWeight.w500,
+                color: Theme.of(context).textTheme.bodyLarge?.color,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              translate('Download different versions of LinkEase'),
+              style: TextStyle(
+                fontSize: 12,
+                color: Theme.of(context)
+                    .textTheme
+                    .bodySmall
+                    ?.color
+                    ?.withOpacity(0.6),
+              ),
+            ),
+            const SizedBox(height: 24),
+            _releaseItem(
+              context,
+              icon: Icons.people_outline,
+              iconColor: const Color(0xFF3b82f6),
+              iconBg: const Color(0xFF3b82f6).withOpacity(0.15),
+              cardBg: const Color(0xFF3b82f6).withOpacity(0.08),
+              cardBorder: const Color(0xFF3b82f6).withOpacity(0.2),
+              btnColor: const Color(0xFF3b82f6),
+              title: translate('User Edition'),
+              subtitle: translate('Tools for regular users'),
+              url: 'https://jyyxt.cloud/releases/share',
+            ),
+            _releaseItem(
+              context,
+              icon: Icons.chat_bubble_outline,
+              iconColor: const Color(0xFF16a34a),
+              iconBg: const Color(0xFF16a34a).withOpacity(0.15),
+              cardBg: const Color(0xFF16a34a).withOpacity(0.08),
+              cardBorder: const Color(0xFF16a34a).withOpacity(0.2),
+              btnColor: const Color(0xFF16a34a),
+              title: translate('Support Edition'),
+              subtitle: translate('Dedicated tools for support staff'),
+              url: 'https://jyyxt.cloud/releases/tech',
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _updateSection(BuildContext context) {
     return Obx(() {
       final updateUrl = stateGlobal.updateUrl.value;
       if (updateUrl.isNotEmpty) {
@@ -2920,48 +2970,130 @@ class _UpdateState extends State<_Update> {
         final versionText = serverLatestVersion.isNotEmpty
             ? serverLatestVersion
             : bind.mainGetNewVersion();
-        
+
         final isToUpdate = (isWindows || isMacOS) && bind.mainIsInstalled();
         String btnText = isToUpdate ? 'Update' : 'Download';
 
-        return Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                '${translate("new-version-of-{${bind.mainGetAppNameSync()}}-tip")} ($versionText).',
-                style: const TextStyle(fontSize: 16),
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              '${translate("new-version-of-{${bind.mainGetAppNameSync()}}-tip")} ($versionText).',
+              style: const TextStyle(fontSize: 16),
+            ),
+            const SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: () async {
+                final url = serverDownloadUrl.isNotEmpty
+                    ? serverDownloadUrl
+                    : updateUrl;
+                if (isToUpdate) {
+                  handleUpdate(updateUrl, directDownloadUrl: serverDownloadUrl);
+                } else if (url.isNotEmpty) {
+                  await launchUrl(Uri.parse(url),
+                      mode: LaunchMode.externalApplication);
+                }
+              },
+              child: Padding(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                child: Text(translate(btnText),
+                    style: const TextStyle(fontSize: 16)),
               ),
-              const SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: () async {
-                  final url = serverDownloadUrl.isNotEmpty
-                      ? serverDownloadUrl
-                      : updateUrl;
-                  if (isToUpdate) {
-                    handleUpdate(updateUrl, directDownloadUrl: serverDownloadUrl);
-                  } else if (url.isNotEmpty) {
-                    await launchUrl(Uri.parse(url),
-                        mode: LaunchMode.externalApplication);
-                  }
-                },
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                  child: Text(translate(btnText), style: const TextStyle(fontSize: 16)),
-                ),
-              )
-            ],
-          ),
+            )
+          ],
         );
       } else {
-        return Center(
-          child: Text(
-            translate('Your version is up to date'),
-            style: const TextStyle(fontSize: 18),
-          ),
+        return Text(
+          translate('Your version is up to date'),
+          style: const TextStyle(fontSize: 18),
         );
       }
     });
+  }
+
+  Widget _releaseItem(
+    BuildContext context, {
+    required IconData icon,
+    required Color iconColor,
+    required Color iconBg,
+    required Color cardBg,
+    required Color cardBorder,
+    required Color btnColor,
+    required String title,
+    required String subtitle,
+    required String url,
+  }) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 14),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+      decoration: BoxDecoration(
+        color: cardBg,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: cardBorder, width: 1),
+      ),
+      child: Row(
+        children: [
+          // Icon wrap — rounded circle
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              color: iconBg,
+              borderRadius: BorderRadius.circular(22),
+            ),
+            child: Icon(icon, size: 22, color: iconColor),
+          ),
+          const SizedBox(width: 16),
+          // Title + subtitle
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: _kContentFontSize,
+                    fontWeight: FontWeight.w600,
+                    color: Theme.of(context).textTheme.bodyLarge?.color,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  subtitle,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Theme.of(context)
+                        .textTheme
+                        .bodySmall
+                        ?.color
+                        ?.withOpacity(0.55),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 12),
+          // Solid filled download button
+          ElevatedButton.icon(
+            onPressed: () => launchUrlString(url),
+            icon: const Icon(Icons.download_outlined,
+                size: 14, color: Colors.white),
+            label: Text(translate('Go to Download'),
+                style: const TextStyle(fontSize: 13, color: Colors.white)),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: btnColor,
+              foregroundColor: Colors.white,
+              elevation: 0,
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              shape:
+                  RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 
@@ -3109,150 +3241,6 @@ class __PrinterState extends State<_Printer> {
         enabled: printerOptions.action != kValuePrinterIncomingJobDismiss,
       )
     ]);
-  }
-}
-
-class _Releases extends StatelessWidget {
-  const _Releases({Key? key}) : super(key: key);
-
-  Widget _releaseItem(
-    BuildContext context, {
-    required IconData icon,
-    required Color iconColor,
-    required Color iconBg,
-    required Color cardBg,
-    required Color cardBorder,
-    required Color btnColor,
-    required String title,
-    required String subtitle,
-    required String url,
-  }) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 14),
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
-      decoration: BoxDecoration(
-        color: cardBg,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: cardBorder, width: 1),
-      ),
-      child: Row(
-        children: [
-          // Icon wrap — rounded circle
-          Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              color: iconBg,
-              borderRadius: BorderRadius.circular(22),
-            ),
-            child: Icon(icon, size: 22, color: iconColor),
-          ),
-          const SizedBox(width: 16),
-          // Title + subtitle
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: TextStyle(
-                    fontSize: _kContentFontSize,
-                    fontWeight: FontWeight.w600,
-                    color: Theme.of(context).textTheme.bodyLarge?.color,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  subtitle,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Theme.of(context)
-                        .textTheme
-                        .bodySmall
-                        ?.color
-                        ?.withOpacity(0.55),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 12),
-          // Solid filled download button
-          ElevatedButton.icon(
-            onPressed: () => launchUrlString(url),
-            icon: const Icon(Icons.download_outlined, size: 14, color: Colors.white),
-            label: Text(translate('Go to Download'), style: const TextStyle(fontSize: 13, color: Colors.white)), // ✅ 去掉 const，改用 translate
-            style: ElevatedButton.styleFrom(
-              backgroundColor: btnColor,
-              foregroundColor: Colors.white,
-              elevation: 0,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8)),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(32, 32, 32, 32),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              translate('Releases'), // ✅
-              style: TextStyle(
-                fontSize: _kTitleFontSize,
-                fontWeight: FontWeight.w500,
-                color: Theme.of(context).textTheme.bodyLarge?.color,
-              ),
-            ),
-            const SizedBox(height: 6),
-            Text(
-              translate('Download different versions of LinkEase'), // ✅
-              style: TextStyle(
-                fontSize: 12,
-                color: Theme.of(context)
-                    .textTheme
-                    .bodySmall
-                    ?.color
-                    ?.withOpacity(0.6),
-              ),
-            ),
-            const SizedBox(height: 24),
-            _releaseItem(
-              context,
-              icon: Icons.people_outline,
-              iconColor: const Color(0xFF3b82f6),
-              iconBg: const Color(0xFF3b82f6).withOpacity(0.15),
-              cardBg: const Color(0xFF3b82f6).withOpacity(0.08),
-              cardBorder: const Color(0xFF3b82f6).withOpacity(0.2),
-              btnColor: const Color(0xFF3b82f6),
-              title: translate('User Edition'),           // ✅
-              subtitle: translate('Tools for regular users'), // ✅
-              url: 'https://jyyxt.cloud/releases/share',
-            ),
-            _releaseItem(
-              context,
-              icon: Icons.chat_bubble_outline,
-              iconColor: const Color(0xFF16a34a),
-              iconBg: const Color(0xFF16a34a).withOpacity(0.15),
-              cardBg: const Color(0xFF16a34a).withOpacity(0.08),
-              cardBorder: const Color(0xFF16a34a).withOpacity(0.2),
-              btnColor: const Color(0xFF16a34a),
-              title: translate('Support Edition'),                    // ✅
-              subtitle: translate('Dedicated tools for support staff'), // ✅
-              url: 'https://jyyxt.cloud/releases/tech',
-            ),
-          ],
-        ),
-      ),
-    );
   }
 }
 
