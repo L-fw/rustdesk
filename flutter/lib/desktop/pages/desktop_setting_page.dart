@@ -3262,7 +3262,7 @@ class _AboutState extends State<_About> {
   }) {
     final secondaryBg = Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.5);
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 9),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
@@ -3377,14 +3377,14 @@ class _AboutState extends State<_About> {
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 520),
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 48),
+            padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 28),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 // ── Logo ──
                 Container(
-                  width: 72,
-                  height: 72,
+                  width: 60,
+                  height: 60,
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(18),
                     color: Colors.transparent,
@@ -3393,8 +3393,8 @@ class _AboutState extends State<_About> {
                     borderRadius: BorderRadius.circular(18),
                     child: Image.asset(
                       'assets/about_logo.png',
-                      width: 72,
-                      height: 72,
+                      width: 60,
+                      height: 60,
                       fit: BoxFit.cover,
                       errorBuilder: (_, __, ___) => const Icon(
                         Icons.important_devices_rounded,
@@ -3404,7 +3404,7 @@ class _AboutState extends State<_About> {
                     ),
                   ),
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: 14),
 
                 // ── App name ──
                 Text(
@@ -3415,7 +3415,7 @@ class _AboutState extends State<_About> {
                     letterSpacing: -0.3,
                   ),
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: 3),
 
                 // ── Tagline ──
                 Text(
@@ -3429,7 +3429,7 @@ class _AboutState extends State<_About> {
                         ?.withOpacity(0.6),
                   ),
                 ),
-                const SizedBox(height: 40),
+                const SizedBox(height: 24),
 
                 // ── Info block ──
                 Container(
@@ -3452,7 +3452,7 @@ class _AboutState extends State<_About> {
                     ],
                   ),
                 ),
-                const SizedBox(height: 36),
+                const SizedBox(height: 22),
 
                 // ── Link pills ──
                 Wrap(
@@ -3486,12 +3486,12 @@ class _AboutState extends State<_About> {
                         onTap: () => launchUrlString('https://jygamwing.com/')),
                   ],
                 ),
-                const SizedBox(height: 40),
+                const SizedBox(height: 24),
 
                 // ── Footer block ──
                 Container(
                   width: double.infinity,
-                  padding: const EdgeInsets.all(24),
+                  padding: const EdgeInsets.all(18),
                   decoration: BoxDecoration(
                     color: secondaryBg,
                     borderRadius: BorderRadius.circular(12),
@@ -3508,7 +3508,7 @@ class _AboutState extends State<_About> {
                           fit: BoxFit.cover,
                         ),
                       ),
-                      const SizedBox(height: 14),
+                      const SizedBox(height: 10),
                       Text(
                         translate('Slogan_tip'),
                         style: TextStyle(
