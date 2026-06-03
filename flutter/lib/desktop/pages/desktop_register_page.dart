@@ -12,6 +12,10 @@ import 'login_tab_page.dart';
 import 'privacy_policy.dart' as privacy_pages;
 import 'terms_of_service.dart' as terms_pages;
 
+/// 主题色：与 LinkEase 登录/注册设计稿一致的蓝色系
+const Color _kPrimaryColor = Color(0xFF2E6FF2);
+const List<Color> _kButtonGradient = [Color(0xFF2D63F0), Color(0xFF5B9BFF)];
+
 /// 桌面端注册页面
 class DesktopRegisterPage extends StatefulWidget {
   const DesktopRegisterPage({Key? key}) : super(key: key);
@@ -67,7 +71,7 @@ class _DesktopRegisterPageState extends State<DesktopRegisterPage>
     _shakeControllers['terms'] = _createShakeController();
     if (isDesktop) {
       WidgetsBinding.instance.addPostFrameCallback((_) async {
-        const windowSize = Size(460, 680);
+        const windowSize = Size(900, 560);
         await windowManager.setMinimumSize(windowSize);
         await windowManager.setResizable(false);
         await windowManager.setSize(windowSize);
@@ -279,7 +283,7 @@ class _DesktopRegisterPageState extends State<DesktopRegisterPage>
       _register();
     }
 
-    // ── 桌面端：居中卡片布局，不使用 AppBar / SafeArea ──
+    // ── 桌面端：左侧品牌面板 + 右侧注册卡片，整体铺满背景图 ──
     return CallbackShortcuts(
       bindings: {
         const SingleActivator(LogicalKeyboardKey.enter): handleEnter,
@@ -288,54 +292,205 @@ class _DesktopRegisterPageState extends State<DesktopRegisterPage>
       child: Focus(
         autofocus: true,
         child: Scaffold(
-      backgroundColor: isDark ? const Color(0xFF1A1D23) : Colors.white,
-      body: Center(
-        child: ScrollConfiguration(
-          behavior: ScrollConfiguration.of(context).copyWith(scrollbars: false),
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(vertical: 20),
-            child: SizedBox(
-              width: 380, // 桌面固定宽度，与登录页一致
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 28),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                  // ── 标题区：居中 Logo + 页面名（与登录页风格一致），关闭按钮叠加右上角 ──
-                  Stack(
-                    alignment: Alignment.center,
-                    children: [
-                      Column(
-                        children: [
-                          Container(
-                            width: 52,
-                            height: 52,
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF7C3AED).withOpacity(0.12),
-                              borderRadius: BorderRadius.circular(14),
-                            ),
-                            child: const Icon(
-                              Icons.person_add_alt_1_outlined,
-                              size: 28,
-                              color: Color(0xFF7C3AED),
-                            ),
-                          ),
-                          const SizedBox(height: 10),
-                          Text(
-                            translate('register_title'),
-                            style: TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                              letterSpacing: 0.5,
-                              color: isDark ? Colors.white : Colors.black87,
-                            ),
-                          ),
-                        ],
-                      ),
+          backgroundColor: const Color(0xFFEEF4FF),
+          body: Container(
+            decoration: const BoxDecoration(
+              image: DecorationImage(
+                image: AssetImage('assets/login_background.png'),
+                fit: BoxFit.cover,
+              ),
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Expanded(child: _buildBrandingPanel()),
+                _buildRegisterCard(isDark),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 
-                    ],
+  // ─────────────────────── 左侧品牌面板 ───────────────────────
+
+  Widget _buildBrandingPanel() {
+    const titleColor = Color(0xFF1B2233);
+    const subColor = Color(0xFF8A93A6);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(52, 40, 28, 40),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(10),
+                child: Image.asset(
+                  'assets/about_logo.png',
+                  width: 38,
+                  height: 38,
+                  fit: BoxFit.cover,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Text(
+                bind.mainGetAppNameSync(),
+                style: const TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                  color: titleColor,
+                ),
+              ),
+            ],
+          ),
+          const Spacer(flex: 2),
+          Container(
+            padding:
+                const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.65),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: const [
+                Icon(Icons.diamond_outlined, size: 14, color: _kPrimaryColor),
+                SizedBox(width: 6),
+                Text(
+                  '简单 · 安全 · 高效',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: _kPrimaryColor,
                   ),
-                  const SizedBox(height: 20),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 30),
+          _buildFeatureItem(
+              Icons.eco_outlined, '轻量易用', '简洁流畅的使用体验'),
+          const SizedBox(height: 24),
+          _buildFeatureItem(
+              Icons.devices_outlined, '多端兼容', '支持 Windows / Android'),
+          const SizedBox(height: 24),
+          _buildFeatureItem(Icons.wifi, '稳定连接', '低延迟与高可用保障'),
+          const Spacer(flex: 3),
+          Row(
+            children: const [
+              Expanded(
+                child: Divider(color: Color(0x22000000), endIndent: 14),
+              ),
+              Icon(Icons.shield_outlined, size: 15, color: _kPrimaryColor),
+              SizedBox(width: 7),
+              Text(
+                '安全访问您的远程设备',
+                style: TextStyle(fontSize: 12.5, color: subColor),
+              ),
+              Expanded(
+                child: Divider(color: Color(0x22000000), indent: 14),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFeatureItem(IconData icon, String title, String subtitle) {
+    return Row(
+      children: [
+        Container(
+          width: 44,
+          height: 44,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.85),
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: [
+              BoxShadow(
+                color: _kPrimaryColor.withOpacity(0.10),
+                blurRadius: 14,
+                offset: const Offset(0, 5),
+              ),
+            ],
+          ),
+          child: Icon(icon, color: _kPrimaryColor, size: 22),
+        ),
+        const SizedBox(width: 14),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              title,
+              style: const TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFF1B2233),
+              ),
+            ),
+            const SizedBox(height: 3),
+            Text(
+              subtitle,
+              style: const TextStyle(
+                  fontSize: 12, color: Color(0xFF8A93A6)),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  // ─────────────────────── 右侧注册卡片 ───────────────────────
+
+  Widget _buildRegisterCard(bool isDark) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(0, 24, 40, 24),
+      child: Container(
+        width: 380,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(18),
+          boxShadow: [
+            BoxShadow(
+              color: _kPrimaryColor.withOpacity(0.12),
+              blurRadius: 30,
+              offset: const Offset(0, 12),
+            ),
+          ],
+        ),
+        child: ScrollConfiguration(
+          behavior:
+              ScrollConfiguration.of(context).copyWith(scrollbars: false),
+          child: SingleChildScrollView(
+            padding:
+                const EdgeInsets.symmetric(horizontal: 32, vertical: 26),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                  Center(
+                    child: Text(
+                      translate('register_title'),
+                      style: const TextStyle(
+                        fontSize: 23,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF1B2233),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Center(
+                    child: Text(
+                      '使用手机号注册 ${bind.mainGetAppNameSync()}，开始安全管理您的远程设备',
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                          fontSize: 12.5, color: Color(0xFF8A93A6)),
+                    ),
+                  ),
+                  const SizedBox(height: 22),
 
                   // ── 用户名 ──
                   _buildTextField(
@@ -349,7 +504,73 @@ class _DesktopRegisterPageState extends State<DesktopRegisterPage>
                       LengthLimitingTextInputFormatter(20),
                     ],
                   ),
-                  const SizedBox(height: 10),
+                  const SizedBox(height: 12),
+
+                  // ── 手机号 ──
+                  _buildTextField(
+                    fieldKey: 'phone',
+                    controller: _phoneController,
+                    focusNode: _phoneFocus,
+                    label: translate('Phone Number'),
+                    icon: Icons.phone_android,
+                    inputFormatters: [
+                      FilteringTextInputFormatter.digitsOnly,
+                      LengthLimitingTextInputFormatter(11),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+
+                  // ── 验证码 + 获取按钮 ──
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: _buildTextField(
+                          fieldKey: 'sms',
+                          controller: _smsCodeController,
+                          focusNode: _smsCodeFocus,
+                          label: translate('Verification code'),
+                          icon: Icons.verified_user_outlined,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      SizedBox(
+                        height: 48,
+                        child: ElevatedButton(
+                          onPressed: (_countdown > 0 || _isSendingSms)
+                              ? null
+                              : _sendSmsCode,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFFE8F0FF),
+                            foregroundColor: _kPrimaryColor,
+                            disabledBackgroundColor: Colors.grey.shade200,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(11),
+                            ),
+                            padding:
+                                const EdgeInsets.symmetric(horizontal: 16),
+                            elevation: 0,
+                          ),
+                          child: _isSendingSms
+                              ? const SizedBox(
+                                  width: 16,
+                                  height: 16,
+                                  child: CircularProgressIndicator(
+                                      strokeWidth: 2, color: _kPrimaryColor),
+                                )
+                              : Text(
+                                  _countdown > 0
+                                      ? '${_countdown}s'
+                                      : translate('get_sms_code'),
+                                  style: const TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w600),
+                                ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
 
                   // ── 密码 ──
                   _buildTextField(
@@ -427,72 +648,7 @@ class _DesktopRegisterPageState extends State<DesktopRegisterPage>
                           setState(() => _obscureConfirm = !_obscureConfirm),
                     ),
                   ),
-                  const SizedBox(height: 10),
-
-                  // ── 手机号 ──
-                  _buildTextField(
-                    fieldKey: 'phone',
-                    controller: _phoneController,
-                    focusNode: _phoneFocus,
-                    label: translate('Phone Number'),
-                    icon: Icons.phone_android,
-                    inputFormatters: [
-                      FilteringTextInputFormatter.digitsOnly,
-                      LengthLimitingTextInputFormatter(11),
-                    ],
-                    // 桌面端不设置 keyboardType，避免弹出虚拟键盘提示
-                  ),
-                  const SizedBox(height: 10),
-
-                  // ── 验证码 + 获取按钮 ──
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(
-                        child: _buildTextField(
-                          fieldKey: 'sms',
-                          controller: _smsCodeController,
-                          focusNode: _smsCodeFocus,
-                          label: translate('Verification code'),
-                          icon: Icons.sms_outlined,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      SizedBox(
-                        height: 48,
-                        child: ElevatedButton(
-                          onPressed: (_countdown > 0 || _isSendingSms)
-                              ? null
-                              : _sendSmsCode,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF7C3AED),
-                            foregroundColor: Colors.white,
-                            disabledBackgroundColor: Colors.grey.shade300,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            padding:
-                                const EdgeInsets.symmetric(horizontal: 16),
-                            elevation: 0,
-                          ),
-                          child: _isSendingSms
-                              ? const SizedBox(
-                                  width: 16,
-                                  height: 16,
-                                  child: CircularProgressIndicator(
-                                      strokeWidth: 2, color: Colors.white),
-                                )
-                              : Text(
-                                  _countdown > 0
-                                      ? '${_countdown}s'
-                                      : translate('get_sms_code') ,
-                                  style: const TextStyle(fontSize: 13),
-                                ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 10),
+                  const SizedBox(height: 12),
 
                   // ── 激活码 ──
                   _buildTextField(
@@ -539,41 +695,10 @@ class _DesktopRegisterPageState extends State<DesktopRegisterPage>
                   ],
 
                   // ── 注册按钮 ──
-                  SizedBox(
-                    width: double.infinity,
-                    height: 44,
-                    child: ElevatedButton(
-                      onPressed: _isLoading ? null : _register,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: isDark
-                            ? const Color(0xFF6D28D9)
-                            : const Color(0xFF7C3AED),
-                        foregroundColor: Colors.white,
-                        overlayColor: isDark
-                            ? const Color(0xFF7C3AED)
-                            : const Color(0xFF6D28D9),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        elevation: 0,
-                      ),
-                      child: _isLoading
-                          ? const SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2.5,
-                                color: Colors.white,
-                              ),
-                            )
-                          : Text(
-                              translate('register_btn'),
-                              style: TextStyle(
-                                  fontSize: 16, fontWeight: FontWeight.w600),
-                            ),
-                    ),
-                  ),
+                  _buildRegisterButton(),
                   const SizedBox(height: 16),
+                  const Divider(height: 1, color: Color(0x14000000)),
+                  const SizedBox(height: 14),
 
                   // ── 去登录链接 ──
                   Row(
@@ -581,11 +706,12 @@ class _DesktopRegisterPageState extends State<DesktopRegisterPage>
                     children: [
                       Text(
                         translate('already_have_account'),
-                        style: TextStyle(
-                          color: isDark ? Colors.white54 : Colors.black45,
+                        style: const TextStyle(
+                          color: Color(0xFF8A93A6),
                           fontSize: 13,
                         ),
                       ),
+                      const SizedBox(width: 4),
                       MouseRegion(
                         cursor: SystemMouseCursors.click,
                         child: GestureDetector(
@@ -593,7 +719,7 @@ class _DesktopRegisterPageState extends State<DesktopRegisterPage>
                           child: Text(
                             translate('go_to_login'),
                             style: const TextStyle(
-                              color: Color(0xFF7C3AED),
+                              color: _kPrimaryColor,
                               fontSize: 13,
                               fontWeight: FontWeight.w600,
                             ),
@@ -608,7 +734,57 @@ class _DesktopRegisterPageState extends State<DesktopRegisterPage>
           ),
         ),
       ),
-    ))));
+    );
+  }
+
+  Widget _buildRegisterButton() {
+    const textColor = Colors.white;
+    return Opacity(
+      opacity: _isLoading ? 0.7 : 1.0,
+      child: Container(
+        width: double.infinity,
+        height: 46,
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: _kButtonGradient,
+            begin: Alignment.centerLeft,
+            end: Alignment.centerRight,
+          ),
+          borderRadius: BorderRadius.circular(11),
+          boxShadow: [
+            BoxShadow(
+              color: _kPrimaryColor.withOpacity(0.32),
+              blurRadius: 14,
+              offset: const Offset(0, 6),
+            ),
+          ],
+        ),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(11),
+            onTap: _isLoading ? null : _register,
+            child: Center(
+              child: _isLoading
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                          strokeWidth: 2.5, color: textColor),
+                    )
+                  : Text(
+                      translate('register_btn'),
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: textColor,
+                      ),
+                    ),
+            ),
+          ),
+        ),
+      ),
+    );
   }
 
   Widget _buildTermsCheckbox(bool isDark) {
@@ -630,7 +806,7 @@ class _DesktopRegisterPageState extends State<DesktopRegisterPage>
             height: 20,
             child: Checkbox(
               value: _agreedToTerms,
-              activeColor: const Color(0xFF7C3AED),
+              activeColor: _kPrimaryColor,
               // 桌面端缩小 checkbox 尺寸以更贴合桌面 UI 密度
               materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
               onChanged: (val) =>
@@ -697,7 +873,7 @@ class _DesktopRegisterPageState extends State<DesktopRegisterPage>
         onTap: onTap,
         child: Text(
           label,
-          style: const TextStyle(fontSize: 12, color: Color(0xFF7C3AED)),
+          style: const TextStyle(fontSize: 12, color: _kPrimaryColor),
         ),
       ),
     );
@@ -751,42 +927,36 @@ class _DesktopRegisterPageState extends State<DesktopRegisterPage>
             },
             style: const TextStyle(fontSize: 15),
             decoration: InputDecoration(
-              labelText: hasFocus ? label : null,
-              hintText: hasFocus ? null : label,
-              floatingLabelBehavior: hasFocus
-                  ? FloatingLabelBehavior.always
-                  : FloatingLabelBehavior.never,
-              labelStyle:
-                  TextStyle(color: Colors.grey.shade600, fontSize: 15),
+              hintText: label,
+              floatingLabelBehavior: FloatingLabelBehavior.never,
               hintStyle:
-                  TextStyle(color: Colors.grey.shade600, fontSize: 15),
-              floatingLabelStyle: TextStyle(
-                color: const Color(0xFF7C3AED),
-                fontSize: 13,
-                fontWeight: FontWeight.w500,
-                backgroundColor:
-                    Theme.of(context).scaffoldBackgroundColor,
-              ),
+                  TextStyle(color: Colors.grey.shade500, fontSize: 15),
               prefixIcon: Icon(
                 icon,
                 size: 20,
-                color: isInvalid ? Colors.red : null,
+                color: isInvalid
+                    ? Colors.red
+                    : (hasFocus ? _kPrimaryColor : const Color(0xFF9AA3B2)),
               ),
               suffixIcon: suffix,
+              filled: true,
+              fillColor: isInvalid
+                  ? const Color(0xFFFFF5F5)
+                  : const Color(0xFFF6F8FB),
               border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: BorderRadius.circular(11),
                 borderSide: BorderSide(color: Colors.grey.shade300),
               ),
               enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: BorderRadius.circular(11),
                 borderSide: BorderSide(
                     color:
-                        isInvalid ? Colors.red : Colors.grey.shade300),
+                        isInvalid ? Colors.red : const Color(0xFFE3E8F0)),
               ),
               focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: BorderRadius.circular(11),
                 borderSide: BorderSide(
-                  color: isInvalid ? Colors.red : const Color(0xFF7C3AED),
+                  color: isInvalid ? Colors.red : _kPrimaryColor,
                   width: 1.5,
                 ),
               ),
