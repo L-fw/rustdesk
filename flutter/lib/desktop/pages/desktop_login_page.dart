@@ -16,6 +16,10 @@ import 'login_tab_page.dart';
 import 'privacy_policy.dart' as privacy_pages;
 import 'terms_of_service.dart' as terms_pages;
 
+/// 主题色：与 LinkEase 登录设计稿一致的蓝色系
+const Color _kPrimaryColor = Color(0xFF2E6FF2);
+const List<Color> _kButtonGradient = [Color(0xFF2D63F0), Color(0xFF5B9BFF)];
+
 /// 应用登录页面（Desktop）
 class AppLoginPage extends StatefulWidget {
   const AppLoginPage({Key? key}) : super(key: key);
@@ -88,7 +92,7 @@ class _AppLoginPageState extends State<AppLoginPage>
     // 每次进入登录页都重置窗口为固定尺寸（防止从主页/注册页返回时窗口变宽）
     if (isDesktop) {
       WidgetsBinding.instance.addPostFrameCallback((_) async {
-        const windowSize = Size(460, 680);
+        const windowSize = Size(900, 560);
         await windowManager.setMinimumSize(windowSize);
         await windowManager.setResizable(false);
         await windowManager.setSize(windowSize);
@@ -323,7 +327,7 @@ class _AppLoginPageState extends State<AppLoginPage>
                     Navigator.of(context).pop(value);
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF7C3AED),
+                    backgroundColor: _kPrimaryColor,
                     foregroundColor: Colors.white,
                   ),
                   child: Text(translate('OK')),
@@ -579,9 +583,6 @@ class _AppLoginPageState extends State<AppLoginPage>
       }
     }
 
-    // Desktop：全屏背景 + 居中固定宽度登录卡片
-    final scaffoldBg = isDark ? const Color(0xFF1A1D23) : Colors.white;
-
     return CallbackShortcuts(
       bindings: {
         const SingleActivator(LogicalKeyboardKey.enter): handleEnter,
@@ -590,150 +591,326 @@ class _AppLoginPageState extends State<AppLoginPage>
       child: Focus(
         autofocus: true,
         child: Scaffold(
-      backgroundColor: scaffoldBg,
-      body: Center(
-        child: ScrollConfiguration(
-          behavior: ScrollConfiguration.of(context).copyWith(scrollbars: false),
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(vertical: 20),
-          child: SizedBox(
-            width: 380, // 桌面固定宽度，稍微收窄让输入框不那么宽
-            child: Container(
-              child: Padding(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 32, vertical: 28),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                    // Logo & App Name
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(8),
-                      child: Image.asset(
-                        'assets/about_logo.png',
-                        width: 52,
-                        height: 52,
-                        fit: BoxFit.cover,
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    Text(
-                      bind.mainGetAppNameSync(),
-                      style: const TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 0.5,
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-
-                    // Tab Bar
-                    Container(
-                      decoration: BoxDecoration(
-                        color: isDark
-                            ? Colors.white.withOpacity(0.08)
-                            : Colors.grey.shade100,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: TabBar(
-                        controller: _tabController,
-                        indicator: BoxDecoration(
-                          color: const Color(0xFF7C3AED),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        labelColor: Colors.white,
-                        unselectedLabelColor:
-                            isDark ? Colors.white60 : Colors.black54,
-                        labelStyle: const TextStyle(
-                            fontSize: 13, fontWeight: FontWeight.w600),
-                        unselectedLabelStyle: const TextStyle(fontSize: 13),
-                        indicatorSize: TabBarIndicatorSize.tab,
-                        dividerColor: Colors.transparent,
-                        tabs: [
-                          Tab(text: translate('tab_account_login')),
-                          Tab(text: translate('tab_phone_login')),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-
-                    // Tab Content —— 固定高度，内容自适应
-                    SizedBox(
-                      height: 252,
-                      child: TabBarView(
-                        controller: _tabController,
-                        children: [
-                          _buildPasswordLoginTab(),
-                          _buildSmsLoginTab(),
-                        ],
-                      ),
-                    ),
-
-                    // Error Message
-                    if (_errorMsg != null) ...[
-                      const SizedBox(height: 8),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 12, vertical: 8),
-                        decoration: BoxDecoration(
-                          color: Colors.red.withOpacity(0.08),
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: Colors.red.withOpacity(0.2)),
-                        ),
-                        child: Row(
-                          children: [
-                            const Icon(Icons.error_outline,
-                                color: Colors.red, size: 16),
-                            const SizedBox(width: 6),
-                            Expanded(
-                              child: Text(
-                                _errorMsg!,
-                                style: const TextStyle(
-                                    color: Colors.red, fontSize: 12),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-
-                    const SizedBox(height: 16),
-
-                    // Register Link
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          translate('no_account_prompt'),
-                          style: TextStyle(
-                            color: isDark ? Colors.white54 : Colors.black45,
-                            fontSize: 13,
-                          ),
-                        ),
-                        MouseRegion(
-                          cursor: SystemMouseCursors.click,
-                          child: GestureDetector(
-                            onTap: _goToRegister,
-                            child: Text(
-                              translate('register_now'),
-                              style: TextStyle(
-                                color: const Color(0xFF7C3AED),
-                                fontSize: 13,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
+          backgroundColor: const Color(0xFFEEF4FF),
+          body: Container(
+            decoration: const BoxDecoration(
+              image: DecorationImage(
+                image: AssetImage('assets/login_background.png'),
+                fit: BoxFit.cover,
               ),
             ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // 左侧品牌介绍面板
+                Expanded(child: _buildBrandingPanel()),
+                // 右侧登录卡片
+                _buildLoginCard(isDark),
+              ],
             ),
           ),
         ),
       ),
-    )));
+    );
+  }
+
+  // ─────────────────────── 左侧品牌面板 ───────────────────────
+
+  Widget _buildBrandingPanel() {
+    const titleColor = Color(0xFF1B2233);
+    const subColor = Color(0xFF8A93A6);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(52, 40, 28, 40),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Logo + 应用名
+          Row(
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(10),
+                child: Image.asset(
+                  'assets/about_logo.png',
+                  width: 38,
+                  height: 38,
+                  fit: BoxFit.cover,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Text(
+                bind.mainGetAppNameSync(),
+                style: const TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                  color: titleColor,
+                ),
+              ),
+            ],
+          ),
+          const Spacer(flex: 2),
+          // 标签徽章
+          Container(
+            padding:
+                const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.65),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: const [
+                Icon(Icons.diamond_outlined, size: 14, color: _kPrimaryColor),
+                SizedBox(width: 6),
+                Text(
+                  '简单 · 安全 · 高效',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: _kPrimaryColor,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 30),
+          _buildFeatureItem(
+              Icons.eco_outlined, '轻量易用', '简洁流畅的使用体验'),
+          const SizedBox(height: 24),
+          _buildFeatureItem(
+              Icons.devices_outlined, '多端兼容', '支持 Windows / Android'),
+          const SizedBox(height: 24),
+          _buildFeatureItem(Icons.wifi, '稳定连接', '低延迟与高可用保障'),
+          const Spacer(flex: 3),
+          // 底部安全提示
+          Row(
+            children: const [
+              Expanded(
+                child: Divider(color: Color(0x22000000), endIndent: 14),
+              ),
+              Icon(Icons.shield_outlined, size: 15, color: _kPrimaryColor),
+              SizedBox(width: 7),
+              Text(
+                '安全访问您的远程设备',
+                style: TextStyle(fontSize: 12.5, color: subColor),
+              ),
+              Expanded(
+                child: Divider(color: Color(0x22000000), indent: 14),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFeatureItem(IconData icon, String title, String subtitle) {
+    return Row(
+      children: [
+        Container(
+          width: 44,
+          height: 44,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.85),
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: [
+              BoxShadow(
+                color: _kPrimaryColor.withOpacity(0.10),
+                blurRadius: 14,
+                offset: const Offset(0, 5),
+              ),
+            ],
+          ),
+          child: Icon(icon, color: _kPrimaryColor, size: 22),
+        ),
+        const SizedBox(width: 14),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              title,
+              style: const TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFF1B2233),
+              ),
+            ),
+            const SizedBox(height: 3),
+            Text(
+              subtitle,
+              style: const TextStyle(
+                  fontSize: 12, color: Color(0xFF8A93A6)),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  // ─────────────────────── 右侧登录卡片 ───────────────────────
+
+  Widget _buildLoginCard(bool isDark) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(0, 30, 40, 30),
+      child: Container(
+        width: 380,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(18),
+          boxShadow: [
+            BoxShadow(
+              color: _kPrimaryColor.withOpacity(0.12),
+              blurRadius: 30,
+              offset: const Offset(0, 12),
+            ),
+          ],
+        ),
+        child: ScrollConfiguration(
+          behavior:
+              ScrollConfiguration.of(context).copyWith(scrollbars: false),
+          child: SingleChildScrollView(
+            padding:
+                const EdgeInsets.symmetric(horizontal: 32, vertical: 30),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Center(
+                  child: Text(
+                    '欢迎回来！',
+                    style: TextStyle(
+                      fontSize: 23,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF1B2233),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Center(
+                  child: Text(
+                    '登录 ${bind.mainGetAppNameSync()}，继续管理您的远程设备',
+                    style: const TextStyle(
+                        fontSize: 12.5, color: Color(0xFF8A93A6)),
+                  ),
+                ),
+                const SizedBox(height: 22),
+
+                // Tab Bar
+                Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF1F4F9),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: TabBar(
+                    controller: _tabController,
+                    indicator: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(9),
+                      boxShadow: [
+                        BoxShadow(
+                          color: _kPrimaryColor.withOpacity(0.14),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    labelColor: _kPrimaryColor,
+                    unselectedLabelColor: const Color(0xFF8A93A6),
+                    labelStyle: const TextStyle(
+                        fontSize: 13, fontWeight: FontWeight.w600),
+                    unselectedLabelStyle: const TextStyle(fontSize: 13),
+                    indicatorSize: TabBarIndicatorSize.tab,
+                    dividerColor: Colors.transparent,
+                    splashFactory: NoSplash.splashFactory,
+                    overlayColor:
+                        MaterialStateProperty.all(Colors.transparent),
+                    tabs: [
+                      Tab(text: translate('tab_account_login')),
+                      Tab(text: translate('tab_phone_login')),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 22),
+
+                // Tab Content —— 固定高度，内容自适应
+                SizedBox(
+                  height: 250,
+                  child: TabBarView(
+                    controller: _tabController,
+                    children: [
+                      _buildPasswordLoginTab(),
+                      _buildSmsLoginTab(),
+                    ],
+                  ),
+                ),
+
+                // Error Message
+                if (_errorMsg != null) ...[
+                  const SizedBox(height: 10),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: Colors.red.withOpacity(0.08),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.red.withOpacity(0.2)),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.error_outline,
+                            color: Colors.red, size: 16),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: Text(
+                            _errorMsg!,
+                            style: const TextStyle(
+                                color: Colors.red, fontSize: 12),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+
+                const SizedBox(height: 18),
+                const Divider(height: 1, color: Color(0x14000000)),
+                const SizedBox(height: 14),
+
+                // Register Link
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      translate('no_account_prompt'),
+                      style: const TextStyle(
+                        color: Color(0xFF8A93A6),
+                        fontSize: 13,
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    MouseRegion(
+                      cursor: SystemMouseCursors.click,
+                      child: GestureDetector(
+                        onTap: _goToRegister,
+                        child: Text(
+                          translate('register_now'),
+                          style: const TextStyle(
+                            color: _kPrimaryColor,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
   }
 
   // ─────────────────────── 密码登录 Tab ───────────────────────
@@ -791,7 +968,7 @@ class _AppLoginPageState extends State<AppLoginPage>
               height: 20,
               child: Checkbox(
                 value: _rememberPassword,
-                activeColor: const Color(0xFF7C3AED),
+                activeColor: _kPrimaryColor,
                 onChanged: (val) {
                   final next = val ?? false;
                   setState(() => _rememberPassword = next);
@@ -813,30 +990,27 @@ class _AppLoginPageState extends State<AppLoginPage>
                 color: isDark ? Colors.white54 : Colors.black54,
               ),
             ),
+            const Spacer(),
+            MouseRegion(
+              cursor: SystemMouseCursors.click,
+              child: GestureDetector(
+                onTap: _showForgotPassword,
+                child: Text(
+                  translate('Forget Password'),
+                  style: const TextStyle(
+                    color: _kPrimaryColor,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ),
           ],
         ),
         const SizedBox(height: 10),
         _buildTermsCheckbox(isDark),
-        const SizedBox(height: 12),
+        const SizedBox(height: 14),
         _buildLoginButton(onPressed: _loginWithPassword),
-        const SizedBox(height: 6),
-        Align(
-          alignment: Alignment.centerRight,
-          child: MouseRegion(
-            cursor: SystemMouseCursors.click,
-            child: GestureDetector(
-              onTap: _showForgotPassword,
-              child: Text(
-                translate('Forget Password'),
-                style: TextStyle(
-                  color: const Color(0xFF7C3AED),
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-          ),
-        ),
       ],
     );
   }
@@ -884,7 +1058,7 @@ class _AppLoginPageState extends State<AppLoginPage>
                 onPressed:
                     (_countdown > 0 || _isLoading) ? null : _sendSmsCode,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF7C3AED),
+                  backgroundColor: _kPrimaryColor,
                   foregroundColor: Colors.white,
                   disabledBackgroundColor: Colors.grey.shade300,
                   shape: RoundedRectangleBorder(
@@ -929,7 +1103,7 @@ class _AppLoginPageState extends State<AppLoginPage>
             height: 20,
             child: Checkbox(
               value: _agreedToTerms,
-              activeColor: const Color(0xFF7C3AED),
+              activeColor: _kPrimaryColor,
               onChanged: (val) =>
                   setState(() => _agreedToTerms = val ?? false),
             ),
@@ -956,7 +1130,7 @@ class _AppLoginPageState extends State<AppLoginPage>
                           reverseTransitionDuration: Duration.zero)),
                       child: Text(translate('terms_link_label'),
                           style:
-                              TextStyle(fontSize: 12, color: const Color(0xFF7C3AED))),
+                              TextStyle(fontSize: 12, color: _kPrimaryColor)),
                     ),
                   ),
                   Text(
@@ -975,7 +1149,7 @@ class _AppLoginPageState extends State<AppLoginPage>
                           reverseTransitionDuration: Duration.zero)),
                       child: Text(translate('privacy_link_label'),
                           style:
-                              TextStyle(fontSize: 12, color: const Color(0xFF7C3AED))),
+                              TextStyle(fontSize: 12, color: _kPrimaryColor)),
                     ),
                   ),
                 ],
@@ -1038,22 +1212,30 @@ class _AppLoginPageState extends State<AppLoginPage>
               hintStyle:
                   TextStyle(color: Colors.grey.shade500, fontSize: 15),
               prefixIcon: Icon(icon,
-                  size: 20, color: isInvalid ? Colors.red : null),
+                  size: 20,
+                  color: isInvalid
+                      ? Colors.red
+                      : (hasFocus ? _kPrimaryColor : const Color(0xFF9AA3B2))),
               suffixIcon: suffix,
+              filled: true,
+              fillColor: isInvalid
+                  ? const Color(0xFFFFF5F5)
+                  : const Color(0xFFF6F8FB),
               border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: BorderRadius.circular(11),
                 borderSide: BorderSide(color: Colors.grey.shade300),
               ),
               enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: BorderRadius.circular(11),
                 borderSide: BorderSide(
-                    color:
-                        isInvalid ? Colors.red : Colors.grey.shade300),
+                    color: isInvalid
+                        ? Colors.red
+                        : const Color(0xFFE3E8F0)),
               ),
               focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: BorderRadius.circular(11),
                 borderSide: BorderSide(
-                  color: isInvalid ? Colors.red : const Color(0xFF7C3AED),
+                  color: isInvalid ? Colors.red : _kPrimaryColor,
                   width: 1.5,
                 ),
               ),
@@ -1068,42 +1250,51 @@ class _AppLoginPageState extends State<AppLoginPage>
   }
 
   Widget _buildLoginButton({required VoidCallback onPressed}) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    // 深色模式：按钮用更柔和的色调，避免高饱和度紫色在深底下显得突兀
-    final bgColor = isDark ? const Color(0xFF6D28D9) : const Color(0xFF7C3AED);
-    final textColor = Colors.white;
-    final overlayColor = isDark
-        ? const Color(0xFF7C3AED) // 悬停时略微提亮，而非加白透明叠层
-        : const Color(0xFF6D28D9);
-
-    return SizedBox(
-      width: double.infinity,
-      height: 44,
-      child: ElevatedButton(
-        onPressed: _isLoading ? null : onPressed,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: bgColor,
-          foregroundColor: textColor,
-          overlayColor: overlayColor,
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-          elevation: 0,
+    const textColor = Colors.white;
+    return Opacity(
+      opacity: _isLoading ? 0.7 : 1.0,
+      child: Container(
+        width: double.infinity,
+        height: 46,
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: _kButtonGradient,
+            begin: Alignment.centerLeft,
+            end: Alignment.centerRight,
+          ),
+          borderRadius: BorderRadius.circular(11),
+          boxShadow: [
+            BoxShadow(
+              color: _kPrimaryColor.withOpacity(0.32),
+              blurRadius: 14,
+              offset: const Offset(0, 6),
+            ),
+          ],
         ),
-        child: _isLoading
-            ? SizedBox(
-                width: 20,
-                height: 20,
-                child: CircularProgressIndicator(
-                    strokeWidth: 2.5, color: textColor),
-              )
-            : Text(
-                translate('login_btn'),
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: textColor,
-                ),
-              ),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(11),
+            onTap: _isLoading ? null : onPressed,
+            child: Center(
+              child: _isLoading
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                          strokeWidth: 2.5, color: textColor),
+                    )
+                  : Text(
+                      translate('login_btn'),
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: textColor,
+                      ),
+                    ),
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -1313,7 +1504,7 @@ class _ForgotPasswordDialogState extends State<DesktopChangePasswordDialog> {
                               ? null
                               : _sendSmsCode,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF7C3AED),
+                        backgroundColor: _kPrimaryColor,
                         foregroundColor: Colors.white,
                         disabledBackgroundColor: Colors.grey.shade300,
                         shape: RoundedRectangleBorder(
@@ -1448,7 +1639,7 @@ class _ForgotPasswordDialogState extends State<DesktopChangePasswordDialog> {
         ElevatedButton(
           onPressed: _isLoading ? null : _submit,
           style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFF7C3AED),
+            backgroundColor: _kPrimaryColor,
             foregroundColor: Colors.white,
             elevation: 0,
           ),
