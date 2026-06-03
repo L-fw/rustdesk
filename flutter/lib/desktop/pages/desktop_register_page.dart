@@ -71,7 +71,7 @@ class _DesktopRegisterPageState extends State<DesktopRegisterPage>
     _shakeControllers['terms'] = _createShakeController();
     if (isDesktop) {
       WidgetsBinding.instance.addPostFrameCallback((_) async {
-        const windowSize = Size(900, 560);
+        const windowSize = Size(1060, 615);
         await windowManager.setMinimumSize(windowSize);
         await windowManager.setResizable(false);
         await windowManager.setSize(windowSize);
@@ -464,13 +464,18 @@ class _DesktopRegisterPageState extends State<DesktopRegisterPage>
         child: ScrollConfiguration(
           behavior:
               ScrollConfiguration.of(context).copyWith(scrollbars: false),
-          child: SingleChildScrollView(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 32, vertical: 26),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              mainAxisSize: MainAxisSize.min,
-              children: [
+          child: LayoutBuilder(
+            builder: (context, constraints) => SingleChildScrollView(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 32, vertical: 26),
+              child: ConstrainedBox(
+                constraints:
+                    BoxConstraints(minHeight: constraints.maxHeight - 52),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
                   Center(
                     child: Text(
                       translate('register_title'),
@@ -728,11 +733,13 @@ class _DesktopRegisterPageState extends State<DesktopRegisterPage>
                       ),
                     ],
                   ),
-                ],
+                  ],
+                ),
+                ),
+              ),
               ),
             ),
           ),
-        ),
     );
   }
 

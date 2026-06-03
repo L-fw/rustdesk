@@ -92,7 +92,7 @@ class _AppLoginPageState extends State<AppLoginPage>
     // 每次进入登录页都重置窗口为固定尺寸（防止从主页/注册页返回时窗口变宽）
     if (isDesktop) {
       WidgetsBinding.instance.addPostFrameCallback((_) async {
-        const windowSize = Size(900, 560);
+        const windowSize = Size(1060, 615);
         await windowManager.setMinimumSize(windowSize);
         await windowManager.setResizable(false);
         await windowManager.setSize(windowSize);
@@ -768,13 +768,18 @@ class _AppLoginPageState extends State<AppLoginPage>
         child: ScrollConfiguration(
           behavior:
               ScrollConfiguration.of(context).copyWith(scrollbars: false),
-          child: SingleChildScrollView(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 32, vertical: 30),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              mainAxisSize: MainAxisSize.min,
-              children: [
+          child: LayoutBuilder(
+            builder: (context, constraints) => SingleChildScrollView(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 32, vertical: 30),
+              child: ConstrainedBox(
+                constraints:
+                    BoxConstraints(minHeight: constraints.maxHeight - 60),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
                 const Center(
                   child: Text(
                     '欢迎回来！',
@@ -905,7 +910,9 @@ class _AppLoginPageState extends State<AppLoginPage>
                     ),
                   ],
                 ),
-              ],
+                  ],
+                ),
+              ),
             ),
           ),
         ),
