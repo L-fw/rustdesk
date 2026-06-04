@@ -531,7 +531,7 @@ class _DesktopRegisterPageState extends State<DesktopRegisterPage>
                       ),
                       const SizedBox(width: 12),
                       SizedBox(
-                        height: 48,
+                        height: 44,
                         child: ElevatedButton(
                           onPressed: (_countdown > 0 || _isSendingSms)
                               ? null
@@ -958,8 +958,8 @@ class _DesktopRegisterPageState extends State<DesktopRegisterPage>
                 ),
               ),
               contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 14, vertical: 12),
-              isDense: false,
+                  horizontal: 14, vertical: 10),
+              isDense: true,
             ),
           ),
         );

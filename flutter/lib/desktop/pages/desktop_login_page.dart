@@ -1047,7 +1047,7 @@ class _AppLoginPageState extends State<AppLoginPage>
             ),
             const SizedBox(width: 12),
             SizedBox(
-              height: 48,
+              height: 44,
               child: ElevatedButton(
                 onPressed:
                     (_countdown > 0 || _isLoading) ? null : _sendSmsCode,
@@ -1234,8 +1234,8 @@ class _AppLoginPageState extends State<AppLoginPage>
                 ),
               ),
               contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 14, vertical: 12),
-              isDense: false,
+                  horizontal: 14, vertical: 10),
+              isDense: true,
             ),
           ),
         );
