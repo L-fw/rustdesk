@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_hbb/consts.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import 'login_tab_page.dart';
@@ -26,6 +27,7 @@ class PrivacyPolicyPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return LoginTabPage(
       showBackButton: true,
+      windowSize: kDesktopMainWindowSize,
       child: Scaffold(
         backgroundColor: _bg,
         body: Column(

@@ -7,8 +7,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter_hbb/common/app_auth_service.dart';
 import 'package:flutter_hbb/consts.dart';
 import 'package:flutter_hbb/desktop/pages/desktop_register_page.dart';
-import 'package:window_manager/window_manager.dart';
-import 'package:flutter_hbb/utils/multi_window_manager.dart';
 
 import '../../common.dart';
 import '../../models/platform_model.dart';
@@ -520,13 +518,8 @@ class _AppLoginPageState extends State<AppLoginPage>
   }
 
   void _goToHome() async {
-    // 登录成功后，固定设置窗口大小为940x640并居中（仅Windows桌面端）
-    if (isWindows) {
-      await windowManager.setResizable(true);
-      await windowManager.setMinimumSize(const Size(600, 480));
-      await windowManager.setSize(const Size(950, 640));
-      await windowManager.center();
-    }
+    // 窗口尺寸由 DesktopTabPage 统一设置为 kDesktopMainWindowSize，
+    // 这里无需再设置（之前的 950x640 会被立即覆盖）。
     Navigator.of(context).pushAndRemoveUntil(
       PageRouteBuilder(
         pageBuilder: (context, animation, secondaryAnimation) =>

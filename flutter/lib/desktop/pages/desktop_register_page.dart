@@ -7,7 +7,6 @@ import 'package:flutter_hbb/common/app_auth_service.dart';
 
 import '../../common.dart';
 import '../../models/platform_model.dart';
-import 'login_tab_page.dart';
 import 'privacy_policy.dart' as privacy_pages;
 import 'terms_of_service.dart' as terms_pages;
 
@@ -829,7 +828,7 @@ class _DesktopRegisterPageState extends State<DesktopRegisterPage>
                     onTap: () => Navigator.of(context).push(
                       PageRouteBuilder(
                         pageBuilder: (_, __, ___) =>
-                            const LoginTabPage(showBackButton: true, child: terms_pages.TermsOfServicePage()),
+                            const terms_pages.TermsOfServicePage(),
                         transitionDuration: Duration.zero,
                         reverseTransitionDuration: Duration.zero,
                       ),
@@ -847,7 +846,7 @@ class _DesktopRegisterPageState extends State<DesktopRegisterPage>
                     onTap: () => Navigator.of(context).push(
                       PageRouteBuilder(
                         pageBuilder: (_, __, ___) =>
-                            const LoginTabPage(showBackButton: true, child: privacy_pages.PrivacyPolicyPage()),
+                            const privacy_pages.PrivacyPolicyPage(),
                         transitionDuration: Duration.zero,
                         reverseTransitionDuration: Duration.zero,
                       ),
