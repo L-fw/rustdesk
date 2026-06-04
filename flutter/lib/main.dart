@@ -168,7 +168,9 @@ void runMainApp(bool startService) async {
   windowManager.waitUntilReadyToShow(windowOptions, () async {
     // Restore the location of the main window before window hide or show.
     if (isDesktop && !(kAppModeShareOnly || _isAppLoggedIn)) {
-      const windowSize = Size(460, 680);
+      // 未登录时显示登录页，窗口尺寸与 kDesktopMainWindowSize 保持一致，
+      // 否则首屏会出现旧版登录页的小窗口（460x680）。
+      const windowSize = kDesktopMainWindowSize;
       await windowManager.setMinimumSize(windowSize);
       await windowManager.setResizable(false);
       await windowManager.setSize(windowSize);
