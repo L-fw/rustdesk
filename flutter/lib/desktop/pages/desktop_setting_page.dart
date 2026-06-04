@@ -2166,8 +2166,9 @@ class _AccountState extends State<_Account> {
     if (ok == true) {
       Navigator.of(context).pushAndRemoveUntil(
         PageRouteBuilder(
-          pageBuilder: (_, __, ___) =>
-              const LoginTabPage(child: desktop_login.AppLoginPage()),
+          pageBuilder: (_, __, ___) => const LoginTabPage(
+              windowSize: kDesktopMainWindowSize,
+              child: desktop_login.AppLoginPage()),
           transitionDuration: Duration.zero,
           reverseTransitionDuration: Duration.zero,
         ),
@@ -2194,8 +2195,9 @@ class _AccountState extends State<_Account> {
       if (mounted) {
         Navigator.of(context).pushAndRemoveUntil(
           PageRouteBuilder(
-              pageBuilder: (_, __, ___) =>
-                  const LoginTabPage(child: desktop_login.AppLoginPage()),
+              pageBuilder: (_, __, ___) => const LoginTabPage(
+                  windowSize: kDesktopMainWindowSize,
+                  child: desktop_login.AppLoginPage()),
               transitionDuration: Duration.zero,
               reverseTransitionDuration: Duration.zero),
           (route) => false,

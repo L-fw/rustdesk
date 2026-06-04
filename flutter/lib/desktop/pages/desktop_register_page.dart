@@ -4,7 +4,6 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_hbb/common/app_auth_service.dart';
-import 'package:window_manager/window_manager.dart';
 
 import '../../common.dart';
 import '../../models/platform_model.dart';
@@ -69,15 +68,8 @@ class _DesktopRegisterPageState extends State<DesktopRegisterPage>
     _shakeControllers['sms'] = _createShakeController();
     _shakeControllers['activation'] = _createShakeController();
     _shakeControllers['terms'] = _createShakeController();
-    if (isDesktop) {
-      WidgetsBinding.instance.addPostFrameCallback((_) async {
-        const windowSize = Size(1060, 615);
-        await windowManager.setMinimumSize(windowSize);
-        await windowManager.setResizable(false);
-        await windowManager.setSize(windowSize);
-        await windowManager.center();
-      });
-    }
+    // 窗口尺寸由外层 LoginTabPage(windowSize: kDesktopMainWindowSize) 统一管理，
+    // 避免注册页与 LoginTabPage 各自设置尺寸时互相冲突。
   }
 
   @override

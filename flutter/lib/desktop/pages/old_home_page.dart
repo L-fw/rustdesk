@@ -1058,6 +1058,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
               Navigator.of(context).pushAndRemoveUntil(
                 PageRouteBuilder(
                     pageBuilder: (_, __, ___) => const LoginTabPage(
+                        windowSize: kDesktopMainWindowSize,
                         child: desktop_login.AppLoginPage()),
                     transitionDuration: Duration.zero,
                     reverseTransitionDuration: Duration.zero),

@@ -531,7 +531,9 @@ class _AppState extends State<App> with WidgetsBindingObserver {
           home: isDesktop
               ? (kAppModeShareOnly || _isAppLoggedIn
                   ? const DesktopTabPage()
-                  : const LoginTabPage(child: desktop_login.AppLoginPage()))
+                  : const LoginTabPage(
+                      windowSize: kDesktopMainWindowSize,
+                      child: desktop_login.AppLoginPage()))
               : isWeb
                   ? WebHomePage()
                   : kAppModeShareOnly || _isAppLoggedIn

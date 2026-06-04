@@ -13,6 +13,10 @@ const double kDesktopRemoteTabBarHeight = 28.0;
 const int kInvalidWindowId = -1;
 const int kMainWindowId = 0;
 
+/// 桌面端主窗口（登录页 / 注册页 / 主页 / 设置页共用同一个 OS 窗口）的固定尺寸。
+/// 集中定义，避免在多个文件里硬编码同一个尺寸。
+const Size kDesktopMainWindowSize = Size(1060, 615);
+
 const kAllDisplayValue = -1;
 
 const kKeyLegacyMode = 'legacy';

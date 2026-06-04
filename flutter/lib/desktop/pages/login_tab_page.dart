@@ -13,7 +13,11 @@ class LoginTabPage extends StatefulWidget {
   final bool showBackButton;
   final double windowHeight;
 
-  const LoginTabPage({Key? key, required this.child, this.showBackButton = false, this.windowHeight = 550}) : super(key: key);
+  /// 显式指定窗口尺寸。提供时优先于 [windowHeight]（宽度默认 460）。
+  /// 用于登录页等需要更宽窗口的场景，避免与子页面各自设置尺寸时互相冲突。
+  final Size? windowSize;
+
+  const LoginTabPage({Key? key, required this.child, this.showBackButton = false, this.windowHeight = 550, this.windowSize}) : super(key: key);
 
   @override
   State<LoginTabPage> createState() => _LoginTabPageState();
@@ -29,10 +33,14 @@ class _LoginTabPageState extends State<LoginTabPage> with WindowListener {
     windowManager.addListener(this);
     if (isDesktop) {
       WidgetsBinding.instance.addPostFrameCallback((_) async {
-        final windowSize = Size(460, widget.windowHeight);
+        final windowSize =
+            widget.windowSize ?? Size(460, widget.windowHeight);
         await windowManager.setMinimumSize(windowSize);
         await windowManager.setResizable(false);
         await windowManager.setSize(windowSize);
+        if (widget.windowSize != null) {
+          await windowManager.center();
+        }
       });
     }
   }

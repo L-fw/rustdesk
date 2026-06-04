@@ -5,6 +5,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_hbb/common/app_auth_service.dart';
+import 'package:flutter_hbb/consts.dart';
 import 'package:flutter_hbb/desktop/pages/desktop_register_page.dart';
 import 'package:window_manager/window_manager.dart';
 import 'package:flutter_hbb/utils/multi_window_manager.dart';
@@ -89,16 +90,8 @@ class _AppLoginPageState extends State<AppLoginPage>
     _loadAccountHistory();
     _loadPhoneHistory();
     _loadRememberedPasswordForUser(_usernameController.text.trim());
-    // 每次进入登录页都重置窗口为固定尺寸（防止从主页/注册页返回时窗口变宽）
-    if (isDesktop) {
-      WidgetsBinding.instance.addPostFrameCallback((_) async {
-        const windowSize = Size(1060, 615);
-        await windowManager.setMinimumSize(windowSize);
-        await windowManager.setResizable(false);
-        await windowManager.setSize(windowSize);
-        await windowManager.center();
-      });
-    }
+    // 窗口尺寸由外层 LoginTabPage(windowSize: kDesktopMainWindowSize) 统一管理，
+    // 避免登录页与 LoginTabPage 各自设置尺寸时互相冲突（首屏窗口变小）。
   }
 
   @override
@@ -548,7 +541,8 @@ class _AppLoginPageState extends State<AppLoginPage>
   void _goToRegister() {
     Navigator.of(context).push(
       PageRouteBuilder(
-        pageBuilder: (_, __, ___) => const LoginTabPage(child: DesktopRegisterPage()),
+        pageBuilder: (_, __, ___) => const LoginTabPage(
+            windowSize: kDesktopMainWindowSize, child: DesktopRegisterPage()),
         transitionDuration: Duration.zero,
         reverseTransitionDuration: Duration.zero,
       ),
