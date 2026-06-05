@@ -372,7 +372,7 @@ class _DesktopRegisterPageState extends State<DesktopRegisterPage>
           const SizedBox(height: 24),
           _buildFeatureItem(Icons.wifi, translate('feature_stable_title'),
               translate('feature_stable_desc')),
-          const Spacer(flex: 2),
+          const Spacer(flex: 3),
           Row(
             children: [
               const Expanded(
@@ -397,6 +397,7 @@ class _DesktopRegisterPageState extends State<DesktopRegisterPage>
 
   Widget _buildFeatureItem(IconData icon, String title, String subtitle) {
     return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
       children: [
         Container(
           width: 44,

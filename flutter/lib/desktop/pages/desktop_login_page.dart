@@ -671,7 +671,7 @@ class _AppLoginPageState extends State<AppLoginPage>
           const SizedBox(height: 24),
           _buildFeatureItem(Icons.wifi, translate('feature_stable_title'),
               translate('feature_stable_desc')),
-          const Spacer(flex: 2),
+          const Spacer(flex: 3),
           // 底部安全提示
           Row(
             children: [
@@ -697,6 +697,7 @@ class _AppLoginPageState extends State<AppLoginPage>
 
   Widget _buildFeatureItem(IconData icon, String title, String subtitle) {
     return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
       children: [
         Container(
           width: 44,
