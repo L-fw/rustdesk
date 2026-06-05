@@ -945,5 +945,16 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
         ("No devices", "暂无设备"),
         ("Unknown", "未知"),
         ("Advanced features", "高级功能"),
+        ("brand_tagline", "简单 · 安全 · 高效"),
+        ("feature_lightweight_title", "轻量易用"),
+        ("feature_lightweight_desc", "简洁流畅的使用体验"),
+        ("feature_multiplatform_title", "多端兼容"),
+        ("feature_multiplatform_desc", "支持 Windows / Android"),
+        ("feature_stable_title", "稳定连接"),
+        ("feature_stable_desc", "低延迟与高可用保障"),
+        ("brand_secure_access", "安全访问您的远程设备"),
+        ("login_welcome_back", "欢迎回来！"),
+        ("login_welcome_subtitle", "登录 {}，继续管理您的远程设备"),
+        ("register_welcome_subtitle", "使用手机号注册 {}，开始安全管理您的远程设备"),
     ].iter().cloned().collect();
 }

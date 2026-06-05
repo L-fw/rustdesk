@@ -645,12 +645,13 @@ class _AppLoginPageState extends State<AppLoginPage>
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
-              children: const [
-                Icon(Icons.diamond_outlined, size: 14, color: _kPrimaryColor),
-                SizedBox(width: 6),
+              children: [
+                const Icon(Icons.diamond_outlined,
+                    size: 14, color: _kPrimaryColor),
+                const SizedBox(width: 6),
                 Text(
-                  '简单 · 安全 · 高效',
-                  style: TextStyle(
+                  translate('brand_tagline'),
+                  style: const TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
                     color: _kPrimaryColor,
@@ -660,27 +661,31 @@ class _AppLoginPageState extends State<AppLoginPage>
             ),
           ),
           const SizedBox(height: 30),
-          _buildFeatureItem(
-              Icons.eco_outlined, '轻量易用', '简洁流畅的使用体验'),
+          _buildFeatureItem(Icons.eco_outlined,
+              translate('feature_lightweight_title'),
+              translate('feature_lightweight_desc')),
           const SizedBox(height: 24),
-          _buildFeatureItem(
-              Icons.devices_outlined, '多端兼容', '支持 Windows / Android'),
+          _buildFeatureItem(Icons.devices_outlined,
+              translate('feature_multiplatform_title'),
+              translate('feature_multiplatform_desc')),
           const SizedBox(height: 24),
-          _buildFeatureItem(Icons.wifi, '稳定连接', '低延迟与高可用保障'),
-          const Spacer(flex: 3),
+          _buildFeatureItem(Icons.wifi, translate('feature_stable_title'),
+              translate('feature_stable_desc')),
+          const Spacer(flex: 2),
           // 底部安全提示
           Row(
-            children: const [
-              Expanded(
+            children: [
+              const Expanded(
                 child: Divider(color: Color(0x22000000), endIndent: 14),
               ),
-              Icon(Icons.shield_outlined, size: 15, color: _kPrimaryColor),
-              SizedBox(width: 7),
+              const Icon(Icons.shield_outlined,
+                  size: 15, color: _kPrimaryColor),
+              const SizedBox(width: 7),
               Text(
-                '安全访问您的远程设备',
-                style: TextStyle(fontSize: 12.5, color: subColor),
+                translate('brand_secure_access'),
+                style: const TextStyle(fontSize: 12.5, color: subColor),
               ),
-              Expanded(
+              const Expanded(
                 child: Divider(color: Color(0x22000000), indent: 14),
               ),
             ],
@@ -767,10 +772,10 @@ class _AppLoginPageState extends State<AppLoginPage>
                   mainAxisAlignment: MainAxisAlignment.center,
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                const Center(
+                Center(
                   child: Text(
-                    '欢迎回来！',
-                    style: TextStyle(
+                    translate('login_welcome_back'),
+                    style: const TextStyle(
                       fontSize: 23,
                       fontWeight: FontWeight.bold,
                       color: Color(0xFF1B2233),
@@ -780,7 +785,8 @@ class _AppLoginPageState extends State<AppLoginPage>
                 const SizedBox(height: 8),
                 Center(
                   child: Text(
-                    '登录 ${bind.mainGetAppNameSync()}，继续管理您的远程设备',
+                    translate('login_welcome_subtitle')
+                        .replaceFirst('{}', bind.mainGetAppNameSync()),
                     style: const TextStyle(
                         fontSize: 12.5, color: Color(0xFF8A93A6)),
                   ),

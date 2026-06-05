@@ -449,5 +449,16 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
         ("Last login time", "Last login time"),
         ("No devices", "No devices"),
         ("Unknown", "Unknown"),
+        ("brand_tagline", "Simple · Secure · Efficient"),
+        ("feature_lightweight_title", "Lightweight & Easy"),
+        ("feature_lightweight_desc", "Clean and smooth experience"),
+        ("feature_multiplatform_title", "Cross-platform"),
+        ("feature_multiplatform_desc", "Supports Windows / Android"),
+        ("feature_stable_title", "Stable Connection"),
+        ("feature_stable_desc", "Low latency and high availability"),
+        ("brand_secure_access", "Securely access your remote devices"),
+        ("login_welcome_back", "Welcome back!"),
+        ("login_welcome_subtitle", "Sign in to {} and keep managing your remote devices"),
+        ("register_welcome_subtitle", "Register {} with your phone number to securely manage your remote devices"),
     ].iter().cloned().collect();
 }
