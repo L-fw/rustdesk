@@ -337,28 +337,32 @@ class _DesktopRegisterPageState extends State<DesktopRegisterPage>
             ],
           ),
           const Spacer(flex: 2),
-          Container(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.65),
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(Icons.diamond_outlined,
-                    size: 14, color: _kPrimaryColor),
-                const SizedBox(width: 6),
-                Text(
-                  translate('brand_tagline'),
-                  style: const TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: _kPrimaryColor,
+          // 标签徽章（与下方介绍项保持相同的水平偏移，确保对齐）
+          Align(
+            alignment: const Alignment(0.3, 0),
+            child: Container(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.65),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.diamond_outlined,
+                      size: 14, color: _kPrimaryColor),
+                  const SizedBox(width: 6),
+                  Text(
+                    translate('brand_tagline'),
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: _kPrimaryColor,
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
           const SizedBox(height: 30),
@@ -396,9 +400,12 @@ class _DesktopRegisterPageState extends State<DesktopRegisterPage>
   }
 
   Widget _buildFeatureItem(IconData icon, String title, String subtitle) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
+    // 与上方徽章保持相同的水平偏移，确保左右对齐
+    return Align(
+      alignment: const Alignment(0.3, 0),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
         Container(
           width: 44,
           height: 44,
@@ -437,6 +444,7 @@ class _DesktopRegisterPageState extends State<DesktopRegisterPage>
           ],
         ),
       ],
+      ),
     );
   }
 
