@@ -15,7 +15,7 @@ const Color _kPrimaryColor = Color(0xFF2E6FF2);
 const List<Color> _kButtonGradient = [Color(0xFF2D63F0), Color(0xFF5B9BFF)];
 
 /// 左侧品牌面板中徽章与介绍项统一的左侧缩进，保证四个条目左对齐
-const double _kBrandIndent = 40;
+const double _kBrandIndent = 100;
 
 /// 桌面端注册页面
 class DesktopRegisterPage extends StatefulWidget {

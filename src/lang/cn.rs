@@ -956,5 +956,6 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
         ("login_welcome_back", "欢迎回来！"),
         ("login_welcome_subtitle", "登录 {}，继续管理您的远程设备"),
         ("register_welcome_subtitle", "使用手机号注册 {}，开始安全管理您的远程设备"),
+        ("All", "全部"),
     ].iter().cloned().collect();
 }

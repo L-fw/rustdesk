@@ -3,6 +3,9 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
     [
         ("LinkEase", "佳影"),
         ("Status", "狀態"),
+        ("Access Control", "訪問控制"),
+        ("Access Credentials", "訪問權限"),
+        ("Connection Protection", "連接保護"),
         ("Your Desktop", "您的桌面"),
         ("Local ID", "本機ID"),
         ("local_id_tip", "您的本機ID，分享給他人後他們即可遠端連線到您"),
@@ -895,5 +898,14 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
         ("login_welcome_back", "歡迎回來！"),
         ("login_welcome_subtitle", "登入 {}，繼續管理您的遠端裝置"),
         ("register_welcome_subtitle", "使用手機號註冊 {}，開始安全管理您的遠端裝置"),
+        ("All", "全部"),
+        ("language_region_tip", "選擇應用界面顯示的語言"),
+        ("recording_card_tip", "自動錄製遠程會話並保存到本地"),
+        ("security_settings_banner_tip", "安全設置已開啟，您的遠程連接受到保護"),
+        ("display_settings_tip", "設置主題外觀、默認顯示方式與滾動方式"),
+        ("Account Info", "賬戶信息"),
+        ("Account Security", "賬戶安全"),
+        ("Account Actions", "賬戶操作"),
+        ("Deregister account", "登出賬號"),
     ].iter().cloned().collect();
 }
