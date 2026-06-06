@@ -14,6 +14,9 @@ import 'terms_of_service.dart' as terms_pages;
 const Color _kPrimaryColor = Color(0xFF2E6FF2);
 const List<Color> _kButtonGradient = [Color(0xFF2D63F0), Color(0xFF5B9BFF)];
 
+/// 左侧品牌面板中徽章与介绍项统一的左侧缩进，保证四个条目左对齐
+const double _kBrandIndent = 40;
+
 /// 桌面端注册页面
 class DesktopRegisterPage extends StatefulWidget {
   const DesktopRegisterPage({Key? key}) : super(key: key);
@@ -337,9 +340,9 @@ class _DesktopRegisterPageState extends State<DesktopRegisterPage>
             ],
           ),
           const Spacer(flex: 2),
-          // 标签徽章（与下方介绍项保持相同的水平偏移，确保对齐）
-          Align(
-            alignment: const Alignment(0.3, 0),
+          // 标签徽章（与下方介绍项使用相同的左侧缩进，确保左对齐）
+          Padding(
+            padding: const EdgeInsets.only(left: _kBrandIndent),
             child: Container(
               padding:
                   const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
@@ -400,9 +403,9 @@ class _DesktopRegisterPageState extends State<DesktopRegisterPage>
   }
 
   Widget _buildFeatureItem(IconData icon, String title, String subtitle) {
-    // 与上方徽章保持相同的水平偏移，确保左右对齐
-    return Align(
-      alignment: const Alignment(0.3, 0),
+    // 与上方徽章使用相同的左侧缩进，确保左对齐
+    return Padding(
+      padding: const EdgeInsets.only(left: _kBrandIndent),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
