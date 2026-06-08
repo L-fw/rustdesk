@@ -874,6 +874,9 @@ class _SafetyState extends State<_Safety> with AutomaticKeepAliveClientMixin {
   @override
   bool get wantKeepAlive => true;
   bool locked = bind.mainIsInstalled();
+  // Whether the collapsible "Advanced Permissions" section of the access
+  // permissions card is expanded (matches the "高级权限 / 展开" row in the mockup).
+  bool _showAdvancedPermissions = false;
   final scrollController = ScrollController();
 
   @override
@@ -884,10 +887,6 @@ class _SafetyState extends State<_Safety> with AutomaticKeepAliveClientMixin {
         child: Column(
           children: [
             _securityBanner(),
-            _lock(locked, 'Unlock Security Settings', () {
-              locked = false;
-              setState(() => {});
-            }),
             preventMouseKeyBuilder(
               block: locked,
               child: Column(children: [
@@ -1024,57 +1023,115 @@ class _SafetyState extends State<_Safety> with AutomaticKeepAliveClientMixin {
           break;
       }
 
+      // Primary permissions, laid out in two columns exactly as in the
+      // "8.2-设置-安全" mockup:
+      //   允许控制键盘/鼠标 | 允许传输音频
+      //   允许同步剪贴板    | 允许查看摄像头
+      //   允许传输文件      |
+      final basicPermissions = <Widget>[
+        _OptionCheckBox(context, 'Enable keyboard/mouse', kOptionEnableKeyboard,
+            enabled: enabled, fakeValue: fakeValue),
+        _OptionCheckBox(context, 'Enable audio', kOptionEnableAudio,
+            enabled: enabled, fakeValue: fakeValue),
+        _OptionCheckBox(context, 'Enable clipboard', kOptionEnableClipboard,
+            enabled: enabled, fakeValue: fakeValue),
+        _OptionCheckBox(context, 'Enable camera', kOptionEnableCamera,
+            enabled: enabled, fakeValue: fakeValue),
+        _OptionCheckBox(
+            context, 'Enable file transfer', kOptionEnableFileTransfer,
+            enabled: enabled, fakeValue: fakeValue),
+      ];
+
+      // The remaining permissions, hidden behind the "高级权限 / 展开" expander.
+      final advancedPermissions = <Widget>[
+        _OptionCheckBox(context, 'Enable TCP tunneling', kOptionEnableTunnel,
+            enabled: enabled, fakeValue: fakeValue),
+        _OptionCheckBox(
+            context, 'Enable remote restart', kOptionEnableRemoteRestart,
+            enabled: enabled, fakeValue: fakeValue),
+        _OptionCheckBox(
+            context, 'Enable recording session', kOptionEnableRecordSession,
+            enabled: enabled, fakeValue: fakeValue),
+        if (isWindows)
+          _OptionCheckBox(
+              context, 'Enable blocking user input', kOptionEnableBlockInput,
+              enabled: enabled, fakeValue: fakeValue),
+        _OptionCheckBox(context, 'Enable remote configuration modification',
+            kOptionAllowRemoteConfigModification,
+            enabled: enabled, fakeValue: fakeValue),
+      ];
+
+      // "权限方案" label sitting above the access-mode dropdown.
+      final accessModeField = Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            translate('Permission scheme'),
+            style: const TextStyle(
+                fontSize: _kContentFontSize, color: Color(0xFF6B7280)),
+          ),
+          const SizedBox(height: 6),
+          ComboBox(
+              keys: [
+                defaultOptionAccessMode,
+                'full',
+                'view',
+              ],
+              values: [
+                translate('Custom'),
+                translate('Full Access'),
+                translate('Screen Share'),
+              ],
+              enabled: enabled && !isOptionFixed(kOptionAccessMode),
+              initialKey: initialKey,
+              onChanged: (mode) async {
+                await bind.mainSetOption(key: kOptionAccessMode, value: mode);
+                setState(() {});
+              }),
+        ],
+      ).marginOnly(left: _kCheckBoxLeftMargin);
+
+      // "高级权限" row with a trailing expand/collapse affordance.
+      final advancedHeader = InkWell(
+        borderRadius: BorderRadius.circular(6),
+        onTap: () => setState(
+            () => _showAdvancedPermissions = !_showAdvancedPermissions),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 2),
+          child: Row(
+            children: [
+              Text(
+                translate('Advanced Permissions'),
+                style: const TextStyle(
+                    fontSize: _kContentFontSize, fontWeight: FontWeight.w500),
+              ),
+              const Spacer(),
+              Text(
+                translate(_showAdvancedPermissions ? 'Collapse' : 'Expand'),
+                style: const TextStyle(fontSize: 13, color: _accentColor),
+              ),
+              Icon(
+                _showAdvancedPermissions
+                    ? Icons.keyboard_arrow_up
+                    : Icons.keyboard_arrow_down,
+                size: 18,
+                color: _accentColor,
+              ),
+            ],
+          ),
+        ),
+      ).marginOnly(left: _kCheckBoxLeftMargin);
+
       return _GCard(
           icon: Icons.verified_user_outlined,
           iconColor: const Color(0xFF22C55E),
-          title: 'Access Control',
+          title: 'Access Permissions',
+          subtitle: 'access_permissions_tip',
           children: [
-        ComboBox(
-            keys: [
-              defaultOptionAccessMode,
-              'full',
-              'view',
-            ],
-            values: [
-              translate('Custom'),
-              translate('Full Access'),
-              translate('Screen Share'),
-            ],
-            enabled: enabled && !isOptionFixed(kOptionAccessMode),
-            initialKey: initialKey,
-            onChanged: (mode) async {
-              await bind.mainSetOption(key: kOptionAccessMode, value: mode);
-              setState(() {});
-            }).marginOnly(left: _kCheckBoxLeftMargin),
-        _twoColumnGrid([
-          _OptionCheckBox(
-              context, 'Enable keyboard/mouse', kOptionEnableKeyboard,
-              enabled: enabled, fakeValue: fakeValue),
-          _OptionCheckBox(context, 'Enable clipboard', kOptionEnableClipboard,
-              enabled: enabled, fakeValue: fakeValue),
-          _OptionCheckBox(
-              context, 'Enable file transfer', kOptionEnableFileTransfer,
-              enabled: enabled, fakeValue: fakeValue),
-          _OptionCheckBox(context, 'Enable audio', kOptionEnableAudio,
-              enabled: enabled, fakeValue: fakeValue),
-          _OptionCheckBox(context, 'Enable camera', kOptionEnableCamera,
-              enabled: enabled, fakeValue: fakeValue),
-          _OptionCheckBox(context, 'Enable TCP tunneling', kOptionEnableTunnel,
-              enabled: enabled, fakeValue: fakeValue),
-          _OptionCheckBox(
-              context, 'Enable remote restart', kOptionEnableRemoteRestart,
-              enabled: enabled, fakeValue: fakeValue),
-          _OptionCheckBox(
-              context, 'Enable recording session', kOptionEnableRecordSession,
-              enabled: enabled, fakeValue: fakeValue),
-          if (isWindows)
-            _OptionCheckBox(context, 'Enable blocking user input',
-                kOptionEnableBlockInput,
-                enabled: enabled, fakeValue: fakeValue),
-          _OptionCheckBox(context, 'Enable remote configuration modification',
-              kOptionAllowRemoteConfigModification,
-              enabled: enabled, fakeValue: fakeValue),
-        ]),
+        accessModeField,
+        _twoColumnGrid(basicPermissions),
+        advancedHeader,
+        if (_showAdvancedPermissions) _twoColumnGrid(advancedPermissions),
       ]);
     }
 
@@ -1085,53 +1142,49 @@ class _SafetyState extends State<_Safety> with AutomaticKeepAliveClientMixin {
     return ChangeNotifierProvider.value(
         value: gFFI.serverModel,
         child: Consumer<ServerModel>(builder: ((context, model, child) {
-          List<String> passwordKeys = [
-            kUseTemporaryPassword,
-            kUsePermanentPassword,
-            kUseBothPasswords,
-          ];
-          List<String> passwordValues = [
-            translate('Use one-time password'),
-            translate('Use permanent password'),
-            translate('Use both passwords'),
-          ];
-          bool tmpEnabled = model.verificationMethod != kUsePermanentPassword;
-          bool permEnabled = model.verificationMethod != kUseTemporaryPassword;
-          String currentValue =
-              passwordValues[passwordKeys.indexOf(model.verificationMethod)];
-          List<Widget> radios = passwordValues
-              .map((value) => _Radio<String>(
-                    context,
-                    value: value,
-                    groupValue: currentValue,
-                    label: value,
-                    onChanged: locked
-                        ? null
-                        : ((value) async {
-                            callback() async {
-                              await model.setVerificationMethod(
-                                  passwordKeys[passwordValues.indexOf(value)]);
-                              await model.updatePasswordModel();
-                            }
+          final method = model.verificationMethod;
+          final oneTimeOn = method != kUsePermanentPassword; // temporary or both
+          final permanentOn =
+              method != kUseTemporaryPassword; // permanent or both
+          final bothOn = method == kUseBothPasswords;
+          final tmpEnabled = oneTimeOn;
+          final permEnabled = permanentOn;
 
-                            if (value ==
-                                    passwordValues[passwordKeys
-                                        .indexOf(kUsePermanentPassword)] &&
-                                (await bind.mainGetPermanentPassword())
-                                    .isEmpty) {
-                              if (isChangePermanentPasswordDisabled()) {
-                                await callback();
-                                return;
-                              }
-                              setPasswordDialog(notEmptyCallback: callback);
-                            } else {
-                              await callback();
-                            }
-                          }),
-                  ))
-              .toList();
+          setMethod(String m) async {
+            await model.setVerificationMethod(m);
+            await model.updatePasswordModel();
+          }
 
-          var onChanged = tmpEnabled && !locked
+          // Apply a verification method, prompting to create a permanent
+          // password first when one is required but not yet set.
+          applyMethod(String m) async {
+            final needsPermanent =
+                m == kUsePermanentPassword || m == kUseBothPasswords;
+            if (needsPermanent &&
+                (await bind.mainGetPermanentPassword()).isEmpty &&
+                !isChangePermanentPasswordDisabled()) {
+              setPasswordDialog(notEmptyCallback: () => setMethod(m));
+            } else {
+              await setMethod(m);
+            }
+          }
+
+          // The three verification methods are mutually exclusive, but the
+          // mockup renders them as independent enable switches; keep the
+          // underlying single-choice model consistent here.
+          onOneTime(bool v) => v
+              ? applyMethod(
+                  permanentOn ? kUseBothPasswords : kUseTemporaryPassword)
+              : applyMethod(kUsePermanentPassword);
+          onPermanent(bool v) => v
+              ? applyMethod(
+                  oneTimeOn ? kUseBothPasswords : kUsePermanentPassword)
+              : applyMethod(kUseTemporaryPassword);
+          onBoth(bool v) => v
+              ? applyMethod(kUseBothPasswords)
+              : applyMethod(kUseTemporaryPassword);
+
+          var onLenChanged = tmpEnabled && !locked
               ? (value) {
                   if (value != null) {
                     () async {
@@ -1144,20 +1197,21 @@ class _SafetyState extends State<_Safety> with AutomaticKeepAliveClientMixin {
           List<Widget> lengthRadios = ['6', '8', '10']
               .map((value) => GestureDetector(
                     child: Row(
+                      mainAxisSize: MainAxisSize.min,
                       children: [
                         Radio(
                             value: value,
                             groupValue: model.temporaryPasswordLength,
-                            onChanged: onChanged),
+                            onChanged: onLenChanged),
                         Text(
                           value,
                           style: TextStyle(
                               color: disabledTextColor(
-                                  context, onChanged != null)),
+                                  context, onLenChanged != null)),
                         ),
                       ],
                     ).paddingOnly(right: 10),
-                    onTap: () => onChanged?.call(value),
+                    onTap: () => onLenChanged?.call(value),
                   ))
               .toList();
 
@@ -1165,29 +1219,27 @@ class _SafetyState extends State<_Safety> with AutomaticKeepAliveClientMixin {
               isOptionFixed(kOptionAllowNumericOneTimePassword);
           final isNumOPTChangable = !isOptFixedNumOTP && tmpEnabled && !locked;
           final numericOneTimePassword = GestureDetector(
-            child: InkWell(
-                child: Row(
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
               children: [
                 Checkbox(
                         value: model.allowNumericOneTimePassword,
                         onChanged: isNumOPTChangable
-                            ? (bool? v) {
-                                model.switchAllowNumericOneTimePassword();
-                              }
+                            ? (bool? v) =>
+                                model.switchAllowNumericOneTimePassword()
                             : null)
                     .marginOnly(right: 5),
-                Expanded(
-                    child: Text(
-                  translate('Numeric one-time password'),
+                Text(
+                  translate('Use numeric'),
                   style: TextStyle(
                       color: disabledTextColor(context, isNumOPTChangable)),
-                ))
+                ),
               ],
-            )),
+            ),
             onTap: isNumOPTChangable
                 ? () => model.switchAllowNumericOneTimePassword()
                 : null,
-          ).marginOnly(left: _kContentHSubMargin - 5);
+          );
 
           final modeKeys = <String>[
             'password',
@@ -1204,39 +1256,134 @@ class _SafetyState extends State<_Safety> with AutomaticKeepAliveClientMixin {
             modeInitialKey = defaultOptionApproveMode;
           }
           final usePassword = model.approveMode != 'click';
-
           final isApproveModeFixed = isOptionFixed(kOptionApproveMode);
+
+          // A left-column label with its control on the right, mirroring the
+          // "8.2-设置-安全" mockup's access-password form.
+          Widget formRow(String label, Widget control,
+              {CrossAxisAlignment align = CrossAxisAlignment.center}) {
+            return Row(
+              crossAxisAlignment: align,
+              children: [
+                SizedBox(
+                  width: 104,
+                  child: Text(
+                    translate(label),
+                    style: const TextStyle(
+                        fontSize: _kContentFontSize, color: Color(0xFF6B7280)),
+                  ),
+                ),
+                Expanded(child: control),
+              ],
+            ).marginOnly(left: _kCheckBoxLeftMargin);
+          }
+
+          // A "启用xxx" text with a trailing switch, used inside the right column.
+          Widget enableSwitch(
+              String label, bool value, Function(bool)? onChanged) {
+            return Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  translate(label),
+                  style: TextStyle(
+                      fontSize: _kContentFontSize,
+                      color: disabledTextColor(context, onChanged != null)),
+                ),
+                const SizedBox(width: 10),
+                Transform.scale(
+                  scale: 0.85,
+                  child: Switch(
+                    value: value,
+                    activeColor: _accentColor,
+                    onChanged: onChanged,
+                  ),
+                ),
+              ],
+            );
+          }
+
+          final oneTimeControl = Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              enableSwitch('Enable one-time password', oneTimeOn,
+                  locked ? null : onOneTime),
+              if (tmpEnabled) ...[
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    SizedBox(
+                      width: 72,
+                      child: Text(
+                        translate('Password length'),
+                        style: TextStyle(
+                            fontSize: _kContentFontSize,
+                            color: disabledTextColor(
+                                context, tmpEnabled && !locked)),
+                      ),
+                    ),
+                    ...lengthRadios,
+                  ],
+                ),
+                const SizedBox(height: 4),
+                numericOneTimePassword,
+              ],
+            ],
+          );
+
+          final permanentControl = Row(
+            children: [
+              enableSwitch('Enable permanent password', permanentOn,
+                  locked ? null : onPermanent),
+              const Spacer(),
+              if (!isChangePermanentPasswordDisabled())
+                ElevatedButton(
+                  onPressed: permEnabled && !locked ? setPasswordDialog : null,
+                  style: _gCardButtonStyle,
+                  child: Text(
+                    translate('Set permanent password'),
+                    style: const TextStyle(
+                        fontSize: 14, fontWeight: FontWeight.w600),
+                  ),
+                ),
+            ],
+          );
+
           return _GCard(
               icon: Icons.vpn_key_outlined,
               iconColor: const Color(0xFF8B5CF6),
-              title: 'Access Credentials',
+              title: 'Access Password',
+              subtitle: 'access_password_tip',
               children: [
-            ComboBox(
-              enabled: !locked && !isApproveModeFixed,
-              keys: modeKeys,
-              values: modeValues,
-              initialKey: modeInitialKey,
-              onChanged: (key) => model.setApproveMode(key),
-            ).marginOnly(left: _kContentHMargin),
-            if (usePassword) radios[0],
+            formRow(
+              'Access mode',
+              ComboBox(
+                enabled: !locked && !isApproveModeFixed,
+                keys: modeKeys,
+                values: modeValues,
+                initialKey: modeInitialKey,
+                onChanged: (key) => model.setApproveMode(key),
+              ),
+            ),
             if (usePassword)
-              _SubLabeledWidget(
-                  context,
-                  'One-time password length',
-                  Row(
-                    children: [
-                      ...lengthRadios,
-                    ],
+              formRow('One-time password', oneTimeControl,
+                  align: CrossAxisAlignment.start),
+            if (usePassword) formRow('Permanent password', permanentControl),
+            if (usePassword)
+              formRow(
+                'Use both passwords',
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: Transform.scale(
+                    scale: 0.85,
+                    child: Switch(
+                      value: bothOn,
+                      activeColor: _accentColor,
+                      onChanged: locked ? null : onBoth,
+                    ),
                   ),
-                  enabled: tmpEnabled && !locked),
-            if (usePassword) numericOneTimePassword,
-            if (usePassword) radios[1],
-            if (usePassword && !isChangePermanentPasswordDisabled())
-              _SubButton('Set permanent password', setPasswordDialog,
-                  permEnabled && !locked),
-            // if (usePassword)
-            //   hide_cm(!locked).marginOnly(left: _kContentHSubMargin - 6),
-            if (usePassword) radios[2],
+                ),
+              ),
           ]);
         })));
   }
@@ -1247,16 +1394,13 @@ class _SafetyState extends State<_Safety> with AutomaticKeepAliveClientMixin {
         icon: Icons.shield_outlined,
         iconColor: _accentColor,
         title: 'Connection Protection',
+        subtitle: 'connection_protection_tip',
         children: [
-      shareRdp(context, enabled),
+      if (isWindows && bind.mainIsInstalled()) shareRdp(context, enabled),
       _OptionSwitch(context, 'Deny LAN discovery', 'enable-lan-discovery',
           reverse: true, enabled: enabled),
-      ...directIp(context),
       whitelist(),
       ...autoDisconnect(context),
-      _OptionSwitch(context, 'keep-awake-during-incoming-sessions-label',
-          kOptionKeepAwakeDuringIncomingSessions,
-          reverse: false, enabled: enabled),
       if (bind.mainIsInstalled())
         _OptionSwitch(context, 'allow-only-conn-window-open-tip',
             'allow-only-conn-window-open',
