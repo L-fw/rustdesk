@@ -1923,8 +1923,161 @@ class _RemoteControlState extends State<_RemoteControl> {
     return ListView(controller: scrollController, children: [
       imageQuality(context),
       codec(context),
-      if (isDesktop) trackpadSpeed(context),
+      operationsAndInput(context),
+      clipboardAndFileTransfer(context),
+      if (isDesktop) multipleMonitors(context),
     ]).marginOnly(bottom: _kListViewBottomMargin);
+  }
+
+  // A single toggle row used inside the cards below: colored icon + title +
+  // optional description + switch.
+  Widget _toggleRow({
+    required IconData icon,
+    required Color iconColor,
+    required String title,
+    String? subtitle,
+    required bool value,
+    required ValueChanged<bool>? onChanged,
+  }) {
+    return Row(
+      children: [
+        Container(
+          width: 38,
+          height: 38,
+          decoration: BoxDecoration(
+            color: iconColor.withOpacity(0.12),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Icon(icon, size: 20, color: iconColor),
+        ),
+        const SizedBox(width: 14),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(translate(title),
+                  style: const TextStyle(
+                      fontSize: 14, fontWeight: FontWeight.w600)),
+              if (subtitle != null && subtitle.isNotEmpty) ...[
+                const SizedBox(height: 3),
+                Text(translate(subtitle),
+                    style: const TextStyle(
+                        fontSize: 12, color: Color(0xFF9CA3AF))),
+              ],
+            ],
+          ),
+        ),
+        const SizedBox(width: 12),
+        Switch(
+          value: value,
+          activeColor: MyTheme.accent,
+          onChanged: onChanged,
+        ),
+      ],
+    );
+  }
+
+  // A toggle row bound to a per-session "user default" option.
+  Widget _defaultOptionToggle({
+    required IconData icon,
+    required Color iconColor,
+    required String title,
+    String? subtitle,
+    required String key,
+  }) {
+    final value = bind.mainGetUserDefaultOption(key: key) == 'Y';
+    final isOptFixed = isOptionFixed(key);
+    return _toggleRow(
+      icon: icon,
+      iconColor: iconColor,
+      title: title,
+      subtitle: subtitle,
+      value: value,
+      onChanged: isOptFixed
+          ? null
+          : (b) async {
+              await bind.mainSetUserDefaultOption(
+                key: key,
+                value: b
+                    ? 'Y'
+                    : (key == kOptionEnableFileCopyPaste
+                        ? 'N'
+                        : defaultOptionNo),
+              );
+              setState(() {});
+            },
+    );
+  }
+
+  // 操作与输入
+  Widget operationsAndInput(BuildContext context) {
+    return _GCard(
+        icon: Icons.touch_app_outlined,
+        title: 'Operations and input',
+        children: [
+          if (isDesktop) _trackpadSpeedRow(context),
+          _defaultOptionToggle(
+            icon: Icons.mouse_outlined,
+            iconColor: Colors.orange,
+            title: 'Show remote cursor',
+            subtitle: 'adv_show_cursor_sub',
+            key: kOptionShowRemoteCursor,
+          ),
+        ]);
+  }
+
+  // 剪贴板与文件传输
+  Widget clipboardAndFileTransfer(BuildContext context) {
+    return _GCard(
+        icon: Icons.content_paste_outlined,
+        title: 'Clipboard and file transfer',
+        children: [
+          _defaultOptionToggle(
+            icon: Icons.content_paste_off_outlined,
+            iconColor: Colors.orange,
+            title: 'Disable clipboard',
+            subtitle: 'adv_disable_clipboard_sub',
+            key: kOptionDisableClipboard,
+          ),
+          if (isDesktop)
+            _defaultOptionToggle(
+              icon: Icons.file_copy_outlined,
+              iconColor: Colors.orange,
+              title: 'Enable file copy and paste',
+              subtitle: 'adv_file_copy_sub',
+              key: kOptionEnableFileCopyPaste,
+            ),
+        ]);
+  }
+
+  // 多显示器
+  Widget multipleMonitors(BuildContext context) {
+    return _GCard(
+        icon: Icons.desktop_windows_outlined,
+        title: 'Multiple monitors',
+        children: [
+          _defaultOptionToggle(
+            icon: Icons.web_asset_outlined,
+            iconColor: Colors.orange,
+            title: 'Show displays as individual windows',
+            subtitle: 'adv_individual_windows_sub',
+            key: kKeyShowDisplaysAsIndividualWindows,
+          ),
+          _defaultOptionToggle(
+            icon: Icons.desktop_windows_outlined,
+            iconColor: Colors.orange,
+            title: 'Use all my displays for the remote session',
+            subtitle: 'adv_all_displays_sub',
+            key: kKeyUseAllMyDisplaysForTheRemoteSession,
+          ),
+          _defaultOptionToggle(
+            icon: Icons.monitor_outlined,
+            iconColor: Colors.blue,
+            title: 'Show monitors in toolbar',
+            subtitle: 'adv_show_monitors_sub',
+            key: kKeyShowMonitorsToolbar,
+          ),
+        ]);
   }
 
   Widget imageQuality(BuildContext context) {
@@ -1936,38 +2089,138 @@ class _RemoteControlState extends State<_RemoteControl> {
 
     final isOptFixed = isOptionFixed(kOptionImageQuality);
     final groupValue = bind.mainGetUserDefaultOption(key: kOptionImageQuality);
+    final tiles = <Widget>[
+      _qualityTile(
+        icon: Icons.image_outlined,
+        title: 'Clarity priority',
+        subtitle: 'img_quality_best_sub',
+        value: kRemoteImageQualityBest,
+        groupValue: groupValue,
+        onChanged: isOptFixed ? null : onChanged,
+      ),
+      _qualityTile(
+        icon: Icons.balance_outlined,
+        title: 'Balanced',
+        subtitle: 'img_quality_balanced_sub',
+        value: kRemoteImageQualityBalanced,
+        groupValue: groupValue,
+        onChanged: isOptFixed ? null : onChanged,
+      ),
+      _qualityTile(
+        icon: Icons.bolt_outlined,
+        title: 'Smoothness priority',
+        subtitle: 'img_quality_low_sub',
+        value: kRemoteImageQualityLow,
+        groupValue: groupValue,
+        onChanged: isOptFixed ? null : onChanged,
+      ),
+      _qualityTile(
+        icon: Icons.tune_outlined,
+        title: 'Custom',
+        subtitle: 'img_quality_custom_sub',
+        value: kRemoteImageQualityCustom,
+        groupValue: groupValue,
+        onChanged: isOptFixed ? null : onChanged,
+      ),
+    ];
     return _GCard(
         icon: Icons.high_quality_outlined,
         title: 'Default Image Quality',
         children: [
-      _Radio(context,
-          value: kRemoteImageQualityBest,
-          groupValue: groupValue,
-          label: 'Good image quality',
-          onChanged: isOptFixed ? null : onChanged),
-      _Radio(context,
-          value: kRemoteImageQualityBalanced,
-          groupValue: groupValue,
-          label: 'Balanced',
-          onChanged: isOptFixed ? null : onChanged),
-      _Radio(context,
-          value: kRemoteImageQualityLow,
-          groupValue: groupValue,
-          label: 'Optimize reaction time',
-          onChanged: isOptFixed ? null : onChanged),
-      _Radio(context,
-          value: kRemoteImageQualityCustom,
-          groupValue: groupValue,
-          label: 'Custom',
-          onChanged: isOptFixed ? null : onChanged),
-      Offstage(
-        offstage: groupValue != kRemoteImageQualityCustom,
-        child: customImageQualitySetting(),
-      )
-    ]);
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              for (int i = 0; i < tiles.length; i++) ...[
+                if (i > 0) const SizedBox(width: 12),
+                Expanded(child: tiles[i]),
+              ],
+            ],
+          ),
+          Offstage(
+            offstage: groupValue != kRemoteImageQualityCustom,
+            child: customImageQualitySetting(),
+          ),
+        ]);
   }
 
-  Widget trackpadSpeed(BuildContext context) {
+  // A single selectable image-quality tile: radio indicator (top-left),
+  // centered icon, title and subtitle. Highlighted when selected.
+  Widget _qualityTile({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required String value,
+    required String groupValue,
+    required ValueChanged<String>? onChanged,
+  }) {
+    final selected = value == groupValue;
+    final accent = MyTheme.accent;
+    return InkWell(
+      borderRadius: BorderRadius.circular(12),
+      onTap: onChanged == null ? null : () => onChanged(value),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 16),
+        decoration: BoxDecoration(
+          color: selected ? accent.withOpacity(0.06) : Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: selected ? accent : const Color(0xFFE5E7EB),
+            width: selected ? 1.5 : 1,
+          ),
+        ),
+        child: Stack(
+          children: [
+            Positioned(
+              top: 0,
+              left: 0,
+              child: Icon(
+                selected
+                    ? Icons.radio_button_checked
+                    : Icons.radio_button_unchecked,
+                size: 16,
+                color: selected ? accent : const Color(0xFFC2C7D0),
+              ),
+            ),
+            SizedBox(
+              width: double.infinity,
+              child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(icon,
+                    size: 26,
+                    color: selected ? accent : const Color(0xFF6B7280)),
+                const SizedBox(height: 10),
+                Text(
+                  translate(title),
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: selected ? accent : const Color(0xFF374151),
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  translate(subtitle),
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 11,
+                    height: 1.3,
+                    color: selected
+                        ? accent.withOpacity(0.8)
+                        : const Color(0xFF9CA3AF),
+                  ),
+                ),
+              ],
+            )),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _trackpadSpeedRow(BuildContext context) {
     final initSpeed =
         (int.tryParse(bind.mainGetUserDefaultOption(key: kKeyTrackpadSpeed)) ??
             kDefaultTrackpadSpeed);
@@ -1979,75 +2232,109 @@ class _RemoteControlState extends State<_RemoteControl> {
       // But it may also be ok to take effect in the next connection.
     }
 
-    return _GCard(
-        icon: Icons.mouse_outlined,
-        title: 'Default trackpad speed',
-        children: [
-      TrackpadSpeedWidget(
-        value: curSpeed,
-        onDebouncer: onDebouncer,
-      ),
-    ]);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Container(
+              width: 38,
+              height: 38,
+              decoration: BoxDecoration(
+                color: Colors.teal.withOpacity(0.12),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Icon(Icons.mouse_outlined,
+                  size: 20, color: Colors.teal),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(translate('Default trackpad speed'),
+                      style: const TextStyle(
+                          fontSize: 14, fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 3),
+                  Text(translate('rc_trackpad_speed_sub'),
+                      style: const TextStyle(
+                          fontSize: 12, color: Color(0xFF9CA3AF))),
+                ],
+              ),
+            ),
+          ],
+        ),
+        TrackpadSpeedWidget(
+          value: curSpeed,
+          onDebouncer: onDebouncer,
+        ),
+      ],
+    );
   }
 
   Widget codec(BuildContext context) {
-    onChanged(String value) async {
+    onChanged(String? value) async {
+      if (value == null) return;
       await bind.mainSetUserDefaultOption(
           key: kOptionCodecPreference, value: value);
       setState(() {});
     }
 
-    final groupValue =
+    var groupValue =
         bind.mainGetUserDefaultOption(key: kOptionCodecPreference);
-    var hwRadios = [];
     final isOptFixed = isOptionFixed(kOptionCodecPreference);
+    // value -> display label
+    final items = <MapEntry<String, String>>[
+      const MapEntry('auto', 'Auto (recommended)'),
+      const MapEntry('vp8', 'VP8'),
+      const MapEntry('vp9', 'VP9'),
+      const MapEntry('av1', 'AV1'),
+    ];
     try {
       final Map codecsJson = jsonDecode(bind.mainSupportedHwdecodings());
-      final h264 = codecsJson['h264'] ?? false;
-      final h265 = codecsJson['h265'] ?? false;
-      if (h264) {
-        hwRadios.add(_Radio(context,
-            value: 'h264',
-            groupValue: groupValue,
-            label: 'H264',
-            onChanged: isOptFixed ? null : onChanged));
+      if (codecsJson['h264'] ?? false) {
+        items.add(const MapEntry('h264', 'H264'));
       }
-      if (h265) {
-        hwRadios.add(_Radio(context,
-            value: 'h265',
-            groupValue: groupValue,
-            label: 'H265',
-            onChanged: isOptFixed ? null : onChanged));
+      if (codecsJson['h265'] ?? false) {
+        items.add(const MapEntry('h265', 'H265'));
       }
     } catch (e) {
       debugPrint("failed to parse supported hwdecodings, err=$e");
+    }
+    if (!items.any((e) => e.key == groupValue)) {
+      groupValue = 'auto';
     }
     return _GCard(
         icon: Icons.video_settings_outlined,
         title: 'Default Codec',
         children: [
-      _Radio(context,
-          value: 'auto',
-          groupValue: groupValue,
-          label: 'Auto',
-          onChanged: isOptFixed ? null : onChanged),
-      _Radio(context,
-          value: 'vp8',
-          groupValue: groupValue,
-          label: 'VP8',
-          onChanged: isOptFixed ? null : onChanged),
-      _Radio(context,
-          value: 'vp9',
-          groupValue: groupValue,
-          label: 'VP9',
-          onChanged: isOptFixed ? null : onChanged),
-      _Radio(context,
-          value: 'av1',
-          groupValue: groupValue,
-          label: 'AV1',
-          onChanged: isOptFixed ? null : onChanged),
-      ...hwRadios,
-    ]);
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: const Color(0xFFE5E7EB)),
+            ),
+            child: DropdownButtonHideUnderline(
+              child: DropdownButton<String>(
+                value: groupValue,
+                isExpanded: true,
+                icon: const Icon(Icons.keyboard_arrow_down_rounded,
+                    color: Color(0xFF9CA3AF)),
+                borderRadius: BorderRadius.circular(8),
+                style: const TextStyle(
+                    fontSize: 14, color: Color(0xFF374151)),
+                onChanged: isOptFixed ? null : onChanged,
+                items: items
+                    .map((e) => DropdownMenuItem<String>(
+                          value: e.key,
+                          child: Text(translate(e.value)),
+                        ))
+                    .toList(),
+              ),
+            ),
+          ),
+        ]);
   }
 
 }
@@ -2704,14 +2991,6 @@ class _AdvancedState extends State<_Advanced> {
     section('Window toolbar', [
       if (desktop)
         _defaultOptionToggle(
-          icon: Icons.monitor_outlined,
-          iconColor: Colors.blue,
-          title: 'Show monitors in toolbar',
-          subtitle: 'adv_show_monitors_sub',
-          key: kKeyShowMonitorsToolbar,
-        ),
-      if (desktop)
-        _defaultOptionToggle(
           icon: Icons.unfold_less,
           iconColor: Colors.blue,
           title: 'Collapse toolbar',
@@ -2766,13 +3045,6 @@ class _AdvancedState extends State<_Advanced> {
         key: kOptionViewOnly,
       ),
       _defaultOptionToggle(
-        icon: Icons.mouse_outlined,
-        iconColor: Colors.orange,
-        title: 'Show remote cursor',
-        subtitle: 'adv_show_cursor_sub',
-        key: kOptionShowRemoteCursor,
-      ),
-      _defaultOptionToggle(
         icon: Icons.analytics_outlined,
         iconColor: Colors.orange,
         title: 'Show quality monitor',
@@ -2785,21 +3057,6 @@ class _AdvancedState extends State<_Advanced> {
         title: 'Mute',
         subtitle: 'adv_mute_sub',
         key: kOptionDisableAudio,
-      ),
-      if (desktop)
-        _defaultOptionToggle(
-          icon: Icons.file_copy_outlined,
-          iconColor: Colors.orange,
-          title: 'Enable file copy and paste',
-          subtitle: 'adv_file_copy_sub',
-          key: kOptionEnableFileCopyPaste,
-        ),
-      _defaultOptionToggle(
-        icon: Icons.content_paste_off_outlined,
-        iconColor: Colors.orange,
-        title: 'Disable clipboard',
-        subtitle: 'adv_disable_clipboard_sub',
-        key: kOptionDisableClipboard,
       ),
       _defaultOptionToggle(
         icon: Icons.lock_clock_outlined,
@@ -2822,22 +3079,6 @@ class _AdvancedState extends State<_Advanced> {
         subtitle: 'adv_true_color_sub',
         key: kOptionI444,
       ),
-      if (desktop)
-        _defaultOptionToggle(
-          icon: Icons.web_asset_outlined,
-          iconColor: Colors.orange,
-          title: 'Show displays as individual windows',
-          subtitle: 'adv_individual_windows_sub',
-          key: kKeyShowDisplaysAsIndividualWindows,
-        ),
-      if (desktop)
-        _defaultOptionToggle(
-          icon: Icons.desktop_windows_outlined,
-          iconColor: Colors.orange,
-          title: 'Use all my displays for the remote session',
-          subtitle: 'adv_all_displays_sub',
-          key: kKeyUseAllMyDisplaysForTheRemoteSession,
-        ),
       if (incomingOk) _wallpaperToggle(),
       if (outgoingOk)
         _optionToggle(
