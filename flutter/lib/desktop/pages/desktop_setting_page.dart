@@ -2128,10 +2128,9 @@ class _RemoteControlState extends State<_RemoteControl> {
         title: 'Default Image Quality',
         children: [
           Row(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               for (int i = 0; i < tiles.length; i++) ...[
-                if (i > 0) const SizedBox(width: 12),
+                if (i > 0) const SizedBox(width: 10),
                 Expanded(child: tiles[i]),
               ],
             ],
@@ -2159,7 +2158,8 @@ class _RemoteControlState extends State<_RemoteControl> {
       borderRadius: BorderRadius.circular(12),
       onTap: onChanged == null ? null : () => onChanged(value),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 16),
+        height: 118,
+        padding: const EdgeInsets.fromLTRB(10, 10, 10, 12),
         decoration: BoxDecoration(
           color: selected ? accent.withOpacity(0.06) : Colors.white,
           borderRadius: BorderRadius.circular(12),
@@ -2168,11 +2168,11 @@ class _RemoteControlState extends State<_RemoteControl> {
             width: selected ? 1.5 : 1,
           ),
         ),
-        child: Stack(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            Positioned(
-              top: 0,
-              left: 0,
+            Align(
+              alignment: Alignment.centerLeft,
               child: Icon(
                 selected
                     ? Icons.radio_button_checked
@@ -2181,39 +2181,38 @@ class _RemoteControlState extends State<_RemoteControl> {
                 color: selected ? accent : const Color(0xFFC2C7D0),
               ),
             ),
-            SizedBox(
-              width: double.infinity,
-              child: Column(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(icon,
-                    size: 26,
-                    color: selected ? accent : const Color(0xFF6B7280)),
-                const SizedBox(height: 10),
-                Text(
-                  translate(title),
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: selected ? accent : const Color(0xFF374151),
-                  ),
+            const SizedBox(height: 2),
+            Icon(icon,
+                size: 24,
+                color: selected ? accent : const Color(0xFF6B7280)),
+            const SizedBox(height: 6),
+            Text(
+              translate(title),
+              textAlign: TextAlign.center,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: selected ? accent : const Color(0xFF374151),
+              ),
+            ),
+            const SizedBox(height: 4),
+            Expanded(
+              child: Text(
+                translate(subtitle),
+                textAlign: TextAlign.center,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 11,
+                  height: 1.3,
+                  color: selected
+                      ? accent.withOpacity(0.8)
+                      : const Color(0xFF9CA3AF),
                 ),
-                const SizedBox(height: 6),
-                Text(
-                  translate(subtitle),
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 11,
-                    height: 1.3,
-                    color: selected
-                        ? accent.withOpacity(0.8)
-                        : const Color(0xFF9CA3AF),
-                  ),
-                ),
-              ],
-            )),
+              ),
+            ),
           ],
         ),
       ),
