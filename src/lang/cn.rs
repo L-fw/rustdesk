@@ -973,6 +973,7 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
         ("Memory", "内存"),
         ("No camera permission", "没有相机权限"),
         ("Your version is up to date", "当前已是最新版本！"),
+        ("New version available", "发现新版本"),
         ("Hide Password", "隐藏密码"),
         ("Show Password", "显示密码"),
         ("Logged in", "已登录"),

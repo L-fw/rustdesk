@@ -3310,59 +3310,46 @@ class _Update extends StatefulWidget {
 }
 
 class _UpdateState extends State<_Update> {
+  // Shared accent used for the surrounding chrome of this page.
+  static const Color _accent = Colors.purple;
+
+  bool get _isDark => Theme.of(context).brightness == Brightness.dark;
+
+  // A surface color for plain cards that adapts to light/dark themes.
+  Color get _cardColor =>
+      _isDark ? Colors.white.withOpacity(0.04) : Colors.white;
+
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(32, 32, 32, 32),
+        padding: const EdgeInsets.fromLTRB(32, 28, 32, 36),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _updateSection(context),
-            const SizedBox(height: 24),
+            const SizedBox(height: 16),
             _checkUpdateRow(context),
             const SizedBox(height: 32),
-            Text(
-              translate('Releases'),
-              style: TextStyle(
-                fontSize: _kTitleFontSize,
-                fontWeight: FontWeight.w500,
-                color: Theme.of(context).textTheme.bodyLarge?.color,
-              ),
+            _sectionHeader(
+              context,
+              title: translate('Releases'),
+              subtitle: translate('Download different versions of LinkEase'),
             ),
-            const SizedBox(height: 6),
-            Text(
-              translate('Download different versions of LinkEase'),
-              style: TextStyle(
-                fontSize: 12,
-                color: Theme.of(context)
-                    .textTheme
-                    .bodySmall
-                    ?.color
-                    ?.withOpacity(0.6),
-              ),
-            ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 18),
             _releaseItem(
               context,
               icon: Icons.people_outline,
-              iconColor: const Color(0xFF3b82f6),
-              iconBg: const Color(0xFF3b82f6).withOpacity(0.15),
-              cardBg: const Color(0xFF3b82f6).withOpacity(0.08),
-              cardBorder: const Color(0xFF3b82f6).withOpacity(0.2),
-              btnColor: const Color(0xFF3b82f6),
+              accent: const Color(0xFF3b82f6),
               title: translate('User Edition'),
               subtitle: translate('Tools for regular users'),
               url: 'https://jyyxt.cloud/releases/share',
             ),
+            const SizedBox(height: 14),
             _releaseItem(
               context,
               icon: Icons.chat_bubble_outline,
-              iconColor: const Color(0xFF16a34a),
-              iconBg: const Color(0xFF16a34a).withOpacity(0.15),
-              cardBg: const Color(0xFF16a34a).withOpacity(0.08),
-              cardBorder: const Color(0xFF16a34a).withOpacity(0.2),
-              btnColor: const Color(0xFF16a34a),
+              accent: const Color(0xFF16a34a),
               title: translate('Support Edition'),
               subtitle: translate('Dedicated tools for support staff'),
               url: 'https://jyyxt.cloud/releases/tech',
@@ -3373,34 +3360,82 @@ class _UpdateState extends State<_Update> {
     );
   }
 
+  // Card wrapper shared by the status / toggle rows so they stay visually
+  // consistent (same radius, border and soft shadow).
+  Widget _plainCard({required Widget child}) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+      decoration: BoxDecoration(
+        color: _cardColor,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: _isDark
+              ? Colors.white.withOpacity(0.06)
+              : Colors.black.withOpacity(0.04),
+        ),
+        boxShadow: _isDark
+            ? null
+            : [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.03),
+                  blurRadius: 12,
+                  offset: const Offset(0, 3),
+                ),
+              ],
+      ),
+      child: child,
+    );
+  }
+
+  // Rounded square icon badge used by the status and toggle rows.
+  Widget _iconBadge(IconData icon, Color color, {double size = 42}) {
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.12),
+        borderRadius: BorderRadius.circular(size * 0.28),
+      ),
+      child: Icon(icon, size: size * 0.5, color: color),
+    );
+  }
+
+  Widget _sectionHeader(
+    BuildContext context, {
+    required String title,
+    required String subtitle,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: TextStyle(
+            fontSize: _kTitleFontSize,
+            fontWeight: FontWeight.w600,
+            color: Theme.of(context).textTheme.bodyLarge?.color,
+          ),
+        ),
+        const SizedBox(height: 6),
+        Text(
+          subtitle,
+          style: TextStyle(
+            fontSize: 12,
+            color:
+                Theme.of(context).textTheme.bodySmall?.color?.withOpacity(0.6),
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget _checkUpdateRow(BuildContext context) {
     final value = mainGetLocalBoolOptionSync(kOptionEnableCheckUpdate);
     final isOptFixed = isOptionFixed(kOptionEnableCheckUpdate);
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.03),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
+    return _plainCard(
       child: Row(
         children: [
-          Container(
-            width: 38,
-            height: 38,
-            decoration: BoxDecoration(
-              color: Colors.purple.withOpacity(0.12),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: const Icon(Icons.system_update_outlined,
-                size: 20, color: Colors.purple),
-          ),
+          _iconBadge(Icons.system_update_outlined, _accent),
           const SizedBox(width: 14),
           Expanded(
             child: Column(
@@ -3435,24 +3470,89 @@ class _UpdateState extends State<_Update> {
   Widget _updateSection(BuildContext context) {
     return Obx(() {
       final updateUrl = stateGlobal.updateUrl.value;
-      if (updateUrl.isNotEmpty) {
-        final serverDownloadUrl = stateGlobal.serverDownloadUrl.value;
-        final serverLatestVersion = stateGlobal.serverLatestVersion.value;
-        final versionText = serverLatestVersion.isNotEmpty
-            ? serverLatestVersion
-            : bind.mainGetNewVersion();
+      if (updateUrl.isEmpty) {
+        // Up to date — calm, reassuring status card.
+        const okColor = Color(0xFF16a34a);
+        return _plainCard(
+          child: Row(
+            children: [
+              _iconBadge(Icons.check_circle_outline, okColor),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      translate('Your version is up to date'),
+                      style: const TextStyle(
+                          fontSize: 15, fontWeight: FontWeight.w600),
+                    ),
+                    const SizedBox(height: 3),
+                    FutureBuilder<String>(
+                      future: bind.mainGetVersion(),
+                      builder: (context, snapshot) {
+                        final version = snapshot.data ?? '';
+                        return Text(
+                          '${translate('Version')}: $version',
+                          style: const TextStyle(
+                              fontSize: 12, color: Color(0xFF9CA3AF)),
+                        );
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        );
+      }
 
-        final isToUpdate = (isWindows || isMacOS) && bind.mainIsInstalled();
-        String btnText = isToUpdate ? 'Update' : 'Download';
+      // Update available — highlighted card with a call-to-action button.
+      final serverDownloadUrl = stateGlobal.serverDownloadUrl.value;
+      final serverLatestVersion = stateGlobal.serverLatestVersion.value;
+      final versionText = serverLatestVersion.isNotEmpty
+          ? serverLatestVersion
+          : bind.mainGetNewVersion();
+      final isToUpdate = (isWindows || isMacOS) && bind.mainIsInstalled();
+      final btnText = isToUpdate ? 'Update' : 'Download';
+      final accent = MyTheme.accent;
 
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+      return Container(
+        padding: const EdgeInsets.all(18),
+        decoration: BoxDecoration(
+          color: accent.withOpacity(_isDark ? 0.14 : 0.08),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: accent.withOpacity(0.25)),
+        ),
+        child: Row(
           children: [
-            Text(
-              '${translate("new-version-of-{${bind.mainGetAppNameSync()}}-tip")} ($versionText).',
-              style: const TextStyle(fontSize: 16),
+            _iconBadge(Icons.rocket_launch_outlined, accent, size: 46),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    translate('New version available'),
+                    style: const TextStyle(
+                        fontSize: 15, fontWeight: FontWeight.w600),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    '${translate("new-version-of-{${bind.mainGetAppNameSync()}}-tip")} ($versionText).',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Theme.of(context)
+                          .textTheme
+                          .bodySmall
+                          ?.color
+                          ?.withOpacity(0.7),
+                    ),
+                  ),
+                ],
+              ),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(width: 12),
             ElevatedButton(
               onPressed: () async {
                 final url = serverDownloadUrl.isNotEmpty
@@ -3465,43 +3565,39 @@ class _UpdateState extends State<_Update> {
                       mode: LaunchMode.externalApplication);
                 }
               },
-              child: Padding(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: accent,
+                foregroundColor: Colors.white,
+                elevation: 0,
                 padding:
-                    const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                child: Text(translate(btnText),
-                    style: const TextStyle(fontSize: 16)),
+                    const EdgeInsets.symmetric(horizontal: 22, vertical: 12),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8)),
               ),
-            )
+              child: Text(translate(btnText),
+                  style: const TextStyle(
+                      fontSize: 14, fontWeight: FontWeight.w600)),
+            ),
           ],
-        );
-      } else {
-        return Text(
-          translate('Your version is up to date'),
-          style: const TextStyle(fontSize: 18),
-        );
-      }
+        ),
+      );
     });
   }
 
   Widget _releaseItem(
     BuildContext context, {
     required IconData icon,
-    required Color iconColor,
-    required Color iconBg,
-    required Color cardBg,
-    required Color cardBorder,
-    required Color btnColor,
+    required Color accent,
     required String title,
     required String subtitle,
     required String url,
   }) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 14),
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
       decoration: BoxDecoration(
-        color: cardBg,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: cardBorder, width: 1),
+        color: accent.withOpacity(_isDark ? 0.12 : 0.08),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: accent.withOpacity(0.2), width: 1),
       ),
       child: Row(
         children: [
@@ -3510,10 +3606,10 @@ class _UpdateState extends State<_Update> {
             width: 44,
             height: 44,
             decoration: BoxDecoration(
-              color: iconBg,
+              color: accent.withOpacity(0.15),
               borderRadius: BorderRadius.circular(22),
             ),
-            child: Icon(icon, size: 22, color: iconColor),
+            child: Icon(icon, size: 22, color: accent),
           ),
           const SizedBox(width: 16),
           // Title + subtitle
@@ -3553,7 +3649,7 @@ class _UpdateState extends State<_Update> {
             label: Text(translate('Go to Download'),
                 style: const TextStyle(fontSize: 13, color: Colors.white)),
             style: ElevatedButton.styleFrom(
-              backgroundColor: btnColor,
+              backgroundColor: accent,
               foregroundColor: Colors.white,
               elevation: 0,
               padding:
