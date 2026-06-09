@@ -2422,13 +2422,6 @@ class _AccountState extends State<_Account> {
         ? '${phone.substring(0, 3)}****${phone.substring(phone.length - 4)}'
         : phone;
 
-    final infoColor = Theme.of(context)
-        .textTheme
-        .bodySmall
-        ?.color
-        ?.withOpacity(0.6) ??
-        Colors.grey;
-
     return _GCard(
       icon: Icons.account_circle_outlined,
       title: 'Account Info',
@@ -2477,32 +2470,14 @@ class _AccountState extends State<_Account> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    if (username.isNotEmpty)
-                      Text(
-                        username,
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    if (maskedPhone.isNotEmpty) ...[
-                      const SizedBox(height: 6),
-                      Row(
-                        children: [
-                          Icon(Icons.phone_outlined, size: 14, color: infoColor),
-                          const SizedBox(width: 6),
-                          Text(
-                            translate('Phone Number') + ': $maskedPhone',
-                            style: TextStyle(fontSize: 13, color: infoColor),
-                          ),
-                        ],
-                      ),
-                    ],
-                    if (username.isEmpty && maskedPhone.isEmpty)
-                      Text(
-                        translate('No user info'),
-                        style: TextStyle(fontSize: 13, color: infoColor),
-                      ),
+                    _infoLine(
+                        'Username',
+                        username.isNotEmpty
+                            ? username
+                            : translate('No user info')),
+                    const SizedBox(height: 10),
+                    _infoLine(
+                        'Phone Number', maskedPhone.isNotEmpty ? maskedPhone : '-'),
                   ],
                 ),
               ),
@@ -2514,74 +2489,92 @@ class _AccountState extends State<_Account> {
   }
 
 
-  /// 通用操作行 tile
-  Widget _accountActionTile(
+  /// 账户信息中的「标签: 值」一行
+  Widget _infoLine(String label, String value) {
+    return RichText(
+      text: TextSpan(
+        style: const TextStyle(fontSize: 14, height: 1.2),
+        children: [
+          TextSpan(
+              text: translate(label) + ': ',
+              style: const TextStyle(color: Color(0xFF9CA3AF))),
+          TextSpan(
+              text: value,
+              style: const TextStyle(
+                  color: Color(0xFF374151), fontWeight: FontWeight.w500)),
+        ],
+      ),
+    );
+  }
+
+  /// 账户安全中的可点击行：标题 + 副标题 + 右侧箭头（无前置图标）
+  Widget _accountLinkRow(
     BuildContext context, {
-    required IconData icon,
-    required Color iconColor,
-    required String label,
+    required String title,
     required String subtitle,
     required VoidCallback onTap,
-    Color? labelColor,
   }) {
     return Material(
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
+        borderRadius: BorderRadius.circular(8),
         child: Padding(
-          padding: const EdgeInsets.symmetric(
-              horizontal: _kContentHMargin, vertical: 10),
+          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 2),
           child: Row(
             children: [
-              Container(
-                width: 36,
-                height: 36,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: iconColor.withOpacity(0.1),
-                ),
-                child: Icon(icon, size: 18, color: iconColor),
-              ),
-              const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      translate(label),
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                        color: labelColor,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      translate(subtitle),
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Theme.of(context)
-                            .textTheme
-                            .bodySmall
-                            ?.color
-                            ?.withOpacity(0.5),
-                      ),
-                    ),
+                    Text(translate(title),
+                        style: const TextStyle(
+                            fontSize: 14, fontWeight: FontWeight.w600)),
+                    const SizedBox(height: 3),
+                    Text(translate(subtitle),
+                        style: const TextStyle(
+                            fontSize: 12, color: Color(0xFF9CA3AF))),
                   ],
                 ),
               ),
-              Icon(
-                Icons.chevron_right,
-                size: 18,
-                color: Theme.of(context)
-                    .textTheme
-                    .bodySmall
-                    ?.color
-                    ?.withOpacity(0.3),
-              ),
+              const SizedBox(width: 12),
+              const Icon(Icons.chevron_right,
+                  size: 20, color: Color(0xFFC2C7D0)),
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  /// 账户操作中的一行：标题 + 副标题 + 右侧按钮
+  Widget _accountActionRow(
+    BuildContext context, {
+    required String title,
+    required String subtitle,
+    required Widget button,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 2),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(translate(title),
+                    style: const TextStyle(
+                        fontSize: 14, fontWeight: FontWeight.w600)),
+                const SizedBox(height: 3),
+                Text(translate(subtitle),
+                    style: const TextStyle(
+                        fontSize: 12, color: Color(0xFF9CA3AF))),
+              ],
+            ),
+          ),
+          const SizedBox(width: 12),
+          button,
+        ],
       ),
     );
   }
@@ -2639,23 +2632,20 @@ class _AccountState extends State<_Account> {
 
   Widget _accountSecurityCard(BuildContext context) {
     return _GCard(
-      icon: Icons.security_outlined,
+      icon: Icons.shield_outlined,
+      iconColor: Colors.blue,
       title: 'Account Security',
       children: [
-        _accountActionTile(
+        _accountLinkRow(
           context,
-          icon: Icons.lock_outline,
-          iconColor: Colors.blue,
-          label: 'Change Password',
-          subtitle: translate('Update your account password'),
+          title: 'Change Password',
+          subtitle: 'acc_change_pwd_sub',
           onTap: () => _doChangePassword(),
         ),
-        _accountActionTile(
+        _accountLinkRow(
           context,
-          icon: Icons.email_outlined,
-          iconColor: Colors.orange,
-          label: 'Bind Email',
-          subtitle: translate('Bind an email to secure your account'),
+          title: 'Forgot Password',
+          subtitle: 'acc_forgot_pwd_sub',
           onTap: () {},
         ),
       ],
@@ -2665,39 +2655,41 @@ class _AccountState extends State<_Account> {
   Widget _accountActionsCard(BuildContext context) {
     return _GCard(
       icon: Icons.manage_accounts_outlined,
+      iconColor: Colors.green,
       title: 'Account Actions',
       children: [
-        Padding(
-          padding: const EdgeInsets.only(top: 4),
-          child: Row(
-            children: [
-              OutlinedButton(
-                onPressed: () => _doLogout(),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: const Color(0xFF374151),
-                  side: const BorderSide(color: Color(0xFFE5E7EB)),
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 20, vertical: 14),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8)),
-                ),
-                child: Text(translate('Logout')),
-              ),
-              const SizedBox(width: 12),
-              ElevatedButton(
-                onPressed: () {},
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFEF4444),
-                  foregroundColor: Colors.white,
-                  elevation: 0,
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 20, vertical: 14),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8)),
-                ),
-                child: Text(translate('Deregister account')),
-              ),
-            ],
+        _accountActionRow(
+          context,
+          title: 'Sign out of your account',
+          subtitle: 'acc_logout_sub',
+          button: OutlinedButton(
+            onPressed: () => _doLogout(),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: _accentColor,
+              side: BorderSide(color: _accentColor.withOpacity(0.6)),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8)),
+            ),
+            child: Text(translate('Sign out of your account')),
+          ),
+        ),
+        _accountActionRow(
+          context,
+          title: 'Deregister account',
+          subtitle: 'acc_deregister_sub',
+          button: OutlinedButton(
+            onPressed: () {},
+            style: OutlinedButton.styleFrom(
+              foregroundColor: const Color(0xFFEF4444),
+              side: const BorderSide(color: Color(0xFFEF4444)),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8)),
+            ),
+            child: Text(translate('Deregister account')),
           ),
         ),
       ],
