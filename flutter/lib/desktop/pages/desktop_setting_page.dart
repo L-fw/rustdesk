@@ -2830,7 +2830,7 @@ class _AdvancedState extends State<_Advanced> {
         if (support is bool && support) {
           return _optionToggle(
             icon: Icons.wallpaper_outlined,
-            iconColor: Colors.orange,
+            iconColor: Colors.redAccent,
             title: 'Remove wallpaper during incoming sessions',
             subtitle: 'remove_wallpaper_tip',
             key: kOptionAllowRemoveWallpaper,
@@ -2890,7 +2890,6 @@ class _AdvancedState extends State<_Advanced> {
         isWindows && bind.mainIsInstalled() && !bind.isCustomClient();
     final outgoingOk = !bind.isIncomingOnly();
     final incomingOk = !bind.isOutgoingOnly();
-    final desktop = isDesktop;
 
     final children = <Widget>[
       Padding(
@@ -2920,8 +2919,105 @@ class _AdvancedState extends State<_Advanced> {
       children.add(_card(toggles));
     }
 
-    // 设备性能优化
-    section('Device performance', [
+    // 会话与隐私
+    section('Session and privacy', [
+      _defaultOptionToggle(
+        icon: Icons.screen_share_outlined,
+        iconColor: Colors.blue,
+        title: 'Screen sharing mode',
+        subtitle: 'adv_screen_share_sub',
+        key: kOptionViewOnly,
+      ),
+      _defaultOptionToggle(
+        icon: Icons.visibility_off_outlined,
+        iconColor: Colors.redAccent,
+        title: 'Privacy mode',
+        subtitle: 'adv_privacy_mode_sub',
+        key: kOptionPrivacyMode,
+      ),
+      // 图片以外保留的功能
+      _defaultOptionToggle(
+        icon: Icons.volume_off_outlined,
+        iconColor: Colors.redAccent,
+        title: 'Mute',
+        subtitle: 'adv_mute_sub',
+        key: kOptionDisableAudio,
+      ),
+      if (incomingOk) _wallpaperToggle(),
+    ]);
+
+    // 窗口与工具栏
+    section('Window and toolbar', [
+      _defaultOptionToggle(
+        icon: Icons.unfold_less,
+        iconColor: Colors.blue,
+        title: 'Collapse toolbar',
+        subtitle: 'adv_collapse_toolbar_sub',
+        key: kOptionCollapseToolbar,
+      ),
+      _defaultOptionToggle(
+        icon: Icons.lock_clock_outlined,
+        iconColor: Colors.indigo,
+        title: 'Lock after session end',
+        subtitle: 'adv_lock_after_sub',
+        key: kOptionLockAfterSessionEnd,
+      ),
+      // 图片以外保留的功能
+      if (outgoingOk)
+        _optionToggle(
+          icon: Icons.tab_outlined,
+          iconColor: Colors.indigo,
+          title: 'Confirm before closing multiple tabs',
+          subtitle: 'confirm_close_tabs_tip',
+          key: kOptionEnableConfirmClosingTabs,
+          isServer: false,
+        ),
+      if (outgoingOk)
+        _optionToggle(
+          icon: Icons.open_in_new_outlined,
+          iconColor: Colors.indigo,
+          title: 'Open connection in new tab',
+          subtitle: 'open_new_tab_tip',
+          key: kOptionOpenNewConnInTabs,
+          isServer: false,
+        ),
+    ]);
+
+    // 输入增强
+    section('Input enhancement', [
+      _defaultOptionToggle(
+        icon: Icons.swap_vert,
+        iconColor: Colors.teal,
+        title: 'Reverse mouse wheel',
+        subtitle: 'adv_reverse_wheel_sub',
+        key: kKeyReverseMouseWheel,
+      ),
+      _defaultOptionToggle(
+        icon: Icons.swap_horiz,
+        iconColor: Colors.teal,
+        title: 'swap-left-right-mouse',
+        subtitle: 'adv_swap_mouse_sub',
+        key: kOptionSwapLeftRightMouse,
+      ),
+    ]);
+
+    // 显示与性能
+    section('Display and performance', [
+      _defaultOptionToggle(
+        icon: Icons.mouse_outlined,
+        iconColor: Colors.green,
+        title: 'Show remote cursor',
+        subtitle: 'adv_show_cursor_sub',
+        key: kOptionShowRemoteCursor,
+      ),
+      _defaultOptionToggle(
+        icon: Icons.analytics_outlined,
+        iconColor: Colors.green,
+        title: 'Show quality monitor',
+        subtitle: 'adv_quality_monitor_sub',
+        key: kOptionShowQualityMonitor,
+      ),
+      // 图片以外保留的功能
       if (hasHwcodec)
         _optionToggle(
           icon: Icons.memory_outlined,
@@ -2976,123 +3072,61 @@ class _AdvancedState extends State<_Advanced> {
           subtitle: 'directx_capture_tip',
           key: kOptionDirectxCapture,
         ),
-    ]);
-
-    // 窗口工具栏
-    section('Window toolbar', [
-      if (desktop)
-        _defaultOptionToggle(
-          icon: Icons.unfold_less,
-          iconColor: Colors.blue,
-          title: 'Collapse toolbar',
-          subtitle: 'adv_collapse_toolbar_sub',
-          key: kOptionCollapseToolbar,
-        ),
-      if (outgoingOk)
-        _optionToggle(
-          icon: Icons.tab_outlined,
-          iconColor: Colors.indigo,
-          title: 'Confirm before closing multiple tabs',
-          subtitle: 'confirm_close_tabs_tip',
-          key: kOptionEnableConfirmClosingTabs,
-          isServer: false,
-        ),
-      if (outgoingOk)
-        _optionToggle(
-          icon: Icons.open_in_new_outlined,
-          iconColor: Colors.indigo,
-          title: 'Open connection in new tab',
-          subtitle: 'open_new_tab_tip',
-          key: kOptionOpenNewConnInTabs,
-          isServer: false,
-        ),
-    ]);
-
-    // 输入增强
-    section('Input enhancement', [
-      _defaultOptionToggle(
-        icon: Icons.swap_vert,
-        iconColor: Colors.teal,
-        title: 'Reverse mouse wheel',
-        subtitle: 'adv_reverse_wheel_sub',
-        key: kKeyReverseMouseWheel,
-      ),
-      _defaultOptionToggle(
-        icon: Icons.swap_horiz,
-        iconColor: Colors.teal,
-        title: 'swap-left-right-mouse',
-        subtitle: 'adv_swap_mouse_sub',
-        key: kOptionSwapLeftRightMouse,
-      ),
-    ]);
-
-    // 显示与隐私
-    section('Display and privacy', [
-      _defaultOptionToggle(
-        icon: Icons.visibility_outlined,
-        iconColor: Colors.orange,
-        title: 'View Mode',
-        subtitle: 'adv_view_mode_sub',
-        key: kOptionViewOnly,
-      ),
-      _defaultOptionToggle(
-        icon: Icons.analytics_outlined,
-        iconColor: Colors.orange,
-        title: 'Show quality monitor',
-        subtitle: 'adv_quality_monitor_sub',
-        key: kOptionShowQualityMonitor,
-      ),
-      _defaultOptionToggle(
-        icon: Icons.volume_off_outlined,
-        iconColor: Colors.orange,
-        title: 'Mute',
-        subtitle: 'adv_mute_sub',
-        key: kOptionDisableAudio,
-      ),
-      _defaultOptionToggle(
-        icon: Icons.lock_clock_outlined,
-        iconColor: Colors.orange,
-        title: 'Lock after session end',
-        subtitle: 'adv_lock_after_sub',
-        key: kOptionLockAfterSessionEnd,
-      ),
-      _defaultOptionToggle(
-        icon: Icons.visibility_off_outlined,
-        iconColor: Colors.orange,
-        title: 'Privacy mode',
-        subtitle: 'adv_privacy_mode_sub',
-        key: kOptionPrivacyMode,
-      ),
       _defaultOptionToggle(
         icon: Icons.palette_outlined,
-        iconColor: Colors.orange,
+        iconColor: Colors.green,
         title: 'True color (4:4:4)',
         subtitle: 'adv_true_color_sub',
         key: kOptionI444,
       ),
-      if (incomingOk) _wallpaperToggle(),
-      if (outgoingOk)
-        _optionToggle(
-          icon: Icons.bedtime_outlined,
-          iconColor: Colors.orange,
-          title: 'keep-awake-during-outgoing-sessions-label',
-          subtitle: 'keep_awake_tip',
-          key: kOptionKeepAwakeDuringOutgoingSessions,
-          isServer: false,
-        ),
     ]);
 
-    // 实用功能
-    section('Utility features', [
+    // 网络与性能
+    section('Network and performance', [
+      _defaultOptionToggle(
+        icon: Icons.content_copy_outlined,
+        iconColor: Colors.orange,
+        title: 'Enable file copy and paste',
+        subtitle: 'adv_file_copy_sub',
+        key: kOptionEnableFileCopyPaste,
+      ),
+      _defaultOptionToggle(
+        icon: Icons.content_paste_off_outlined,
+        iconColor: Colors.orange,
+        title: 'Disable clipboard',
+        subtitle: 'adv_disable_clipboard_sub',
+        key: kOptionDisableClipboard,
+      ),
+    ]);
+
+    // 实验功能
+    section('Experimental features', [
+      _defaultOptionToggle(
+        icon: Icons.desktop_windows_outlined,
+        iconColor: Colors.purple,
+        title: 'Open displays in a single window',
+        subtitle: 'adv_single_window_sub',
+        key: kKeyUseAllMyDisplaysForTheRemoteSession,
+      ),
       if (outgoingOk)
         _optionToggle(
-          icon: Icons.system_update_outlined,
+          icon: Icons.bolt_outlined,
           iconColor: Colors.purple,
-          title: 'Check for software update on startup',
-          subtitle: 'check_update_tip',
-          key: kOptionEnableCheckUpdate,
+          title: 'Enable UDP connection',
+          subtitle: 'adv_udp_sub',
+          key: kOptionEnableUdpPunch,
           isServer: false,
         ),
+      if (outgoingOk)
+        _optionToggle(
+          icon: Icons.lan_outlined,
+          iconColor: Colors.purple,
+          title: 'Enable IPv6 connection',
+          subtitle: 'adv_ipv6_sub',
+          key: kOptionEnableIpv6Punch,
+          isServer: false,
+        ),
+      // 图片以外保留的功能
       if (showAutoUpdate)
         _optionToggle(
           icon: Icons.autorenew,
@@ -3103,26 +3137,17 @@ class _AdvancedState extends State<_Advanced> {
         ),
       if (outgoingOk)
         _optionToggle(
-          icon: Icons.bolt_outlined,
-          iconColor: Colors.amber,
-          title: 'Enable UDP hole punching',
-          subtitle: 'udp_punch_tip',
-          key: kOptionEnableUdpPunch,
-          isServer: false,
-        ),
-      if (outgoingOk)
-        _optionToggle(
-          icon: Icons.lan_outlined,
-          iconColor: Colors.amber,
-          title: 'Enable IPv6 P2P connection',
-          subtitle: 'ipv6_punch_tip',
-          key: kOptionEnableIpv6Punch,
+          icon: Icons.bedtime_outlined,
+          iconColor: Colors.purple,
+          title: 'keep-awake-during-outgoing-sessions-label',
+          subtitle: 'keep_awake_tip',
+          key: kOptionKeepAwakeDuringOutgoingSessions,
           isServer: false,
         ),
       if (bind.mainShowOption(key: kOptionAllowLinuxHeadless))
         _optionToggle(
           icon: Icons.terminal_outlined,
-          iconColor: Colors.blueGrey,
+          iconColor: Colors.purple,
           title: 'Allow linux headless',
           subtitle: 'linux_headless_tip',
           key: kOptionAllowLinuxHeadless,
@@ -3287,6 +3312,8 @@ class _UpdateState extends State<_Update> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _updateSection(context),
+            const SizedBox(height: 24),
+            _checkUpdateRow(context),
             const SizedBox(height: 32),
             Text(
               translate('Releases'),
@@ -3335,6 +3362,65 @@ class _UpdateState extends State<_Update> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _checkUpdateRow(BuildContext context) {
+    final value = mainGetLocalBoolOptionSync(kOptionEnableCheckUpdate);
+    final isOptFixed = isOptionFixed(kOptionEnableCheckUpdate);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 38,
+            height: 38,
+            decoration: BoxDecoration(
+              color: Colors.purple.withOpacity(0.12),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: const Icon(Icons.system_update_outlined,
+                size: 20, color: Colors.purple),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(translate('Check for software update on startup'),
+                    style: const TextStyle(
+                        fontSize: 14, fontWeight: FontWeight.w600)),
+                const SizedBox(height: 3),
+                Text(translate('check_update_tip'),
+                    style: const TextStyle(
+                        fontSize: 12, color: Color(0xFF9CA3AF))),
+              ],
+            ),
+          ),
+          const SizedBox(width: 12),
+          Switch(
+            value: value,
+            activeColor: MyTheme.accent,
+            onChanged: isOptFixed
+                ? null
+                : (b) async {
+                    await mainSetLocalBoolOption(kOptionEnableCheckUpdate, b);
+                    setState(() {});
+                  },
+          ),
+        ],
       ),
     );
   }
