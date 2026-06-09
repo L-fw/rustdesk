@@ -2704,29 +2704,24 @@ class _Advanced extends StatefulWidget {
 }
 
 class _AdvancedState extends State<_Advanced> {
-  // A single toggle row: colored icon + title + optional description + switch.
+  // A single toggle row: title + optional description + switch. Rows carry no
+  // icon of their own; they are indented to line up under the card's section
+  // header title. (`icon`/`iconColor` are accepted for call-site convenience
+  // but are not rendered.)
   Widget _toggleRow({
-    required IconData icon,
-    required Color iconColor,
+    IconData? icon,
+    Color? iconColor,
     required String title,
     String? subtitle,
     required bool value,
     required ValueChanged<bool>? onChanged,
   }) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 13, horizontal: 2),
+      padding: const EdgeInsets.symmetric(vertical: 11, horizontal: 2),
       child: Row(
         children: [
-          Container(
-            width: 38,
-            height: 38,
-            decoration: BoxDecoration(
-              color: iconColor.withOpacity(0.12),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Icon(icon, size: 20, color: iconColor),
-          ),
-          const SizedBox(width: 14),
+          // Indent to align with the section header title (icon 38 + gap 14).
+          const SizedBox(width: 52),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -2841,32 +2836,40 @@ class _AdvancedState extends State<_Advanced> {
     );
   }
 
-  Widget _categoryHeader(String title) {
+  // The section header that sits as the first row inside a card: a colored
+  // rounded-square icon followed by the bold section title.
+  Widget _cardHeader(IconData icon, Color iconColor, String title) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(
-          _kCardLeftMargin + 4, 18, _kContentHMargin, 6),
-      child: Text(
-        translate(title),
-        style: const TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.w600,
-            color: Color(0xFF6B7280)),
+      padding: const EdgeInsets.symmetric(vertical: 11, horizontal: 2),
+      child: Row(
+        children: [
+          Container(
+            width: 38,
+            height: 38,
+            decoration: BoxDecoration(
+              color: iconColor.withOpacity(0.12),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(icon, size: 20, color: iconColor),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Text(
+              translate(title),
+              style: const TextStyle(
+                  fontSize: 15, fontWeight: FontWeight.w700),
+            ),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _card(List<Widget> toggles) {
-    final rowChildren = <Widget>[];
-    for (int i = 0; i < toggles.length; i++) {
-      if (i > 0) {
-        rowChildren.add(const Divider(height: 1, color: Color(0xFFF0F1F4)));
-      }
-      rowChildren.add(toggles[i]);
-    }
+  Widget _card(List<Widget> children) {
     return Container(
       margin:
-          const EdgeInsets.fromLTRB(_kCardLeftMargin, 0, _kContentHMargin, 0),
-      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 4),
+          const EdgeInsets.fromLTRB(_kCardLeftMargin, 14, _kContentHMargin, 0),
+      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
@@ -2878,7 +2881,10 @@ class _AdvancedState extends State<_Advanced> {
           ),
         ],
       ),
-      child: Column(children: rowChildren),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: children,
+      ),
     );
   }
 
@@ -2913,14 +2919,14 @@ class _AdvancedState extends State<_Advanced> {
       ),
     ];
 
-    void section(String title, List<Widget> toggles) {
+    void section(
+        String title, IconData icon, Color iconColor, List<Widget> toggles) {
       if (toggles.isEmpty) return;
-      children.add(_categoryHeader(title));
-      children.add(_card(toggles));
+      children.add(_card([_cardHeader(icon, iconColor, title), ...toggles]));
     }
 
     // 会话与隐私
-    section('Session and privacy', [
+    section('Session and privacy', Icons.shield_outlined, Colors.blue, [
       _defaultOptionToggle(
         icon: Icons.screen_share_outlined,
         iconColor: Colors.blue,
@@ -2947,7 +2953,7 @@ class _AdvancedState extends State<_Advanced> {
     ]);
 
     // 窗口与工具栏
-    section('Window and toolbar', [
+    section('Window and toolbar', Icons.web_asset_outlined, Colors.blue, [
       _defaultOptionToggle(
         icon: Icons.unfold_less,
         iconColor: Colors.blue,
@@ -2984,7 +2990,7 @@ class _AdvancedState extends State<_Advanced> {
     ]);
 
     // 输入增强
-    section('Input enhancement', [
+    section('Input enhancement', Icons.mouse_outlined, Colors.purple, [
       _defaultOptionToggle(
         icon: Icons.swap_vert,
         iconColor: Colors.teal,
@@ -3002,7 +3008,8 @@ class _AdvancedState extends State<_Advanced> {
     ]);
 
     // 显示与性能
-    section('Display and performance', [
+    section('Display and performance', Icons.desktop_windows_outlined,
+        Colors.green, [
       _defaultOptionToggle(
         icon: Icons.mouse_outlined,
         iconColor: Colors.green,
@@ -3082,7 +3089,7 @@ class _AdvancedState extends State<_Advanced> {
     ]);
 
     // 网络与性能
-    section('Network and performance', [
+    section('Network and performance', Icons.public_outlined, Colors.orange, [
       _defaultOptionToggle(
         icon: Icons.content_copy_outlined,
         iconColor: Colors.orange,
@@ -3100,7 +3107,7 @@ class _AdvancedState extends State<_Advanced> {
     ]);
 
     // 实验功能
-    section('Experimental features', [
+    section('Experimental features', Icons.science_outlined, Colors.purple, [
       _defaultOptionToggle(
         icon: Icons.desktop_windows_outlined,
         iconColor: Colors.purple,
