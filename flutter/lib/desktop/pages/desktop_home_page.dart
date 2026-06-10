@@ -92,6 +92,34 @@ class _DesktopHomePageState extends State<DesktopHomePage>
   final ValueNotifier<String> _devicesSearch = ValueNotifier('');
   final ValueNotifier<String> _devicesTimeFilter = ValueNotifier('all');
   final ValueNotifier<String> _devicesTypeFilter = ValueNotifier('all');
+  // Devices fetched from the server for the logged-in account.
+  // null = not loaded yet; [] = loaded but empty.
+  final ValueNotifier<List<MyDevice>?> _myDevices = ValueNotifier(null);
+  final ValueNotifier<bool> _myDevicesLoading = ValueNotifier(false);
+  final ValueNotifier<String?> _myDevicesError = ValueNotifier(null);
+
+  Future<void> _loadMyDevices() async {
+    if (_myDevicesLoading.value) return;
+    _myDevicesLoading.value = true;
+    _myDevicesError.value = null;
+    try {
+      if (AppAuthService().currentUserName.value.isEmpty) {
+        _myDevices.value = [];
+        _myDevicesError.value = translate('Not logged in');
+        return;
+      }
+      final list = await AppAuthService().fetchMyDevices();
+      if (list == null) {
+        _myDevicesError.value = translate('Failed');
+        _myDevices.value ??= [];
+      } else {
+        _myDevices.value =
+            list.map((e) => MyDevice.fromJson(e)).toList();
+      }
+    } finally {
+      _myDevicesLoading.value = false;
+    }
+  }
 
   // Favorites page state
   final TextEditingController _favSearchCtrl = TextEditingController();
@@ -298,6 +326,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
             return;
           }
           _selectedNav.value = key;
+          if (key == 'devices') _loadMyDevices();
         },
         child: Container(
           margin: const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
@@ -1452,46 +1481,97 @@ class _DesktopHomePageState extends State<DesktopHomePage>
   // ---------------------------------------------------------------------------
 
   Widget _buildMyDevicesPage(BuildContext context) {
-    return ChangeNotifierProvider.value(
-      value: gFFI.recentPeersModel,
-      child: Consumer<Peers>(
-        builder: (_, peers, __) {
-          bind.mainLoadRecentPeers();
-          return ValueListenableBuilder<String>(
-            valueListenable: _devicesSearch,
-            builder: (_, query, __) {
-              return ValueListenableBuilder<String>(
-                valueListenable: _devicesTimeFilter,
-                builder: (_, timeFilter, __) {
-                  return ValueListenableBuilder<String>(
-                    valueListenable: _devicesTypeFilter,
-                    builder: (_, typeFilter, __) {
-                      final filtered = _filterRecentPeers(
-                          peers.peers, query, timeFilter, typeFilter);
-                      return Padding(
-                        padding: const EdgeInsets.all(20),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            _myDevicesHeader(context, filtered.length),
-                            const SizedBox(height: 14),
-                            _myDevicesToolbar(context),
-                            const SizedBox(height: 14),
-                            Expanded(
-                              child: _myDevicesTable(context, filtered),
-                            ),
-                          ],
-                        ),
-                      );
-                    },
-                  );
-                },
-              );
-            },
-          );
-        },
-      ),
+    return ValueListenableBuilder<List<MyDevice>?>(
+      valueListenable: _myDevices,
+      builder: (_, devices, __) {
+        // Trigger an initial load the first time the page is shown.
+        if (devices == null && !_myDevicesLoading.value) {
+          WidgetsBinding.instance
+              .addPostFrameCallback((_) => _loadMyDevices());
+        }
+        return ValueListenableBuilder<bool>(
+          valueListenable: _myDevicesLoading,
+          builder: (_, loading, __) {
+            return ValueListenableBuilder<String?>(
+              valueListenable: _myDevicesError,
+              builder: (_, error, __) {
+                return ValueListenableBuilder<String>(
+                  valueListenable: _devicesSearch,
+                  builder: (_, query, __) {
+                    return ValueListenableBuilder<String>(
+                      valueListenable: _devicesTimeFilter,
+                      builder: (_, timeFilter, __) {
+                        return ValueListenableBuilder<String>(
+                          valueListenable: _devicesTypeFilter,
+                          builder: (_, typeFilter, __) {
+                            final all = devices ?? <MyDevice>[];
+                            final filtered = _filterMyDevices(
+                                all, query, timeFilter, typeFilter);
+                            return Padding(
+                              padding: const EdgeInsets.all(20),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  _myDevicesHeader(context, filtered.length),
+                                  const SizedBox(height: 14),
+                                  _myDevicesToolbar(context),
+                                  const SizedBox(height: 14),
+                                  Expanded(
+                                    child: _myDevicesTable(context, filtered,
+                                        loading, error, devices == null),
+                                  ),
+                                ],
+                              ),
+                            );
+                          },
+                        );
+                      },
+                    );
+                  },
+                );
+              },
+            );
+          },
+        );
+      },
     );
+  }
+
+  List<MyDevice> _filterMyDevices(List<MyDevice> all, String query,
+      String timeFilter, String typeFilter) {
+    final q = query.trim().toLowerCase();
+    final now = DateTime.now();
+    return all.where((d) {
+      if (q.isNotEmpty) {
+        final matches = d.id.toLowerCase().contains(q) ||
+            d.username.toLowerCase().contains(q) ||
+            d.ip.toLowerCase().contains(q);
+        if (!matches) return false;
+      }
+      if (typeFilter != 'all') {
+        final isMobile = d.clientType != 'desktop';
+        if (typeFilter == 'mobile' && !isMobile) return false;
+        if (typeFilter == 'desktop' && isMobile) return false;
+      }
+      if (timeFilter != 'all') {
+        final dt = d.lastSeenDate;
+        if (dt == null) return false;
+        switch (timeFilter) {
+          case 'today':
+            if (!(dt.year == now.year &&
+                dt.month == now.month &&
+                dt.day == now.day)) return false;
+            break;
+          case 'week':
+            if (now.difference(dt).inDays >= 7) return false;
+            break;
+          case 'month':
+            if (now.difference(dt).inDays >= 30) return false;
+            break;
+        }
+      }
+      return true;
+    }).toList();
   }
 
   Widget _myDevicesHeader(BuildContext context, int count) {
@@ -1560,11 +1640,59 @@ class _DesktopHomePageState extends State<DesktopHomePage>
             ('mobile', translate('Mobile')),
           ],
         ),
+        const SizedBox(width: 12),
+        _outlineButton(
+          icon: Icons.refresh,
+          label: translate('Refresh'),
+          onTap: () => _loadMyDevices(),
+        ),
       ],
     );
   }
 
-  Widget _myDevicesTable(BuildContext context, List<Peer> peers) {
+  Widget _myDevicesTable(BuildContext context, List<MyDevice> devices,
+      bool loading, String? error, bool notLoaded) {
+    Widget content;
+    if (devices.isEmpty && (loading || notLoaded)) {
+      content = const Center(child: CircularProgressIndicator(strokeWidth: 2));
+    } else if (devices.isEmpty && error != null) {
+      content = Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.cloud_off,
+                size: 40, color: Color(0xFFCBD5E1)),
+            const SizedBox(height: 12),
+            Text(error,
+                style: const TextStyle(color: Color(0xFF9CA3AF))),
+            const SizedBox(height: 12),
+            _outlineButton(
+              icon: Icons.refresh,
+              label: translate('Retry'),
+              onTap: () => _loadMyDevices(),
+            ),
+          ],
+        ),
+      );
+    } else if (devices.isEmpty) {
+      content = Center(
+        child: Text(
+          translate('No devices'),
+          style: const TextStyle(color: Color(0xFF9CA3AF)),
+        ),
+      );
+    } else {
+      content = ListView.separated(
+        padding: EdgeInsets.zero,
+        itemCount: devices.length + 1,
+        separatorBuilder: (_, __) =>
+            const Divider(height: 1, color: Color(0xFFF3F4F6)),
+        itemBuilder: (_, i) {
+          if (i == devices.length) return _recentTableFooter();
+          return _myDevicesTableRow(context, devices[i]);
+        },
+      );
+    }
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -1581,25 +1709,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
         children: [
           _myDevicesTableHeader(),
           const Divider(height: 1, color: Color(0xFFEDEFF3)),
-          Expanded(
-            child: peers.isEmpty
-                ? Center(
-                    child: Text(
-                      translate('No devices'),
-                      style: const TextStyle(color: Color(0xFF9CA3AF)),
-                    ),
-                  )
-                : ListView.separated(
-                    padding: EdgeInsets.zero,
-                    itemCount: peers.length + 1,
-                    separatorBuilder: (_, __) => const Divider(
-                        height: 1, color: Color(0xFFF3F4F6)),
-                    itemBuilder: (_, i) {
-                      if (i == peers.length) return _recentTableFooter();
-                      return _myDevicesTableRow(context, peers[i]);
-                    },
-                  ),
-          ),
+          Expanded(child: content),
         ],
       ),
     );
@@ -1631,12 +1741,9 @@ class _DesktopHomePageState extends State<DesktopHomePage>
     );
   }
 
-  Widget _myDevicesTableRow(BuildContext context, Peer peer) {
-    final displayName = peer.alias.isNotEmpty
-        ? peer.alias
-        : (peer.username.isNotEmpty && peer.hostname.isNotEmpty
-            ? '${peer.username}@${peer.hostname}'
-            : (peer.hostname.isNotEmpty ? peer.hostname : peer.id));
+  Widget _myDevicesTableRow(BuildContext context, MyDevice device) {
+    final displayName =
+        device.username.isNotEmpty ? device.username : device.id;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
@@ -1654,19 +1761,30 @@ class _DesktopHomePageState extends State<DesktopHomePage>
                     color: MyTheme.accent,
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: Icon(_platformIcon(peer.platform),
+                  child: Icon(_clientTypeIcon(device.clientType),
                       color: Colors.white, size: 20),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
-                  child: Text(
-                    displayName,
-                    style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: Color(0xFF1F2937)),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        displayName,
+                        style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF1F2937)),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      if (device.online)
+                        Text(
+                          translate('Online'),
+                          style: const TextStyle(
+                              fontSize: 11, color: Color(0xFF22C55E)),
+                        ),
+                    ],
                   ),
                 ),
               ],
@@ -1676,7 +1794,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
           Expanded(
             flex: 2,
             child: Text(
-              _formatPeerId(peer.id),
+              _formatPeerId(device.id),
               style: const TextStyle(fontSize: 13, color: Color(0xFF374151)),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
@@ -1695,7 +1813,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: Text(
-                  _deviceTypeLabel(peer.platform),
+                  _clientTypeLabel(device.clientType),
                   style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w500,
@@ -1708,7 +1826,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
           Expanded(
             flex: 2,
             child: Text(
-              _formatConnectTime(peer.id),
+              _formatIsoTime(device.lastSeen),
               style: const TextStyle(fontSize: 13, color: Color(0xFF374151)),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
@@ -1719,14 +1837,31 @@ class _DesktopHomePageState extends State<DesktopHomePage>
     );
   }
 
-  String _deviceTypeLabel(String platform) {
-    final p = platform.toLowerCase();
-    if (p.contains('windows')) return 'Windows';
-    if (p.contains('android')) return 'Android';
-    if (p.contains('mac') || p.contains('osx')) return 'macOS';
-    if (p.contains('linux')) return 'Linux';
-    if (p.contains('ios')) return 'iOS';
-    return platform.isEmpty ? translate('Unknown') : platform;
+  IconData _clientTypeIcon(String clientType) {
+    return clientType == 'desktop'
+        ? Icons.desktop_windows
+        : Icons.smartphone;
+  }
+
+  String _clientTypeLabel(String clientType) {
+    switch (clientType) {
+      case 'desktop':
+        return translate('Desktop');
+      case 'full':
+      case 'share_only':
+        return translate('Mobile');
+      default:
+        return translate('Unknown');
+    }
+  }
+
+  String _formatIsoTime(String iso) {
+    if (iso.isEmpty) return translate('No record');
+    final dt = DateTime.tryParse(iso)?.toLocal();
+    if (dt == null) return translate('No record');
+    String two(int v) => v.toString().padLeft(2, '0');
+    return '${dt.year}-${two(dt.month)}-${two(dt.day)} '
+        '${two(dt.hour)}:${two(dt.minute)}';
   }
 
   Widget _buildRecentPeersSection(BuildContext context) {
@@ -3386,6 +3521,9 @@ class _DesktopHomePageState extends State<DesktopHomePage>
     _devicesSearch.dispose();
     _devicesTimeFilter.dispose();
     _devicesTypeFilter.dispose();
+    _myDevices.dispose();
+    _myDevicesLoading.dispose();
+    _myDevicesError.dispose();
     _favSearchCtrl.dispose();
     _favSearch.dispose();
     _favGroupFilter.dispose();
@@ -3608,4 +3746,49 @@ void setPasswordDialog({VoidCallback? notEmptyCallback}) async {
       onCancel: close,
     );
   });
+}
+
+/// 一台"我的设备"——由服务器 /api/user/devices 返回，对应当前登录账号下的设备。
+class MyDevice {
+  final String id;
+  final String username;
+  final String phone;
+  final String ip;
+  final String clientType; // 'full' | 'share_only' | 'desktop'
+  final String appVersion;
+  final String lastSeen; // ISO8601
+  final String firstSeen; // ISO8601
+  final bool banned;
+  final bool online;
+
+  MyDevice({
+    required this.id,
+    required this.username,
+    required this.phone,
+    required this.ip,
+    required this.clientType,
+    required this.appVersion,
+    required this.lastSeen,
+    required this.firstSeen,
+    required this.banned,
+    required this.online,
+  });
+
+  factory MyDevice.fromJson(Map<String, dynamic> j) {
+    String s(dynamic v) => v?.toString() ?? '';
+    return MyDevice(
+      id: s(j['id']),
+      username: s(j['username']),
+      phone: s(j['phone']),
+      ip: s(j['ip']),
+      clientType: s(j['clientType']),
+      appVersion: s(j['appVersion']),
+      lastSeen: s(j['lastSeen']),
+      firstSeen: s(j['firstSeen']),
+      banned: j['banned'] == true,
+      online: j['online'] == true,
+    );
+  }
+
+  DateTime? get lastSeenDate => DateTime.tryParse(lastSeen);
 }

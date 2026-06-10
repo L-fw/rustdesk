@@ -343,6 +343,28 @@ class AppAuthService {
     }
   }
 
+  /// 获取当前登录用户的设备列表（"我的设备"）
+  /// 返回 null 表示请求失败（网络异常 / 未登录 / token 失效）
+  Future<List<Map<String, dynamic>>?> fetchMyDevices() async {
+    try {
+      final token = await getToken();
+      if (token.isEmpty) return null;
+      final result = await _post('/api/user/devices', {'token': token});
+      if (result['code'] == 200 && result['data'] is List) {
+        return (result['data'] as List)
+            .whereType<Map<String, dynamic>>()
+            .toList();
+      }
+      if (result['code'] == 401) {
+        // token 已失效，清理本地登录态
+        await logout();
+      }
+      return null;
+    } catch (_) {
+      return null;
+    }
+  }
+
   Future<bool> _verifyToken(String token) async {
     try {
       final tokenVersion = await _getSecureLocalOption(_tokenVersionKey);
