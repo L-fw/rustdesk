@@ -121,6 +121,74 @@ class _DesktopHomePageState extends State<DesktopHomePage>
     }
   }
 
+  // Recent sessions (server-backed). null = not loaded yet.
+  final ValueNotifier<List<MySession>?> _mySessions = ValueNotifier(null);
+  final ValueNotifier<bool> _mySessionsLoading = ValueNotifier(false);
+  final ValueNotifier<String?> _mySessionsError = ValueNotifier(null);
+
+  Future<void> _loadMySessions() async {
+    if (_mySessionsLoading.value) return;
+    _mySessionsLoading.value = true;
+    _mySessionsError.value = null;
+    try {
+      if (AppAuthService().currentUserName.value.isEmpty) {
+        _mySessions.value = [];
+        _mySessionsError.value = translate('Not logged in');
+        return;
+      }
+      final list = await AppAuthService().fetchMySessions();
+      if (list == null) {
+        _mySessionsError.value = translate('Failed');
+        _mySessions.value ??= [];
+      } else {
+        _mySessions.value = list.map((e) => MySession.fromJson(e)).toList();
+      }
+    } finally {
+      _mySessionsLoading.value = false;
+    }
+  }
+
+  // Favorites (server-backed). null = not loaded yet.
+  final ValueNotifier<List<MyFavorite>?> _myFavorites = ValueNotifier(null);
+  final ValueNotifier<bool> _myFavoritesLoading = ValueNotifier(false);
+  final ValueNotifier<String?> _myFavoritesError = ValueNotifier(null);
+
+  Future<void> _loadMyFavorites() async {
+    if (_myFavoritesLoading.value) return;
+    _myFavoritesLoading.value = true;
+    _myFavoritesError.value = null;
+    try {
+      if (AppAuthService().currentUserName.value.isEmpty) {
+        _myFavorites.value = [];
+        _myFavoritesError.value = translate('Not logged in');
+        return;
+      }
+      final list = await AppAuthService().fetchMyFavorites();
+      if (list == null) {
+        _myFavoritesError.value = translate('Failed');
+        _myFavorites.value ??= [];
+      } else {
+        _myFavorites.value =
+            list.map((e) => MyFavorite.fromJson(e)).toList();
+      }
+    } finally {
+      _myFavoritesLoading.value = false;
+    }
+  }
+
+  Future<void> _toggleFavorite(String peerId, bool currentlyFav) async {
+    if (peerId.isEmpty) return;
+    final ok = currentlyFav
+        ? await AppAuthService().removeFavorite(peerId)
+        : await AppAuthService().addFavorite(peerId);
+    if (ok) {
+      showToast(translate(currentlyFav ? 'Successful' : 'Added to favorites'));
+      await _loadMyFavorites();
+    } else {
+      showToast(translate('Failed'));
+    }
+  }
+
   // Favorites page state
   final TextEditingController _favSearchCtrl = TextEditingController();
   final ValueNotifier<String> _favSearch = ValueNotifier('');
@@ -327,6 +395,8 @@ class _DesktopHomePageState extends State<DesktopHomePage>
           }
           _selectedNav.value = key;
           if (key == 'devices') _loadMyDevices();
+          if (key == 'recent') _loadMySessions();
+          if (key == 'favorites') _loadMyFavorites();
         },
         child: Container(
           margin: const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
@@ -921,67 +991,93 @@ class _DesktopHomePageState extends State<DesktopHomePage>
   // ---------------------------------------------------------------------------
 
   Widget _buildRecentSessionsPage(BuildContext context) {
-    return ChangeNotifierProvider.value(
-      value: gFFI.recentPeersModel,
-      child: Consumer<Peers>(
-        builder: (_, peers, __) {
-          bind.mainLoadRecentPeers();
-          return ValueListenableBuilder<String>(
-            valueListenable: _recentSearch,
-            builder: (_, query, __) {
-              return ValueListenableBuilder<String>(
-                valueListenable: _recentTimeFilter,
-                builder: (_, timeFilter, __) {
-                  return ValueListenableBuilder<String>(
-                    valueListenable: _recentTypeFilter,
-                    builder: (_, typeFilter, __) {
-                      final filtered = _filterRecentPeers(
-                          peers.peers, query, timeFilter, typeFilter);
-                      return Padding(
-                        padding: const EdgeInsets.all(20),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            _recentSessionsHeader(context, filtered.length),
-                            const SizedBox(height: 14),
-                            _recentSessionsToolbar(context, filtered.length),
-                            const SizedBox(height: 14),
-                            Expanded(
-                              child: _recentSessionsTable(context, filtered),
-                            ),
-                          ],
-                        ),
-                      );
-                    },
-                  );
-                },
-              );
-            },
-          );
-        },
-      ),
+    return ValueListenableBuilder<List<MySession>?>(
+      valueListenable: _mySessions,
+      builder: (_, sessions, __) {
+        if (sessions == null && !_mySessionsLoading.value) {
+          WidgetsBinding.instance
+              .addPostFrameCallback((_) => _loadMySessions());
+        }
+        return ValueListenableBuilder<bool>(
+          valueListenable: _mySessionsLoading,
+          builder: (_, loading, __) {
+            return ValueListenableBuilder<String?>(
+              valueListenable: _mySessionsError,
+              builder: (_, error, __) {
+                return ValueListenableBuilder<String>(
+                  valueListenable: _recentSearch,
+                  builder: (_, query, __) {
+                    return ValueListenableBuilder<String>(
+                      valueListenable: _recentTimeFilter,
+                      builder: (_, timeFilter, __) {
+                        return ValueListenableBuilder<String>(
+                          valueListenable: _recentTypeFilter,
+                          builder: (_, typeFilter, __) {
+                            final all = sessions ?? <MySession>[];
+                            final filtered = _filterMySessions(
+                                all, query, timeFilter, typeFilter);
+                            return Padding(
+                              padding: const EdgeInsets.all(20),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  _recentSessionsHeader(context, filtered.length),
+                                  const SizedBox(height: 14),
+                                  _recentSessionsToolbar(context, filtered.length),
+                                  const SizedBox(height: 14),
+                                  Expanded(
+                                    child: _recentSessionsTable(context, filtered,
+                                        loading, error, sessions == null),
+                                  ),
+                                ],
+                              ),
+                            );
+                          },
+                        );
+                      },
+                    );
+                  },
+                );
+              },
+            );
+          },
+        );
+      },
     );
   }
 
-  List<Peer> _filterRecentPeers(List<Peer> all, String query, String timeFilter,
-      String typeFilter) {
+  List<MySession> _filterMySessions(List<MySession> all, String query,
+      String timeFilter, String typeFilter) {
     final q = query.trim().toLowerCase();
-    return all.where((p) {
+    final now = DateTime.now();
+    return all.where((s) {
       if (q.isNotEmpty) {
-        final matches = p.id.toLowerCase().contains(q) ||
-            p.alias.toLowerCase().contains(q) ||
-            p.hostname.toLowerCase().contains(q) ||
-            p.username.toLowerCase().contains(q);
+        final matches = s.remoteId.toLowerCase().contains(q) ||
+            s.username.toLowerCase().contains(q);
         if (!matches) return false;
       }
-      // Type filter: 'all' / 'desktop' / 'mobile'
       if (typeFilter != 'all') {
-        final plat = p.platform.toLowerCase();
-        final isMobile = plat.contains('android') || plat.contains('ios');
+        final isMobile = s.remoteClientType != 'desktop';
         if (typeFilter == 'mobile' && !isMobile) return false;
         if (typeFilter == 'desktop' && isMobile) return false;
       }
-      // Time filter is a no-op until we track per-peer last-connect timestamps.
+      if (timeFilter != 'all') {
+        final dt = s.startDate;
+        if (dt == null) return false;
+        switch (timeFilter) {
+          case 'today':
+            if (!(dt.year == now.year &&
+                dt.month == now.month &&
+                dt.day == now.day)) return false;
+            break;
+          case 'week':
+            if (now.difference(dt).inDays >= 7) return false;
+            break;
+          case 'month':
+            if (now.difference(dt).inDays >= 30) return false;
+            break;
+        }
+      }
       return true;
     }).toList();
   }
@@ -1051,6 +1147,12 @@ class _DesktopHomePageState extends State<DesktopHomePage>
             ('desktop', translate('Desktop')),
             ('mobile', translate('Mobile')),
           ],
+        ),
+        const SizedBox(width: 12),
+        _outlineButton(
+          icon: Icons.refresh,
+          label: translate('Refresh'),
+          onTap: () => _loadMySessions(),
         ),
         const SizedBox(width: 12),
         _outlineButton(
@@ -1136,7 +1238,47 @@ class _DesktopHomePageState extends State<DesktopHomePage>
     );
   }
 
-  Widget _recentSessionsTable(BuildContext context, List<Peer> peers) {
+  Widget _recentSessionsTable(BuildContext context, List<MySession> sessions,
+      bool loading, String? error, bool notLoaded) {
+    Widget content;
+    if (sessions.isEmpty && (loading || notLoaded)) {
+      content = const Center(child: CircularProgressIndicator(strokeWidth: 2));
+    } else if (sessions.isEmpty && error != null) {
+      content = Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.cloud_off, size: 40, color: Color(0xFFCBD5E1)),
+            const SizedBox(height: 12),
+            Text(error, style: const TextStyle(color: Color(0xFF9CA3AF))),
+            const SizedBox(height: 12),
+            _outlineButton(
+              icon: Icons.refresh,
+              label: translate('Retry'),
+              onTap: () => _loadMySessions(),
+            ),
+          ],
+        ),
+      );
+    } else if (sessions.isEmpty) {
+      content = Center(
+        child: Text(
+          translate('No recent sessions'),
+          style: const TextStyle(color: Color(0xFF9CA3AF)),
+        ),
+      );
+    } else {
+      content = ListView.separated(
+        padding: EdgeInsets.zero,
+        itemCount: sessions.length + 1,
+        separatorBuilder: (_, __) =>
+            const Divider(height: 1, color: Color(0xFFF3F4F6)),
+        itemBuilder: (_, i) {
+          if (i == sessions.length) return _recentTableFooter();
+          return _recentTableRow(context, sessions[i]);
+        },
+      );
+    }
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -1153,25 +1295,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
         children: [
           _recentTableHeader(),
           const Divider(height: 1, color: Color(0xFFEDEFF3)),
-          Expanded(
-            child: peers.isEmpty
-                ? Center(
-                    child: Text(
-                      translate('No recent sessions'),
-                      style: const TextStyle(color: Color(0xFF9CA3AF)),
-                    ),
-                  )
-                : ListView.separated(
-                    padding: EdgeInsets.zero,
-                    itemCount: peers.length + 1,
-                    separatorBuilder: (_, __) => const Divider(
-                        height: 1, color: Color(0xFFF3F4F6)),
-                    itemBuilder: (_, i) {
-                      if (i == peers.length) return _recentTableFooter();
-                      return _recentTableRow(context, peers[i]);
-                    },
-                  ),
-          ),
+          Expanded(child: content),
         ],
       ),
     );
@@ -1228,13 +1352,10 @@ class _DesktopHomePageState extends State<DesktopHomePage>
     );
   }
 
-  Widget _recentTableRow(BuildContext context, Peer peer) {
-    final displayName = peer.alias.isNotEmpty
-        ? peer.alias
-        : (peer.username.isNotEmpty && peer.hostname.isNotEmpty
-            ? '${peer.username}@${peer.hostname}'
-            : (peer.hostname.isNotEmpty ? peer.hostname : peer.id));
-    final online = peer.online;
+  Widget _recentTableRow(BuildContext context, MySession session) {
+    final remoteId = session.remoteId;
+    final displayName = remoteId.isEmpty ? '---' : remoteId;
+    final active = session.active;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
@@ -1252,7 +1373,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
                     color: MyTheme.accent,
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: Icon(_platformIcon(peer.platform),
+                  child: Icon(_clientTypeIcon(session.remoteClientType),
                       color: Colors.white, size: 20),
                 ),
                 const SizedBox(width: 12),
@@ -1274,23 +1395,23 @@ class _DesktopHomePageState extends State<DesktopHomePage>
           Expanded(
             flex: 2,
             child: Text(
-              _formatPeerId(peer.id),
+              _formatPeerId(remoteId),
               style: const TextStyle(
                   fontSize: 13, color: Color(0xFF374151)),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
           ),
-          // Connection type
+          // Connection type (direction)
           Expanded(
             flex: 2,
             child: Text(
-              translate('Remote control'),
+              _directionLabel(session.direction),
               style: const TextStyle(
                   fontSize: 13, color: Color(0xFF374151)),
             ),
           ),
-          // Status
+          // Status (session active vs ended)
           Expanded(
             flex: 1,
             child: Row(
@@ -1300,17 +1421,19 @@ class _DesktopHomePageState extends State<DesktopHomePage>
                   height: 7,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: online
+                    color: active
                         ? const Color(0xFF22C55E)
                         : const Color(0xFFCBD5E1),
                   ),
                 ),
                 const SizedBox(width: 6),
                 Text(
-                  online ? translate('Online') : translate('Offline'),
+                  active
+                      ? translate('In session')
+                      : translate('Ended'),
                   style: TextStyle(
                     fontSize: 13,
-                    color: online
+                    color: active
                         ? const Color(0xFF22C55E)
                         : const Color(0xFF9CA3AF),
                   ),
@@ -1322,18 +1445,18 @@ class _DesktopHomePageState extends State<DesktopHomePage>
           Expanded(
             flex: 2,
             child: Text(
-              _formatConnectTime(peer.id),
+              _formatIsoTime(session.startTime),
               style: const TextStyle(
                   fontSize: 13, color: Color(0xFF374151)),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
           ),
-          // Duration (elapsed since last connect)
+          // Duration
           Expanded(
             flex: 1,
             child: Text(
-              _formatDuration(peer.id),
+              _formatDurationSecs(session.durationSec),
               style: const TextStyle(
                   fontSize: 13, color: Color(0xFF374151)),
               maxLines: 1,
@@ -1348,7 +1471,9 @@ class _DesktopHomePageState extends State<DesktopHomePage>
                 SizedBox(
                   height: 32,
                   child: ElevatedButton(
-                    onPressed: () => _connectFromRecent(context, peer.id),
+                    onPressed: remoteId.isEmpty
+                        ? null
+                        : () => _connectFromRecent(context, remoteId),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: MyTheme.accent,
                       foregroundColor: Colors.white,
@@ -1367,13 +1492,34 @@ class _DesktopHomePageState extends State<DesktopHomePage>
                   ),
                 ),
                 const SizedBox(width: 8),
-                _recentRowDetailsButton(context, peer),
+                _smallIconBtn(
+                  Icons.star_border,
+                  tooltip: translate('Add to Favorites'),
+                  onTap: remoteId.isEmpty
+                      ? () {}
+                      : () => _toggleFavorite(remoteId, false),
+                ),
               ],
             ),
           ),
         ],
       ),
     );
+  }
+
+  String _directionLabel(String direction) {
+    return direction == 'incoming'
+        ? translate('Incoming')
+        : translate('Outgoing');
+  }
+
+  String _formatDurationSecs(int secs) {
+    if (secs <= 0) return '--';
+    final h = secs ~/ 3600;
+    final m = (secs % 3600) ~/ 60;
+    final s = secs % 60;
+    String two(int v) => v.toString().padLeft(2, '0');
+    return '${two(h)}:${two(m)}:${two(s)}';
   }
 
   // Group the peer id into blocks of 3 digits for readability (e.g. 252 844 127).
@@ -1387,69 +1533,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
     return buf.toString();
   }
 
-  Widget _recentRowDetailsButton(BuildContext context, Peer peer) {
-    return Builder(
-      builder: (btnContext) => SizedBox(
-        height: 32,
-        child: OutlinedButton(
-          onPressed: () async {
-            final entries = await RecentPeerCard(peer: peer)
-                .buildPopupMenuEntry(context);
-            if (entries.isEmpty) return;
-            final pos = _menuPositionFromButton(btnContext);
-            await mod_menu.showMenu(
-              context: context,
-              position: pos,
-              items: entries,
-              elevation: 8,
-            );
-          },
-          style: OutlinedButton.styleFrom(
-            foregroundColor: const Color(0xFF374151),
-            side: const BorderSide(color: Color(0xFFE5E7EB)),
-            padding: const EdgeInsets.symmetric(horizontal: 14),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
-          ),
-          child: Text(
-            translate('Details'),
-            style: const TextStyle(
-                fontSize: 13, fontWeight: FontWeight.w500),
-          ),
-        ),
-      ),
-    );
-  }
-
   static const String _kRecentConnectPrefix = 'recent-connect-at-';
-
-  int? _getStoredConnectTs(String peerId) {
-    final v = bind.mainGetLocalOption(key: '$_kRecentConnectPrefix$peerId');
-    if (v.isEmpty) return null;
-    return int.tryParse(v);
-  }
-
-  String _formatConnectTime(String peerId) {
-    final ts = _getStoredConnectTs(peerId);
-    if (ts == null) return translate('No record');
-    final dt = DateTime.fromMillisecondsSinceEpoch(ts);
-    String two(int v) => v.toString().padLeft(2, '0');
-    return '${dt.year}-${two(dt.month)}-${two(dt.day)} '
-        '${two(dt.hour)}:${two(dt.minute)}';
-  }
-
-  String _formatDuration(String peerId) {
-    final ts = _getStoredConnectTs(peerId);
-    if (ts == null) return translate('No record');
-    final secs = (DateTime.now().millisecondsSinceEpoch - ts) ~/ 1000;
-    if (secs < 0) return translate('No record');
-    final h = secs ~/ 3600;
-    final m = (secs % 3600) ~/ 60;
-    final s = secs % 60;
-    String two(int v) => v.toString().padLeft(2, '0');
-    return '${two(h)}:${two(m)}:${two(s)}';
-  }
 
   void _connectFromRecent(BuildContext context, String peerId) {
     bind.mainSetLocalOption(
@@ -1461,16 +1545,16 @@ class _DesktopHomePageState extends State<DesktopHomePage>
   }
 
   Future<void> _confirmClearRecent(BuildContext context) async {
-    final peers = gFFI.recentPeersModel.peers.toList();
-    if (peers.isEmpty) return;
+    final sessions = _mySessions.value ?? [];
+    if (sessions.isEmpty) return;
     deleteConfirmDialog(() async {
-      for (final p in peers) {
-        await bind.mainRemovePeer(id: p.id);
-        await bind.mainSetLocalOption(
-            key: '$_kRecentConnectPrefix${p.id}', value: '');
+      final ok = await AppAuthService().clearMySessions();
+      if (ok) {
+        _mySessions.value = [];
+        showToast(translate('Successful'));
+      } else {
+        showToast(translate('Failed'));
       }
-      bind.mainLoadRecentPeers();
-      showToast(translate('Successful'));
     }, translate('Clear records'));
   }
 
@@ -2339,64 +2423,74 @@ class _DesktopHomePageState extends State<DesktopHomePage>
   }
 
   Widget _buildFavoritesPage(BuildContext context) {
-    return ChangeNotifierProvider.value(
-      value: gFFI.favoritePeersModel,
-      child: Consumer<Peers>(
-        builder: (_, peers, __) {
-          bind.mainLoadFavPeers();
-          return ValueListenableBuilder<String>(
-            valueListenable: _favSearch,
-            builder: (_, query, __) {
-              return ValueListenableBuilder<String>(
-                valueListenable: _favGroupFilter,
-                builder: (_, groupFilter, __) {
-                  return ValueListenableBuilder<String>(
-                    valueListenable: _favTypeFilter,
-                    builder: (_, typeFilter, __) {
-                      final filtered = _filterFavPeers(
-                          peers.peers, query, groupFilter, typeFilter);
-                      return Padding(
-                        padding: const EdgeInsets.all(20),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            _favHeader(context, filtered.length),
-                            const SizedBox(height: 14),
-                            _favToolbar(context, filtered.length),
-                            const SizedBox(height: 14),
-                            Expanded(
-                              child: _favBody(context, filtered),
-                            ),
-                          ],
-                        ),
-                      );
-                    },
-                  );
-                },
-              );
-            },
-          );
-        },
-      ),
+    return ValueListenableBuilder<List<MyFavorite>?>(
+      valueListenable: _myFavorites,
+      builder: (_, favorites, __) {
+        if (favorites == null && !_myFavoritesLoading.value) {
+          WidgetsBinding.instance
+              .addPostFrameCallback((_) => _loadMyFavorites());
+        }
+        return ValueListenableBuilder<bool>(
+          valueListenable: _myFavoritesLoading,
+          builder: (_, loading, __) {
+            return ValueListenableBuilder<String?>(
+              valueListenable: _myFavoritesError,
+              builder: (_, error, __) {
+                return ValueListenableBuilder<String>(
+                  valueListenable: _favSearch,
+                  builder: (_, query, __) {
+                    return ValueListenableBuilder<String>(
+                      valueListenable: _favGroupFilter,
+                      builder: (_, groupFilter, __) {
+                        return ValueListenableBuilder<String>(
+                          valueListenable: _favTypeFilter,
+                          builder: (_, typeFilter, __) {
+                            final all = favorites ?? <MyFavorite>[];
+                            final filtered = _filterFavorites(
+                                all, query, groupFilter, typeFilter);
+                            return Padding(
+                              padding: const EdgeInsets.all(20),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  _favHeader(context, filtered.length),
+                                  const SizedBox(height: 14),
+                                  _favToolbar(context, filtered.length),
+                                  const SizedBox(height: 14),
+                                  Expanded(
+                                    child: _favBody(context, filtered, loading,
+                                        error, favorites == null),
+                                  ),
+                                ],
+                              ),
+                            );
+                          },
+                        );
+                      },
+                    );
+                  },
+                );
+              },
+            );
+          },
+        );
+      },
     );
   }
 
-  List<Peer> _filterFavPeers(
-      List<Peer> all, String query, String groupFilter, String typeFilter) {
+  List<MyFavorite> _filterFavorites(List<MyFavorite> all, String query,
+      String groupFilter, String typeFilter) {
     final q = query.trim().toLowerCase();
-    return all.where((p) {
+    return all.where((f) {
       if (q.isNotEmpty) {
-        final matches = p.id.toLowerCase().contains(q) ||
-            p.alias.toLowerCase().contains(q) ||
-            p.hostname.toLowerCase().contains(q) ||
-            p.username.toLowerCase().contains(q);
+        final matches = f.peerId.toLowerCase().contains(q) ||
+            f.alias.toLowerCase().contains(q);
         if (!matches) return false;
       }
-      if (groupFilter == 'online' && !p.online) return false;
-      if (groupFilter == 'offline' && p.online) return false;
+      if (groupFilter == 'online' && !f.online) return false;
+      if (groupFilter == 'offline' && f.online) return false;
       if (typeFilter != 'all') {
-        final plat = p.platform.toLowerCase();
-        final isMobile = plat.contains('android') || plat.contains('ios');
+        final isMobile = f.clientType != 'desktop';
         if (typeFilter == 'mobile' && !isMobile) return false;
         if (typeFilter == 'desktop' && isMobile) return false;
       }
@@ -2556,8 +2650,32 @@ class _DesktopHomePageState extends State<DesktopHomePage>
     );
   }
 
-  Widget _favBody(BuildContext context, List<Peer> peers) {
-    if (peers.isEmpty) {
+  Widget _favBody(BuildContext context, List<MyFavorite> favorites,
+      bool loading, String? error, bool notLoaded) {
+    if (favorites.isEmpty && (loading || notLoaded)) {
+      return const Center(child: CircularProgressIndicator(strokeWidth: 2));
+    }
+    if (favorites.isEmpty && error != null) {
+      return Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.cloud_off, size: 56, color: Color(0xFFCBD5E1)),
+            const SizedBox(height: 14),
+            Text(error,
+                style: const TextStyle(
+                    fontSize: 14, color: Color(0xFF6B7280))),
+            const SizedBox(height: 12),
+            _outlineButton(
+              icon: Icons.refresh,
+              label: translate('Retry'),
+              onTap: () => _loadMyFavorites(),
+            ),
+          ],
+        ),
+      );
+    }
+    if (favorites.isEmpty) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -2587,10 +2705,10 @@ class _DesktopHomePageState extends State<DesktopHomePage>
           child: Wrap(
             spacing: spacing,
             runSpacing: spacing,
-            children: peers
-                .map((p) => SizedBox(
+            children: favorites
+                .map((f) => SizedBox(
                       width: cardWidth,
-                      child: _favCard(context, p),
+                      child: _favCard(context, f),
                     ))
                 .toList(),
           ),
@@ -2599,14 +2717,10 @@ class _DesktopHomePageState extends State<DesktopHomePage>
     );
   }
 
-  Widget _favCard(BuildContext context, Peer peer) {
-    final displayName = peer.alias.isNotEmpty
-        ? peer.alias
-        : (peer.username.isNotEmpty && peer.hostname.isNotEmpty
-            ? '${peer.username}@${peer.hostname}'
-            : (peer.hostname.isNotEmpty ? peer.hostname : peer.id));
-    final color = _favCardColor(peer.id);
-    final online = peer.online;
+  Widget _favCard(BuildContext context, MyFavorite fav) {
+    final displayName = fav.alias.isNotEmpty ? fav.alias : fav.peerId;
+    final color = _favCardColor(fav.peerId);
+    final online = fav.online;
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -2633,12 +2747,22 @@ class _DesktopHomePageState extends State<DesktopHomePage>
                   color: color.withOpacity(0.15),
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: Icon(_platformIcon(peer.platform),
+                child: Icon(_clientTypeIcon(fav.clientType),
                     color: color, size: 24),
               ),
               const Spacer(),
-              const Icon(Icons.star,
-                  color: Color(0xFFFBBF24), size: 20),
+              Tooltip(
+                message: translate('Remove from favorites'),
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(12),
+                  onTap: () => _toggleFavorite(fav.peerId, true),
+                  child: const Padding(
+                    padding: EdgeInsets.all(2),
+                    child: Icon(Icons.star,
+                        color: Color(0xFFFBBF24), size: 20),
+                  ),
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 14),
@@ -2650,7 +2774,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
           ),
           const SizedBox(height: 4),
           Text(
-            peer.id,
+            fav.peerId,
             style: const TextStyle(fontSize: 12, color: Color(0xFF9CA3AF)),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
@@ -2698,7 +2822,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
               SizedBox(
                 height: 30,
                 child: ElevatedButton(
-                  onPressed: () => _connectFromRecent(context, peer.id),
+                  onPressed: () => _connectFromRecent(context, fav.peerId),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: MyTheme.accent,
                     foregroundColor: Colors.white,
@@ -3524,6 +3648,12 @@ class _DesktopHomePageState extends State<DesktopHomePage>
     _myDevices.dispose();
     _myDevicesLoading.dispose();
     _myDevicesError.dispose();
+    _mySessions.dispose();
+    _mySessionsLoading.dispose();
+    _mySessionsError.dispose();
+    _myFavorites.dispose();
+    _myFavoritesLoading.dispose();
+    _myFavoritesError.dispose();
     _favSearchCtrl.dispose();
     _favSearch.dispose();
     _favGroupFilter.dispose();
@@ -3791,4 +3921,82 @@ class MyDevice {
   }
 
   DateTime? get lastSeenDate => DateTime.tryParse(lastSeen);
+}
+
+/// 一条"最近连接"会话记录——由服务器 /api/user/sessions 返回。
+class MySession {
+  final String sessionId;
+  final String deviceId;
+  final String peerId;
+  final String remoteId; // 对端 ID（相对当前账号）
+  final String direction; // 'incoming' | 'outgoing'
+  final String remoteClientType; // 'full' | 'share_only' | 'desktop'
+  final String username;
+  final String startTime; // ISO8601
+  final String endTime; // ISO8601
+  final bool active; // 会话是否仍在进行
+  final int durationSec;
+
+  MySession({
+    required this.sessionId,
+    required this.deviceId,
+    required this.peerId,
+    required this.remoteId,
+    required this.direction,
+    required this.remoteClientType,
+    required this.username,
+    required this.startTime,
+    required this.endTime,
+    required this.active,
+    required this.durationSec,
+  });
+
+  factory MySession.fromJson(Map<String, dynamic> j) {
+    String s(dynamic v) => v?.toString() ?? '';
+    int i(dynamic v) =>
+        v is int ? v : int.tryParse(v?.toString() ?? '') ?? 0;
+    return MySession(
+      sessionId: s(j['sessionId']),
+      deviceId: s(j['deviceId']),
+      peerId: s(j['peerId']),
+      remoteId: s(j['remoteId']),
+      direction: s(j['direction']),
+      remoteClientType: s(j['remoteClientType']),
+      username: s(j['username']),
+      startTime: s(j['startTime']),
+      endTime: s(j['endTime']),
+      active: j['active'] == true,
+      durationSec: i(j['durationSec']),
+    );
+  }
+
+  DateTime? get startDate => DateTime.tryParse(startTime);
+}
+
+/// 一条收藏记录——由服务器 /api/user/favorites 返回。
+class MyFavorite {
+  final String peerId;
+  final String alias;
+  final String createdAt; // ISO8601
+  final String clientType; // 'full' | 'share_only' | 'desktop'
+  final bool online;
+
+  MyFavorite({
+    required this.peerId,
+    required this.alias,
+    required this.createdAt,
+    required this.clientType,
+    required this.online,
+  });
+
+  factory MyFavorite.fromJson(Map<String, dynamic> j) {
+    String s(dynamic v) => v?.toString() ?? '';
+    return MyFavorite(
+      peerId: s(j['peerId']),
+      alias: s(j['alias']),
+      createdAt: s(j['createdAt']),
+      clientType: s(j['clientType']),
+      online: j['online'] == true,
+    );
+  }
 }

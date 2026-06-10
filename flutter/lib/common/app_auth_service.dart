@@ -365,6 +365,86 @@ class AppAuthService {
     }
   }
 
+  /// 获取当前登录用户的最近连接记录（会话历史）
+  /// 返回 null 表示请求失败（网络异常 / 未登录 / token 失效）
+  Future<List<Map<String, dynamic>>?> fetchMySessions() async {
+    try {
+      final token = await getToken();
+      if (token.isEmpty) return null;
+      final result = await _post('/api/user/sessions', {'token': token});
+      if (result['code'] == 200 && result['data'] is List) {
+        return (result['data'] as List)
+            .whereType<Map<String, dynamic>>()
+            .toList();
+      }
+      if (result['code'] == 401) await logout();
+      return null;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// 清空当前登录用户的会话记录。成功返回 true。
+  Future<bool> clearMySessions() async {
+    try {
+      final token = await getToken();
+      if (token.isEmpty) return false;
+      final result = await _post('/api/user/sessions/clear', {'token': token});
+      return result['code'] == 200;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  /// 获取当前登录用户的收藏列表
+  Future<List<Map<String, dynamic>>?> fetchMyFavorites() async {
+    try {
+      final token = await getToken();
+      if (token.isEmpty) return null;
+      final result = await _post('/api/user/favorites', {'token': token});
+      if (result['code'] == 200 && result['data'] is List) {
+        return (result['data'] as List)
+            .whereType<Map<String, dynamic>>()
+            .toList();
+      }
+      if (result['code'] == 401) await logout();
+      return null;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// 添加收藏。成功返回 true。
+  Future<bool> addFavorite(String peerId, {String? alias}) async {
+    try {
+      final token = await getToken();
+      if (token.isEmpty || peerId.isEmpty) return false;
+      final result = await _post('/api/user/favorites/add', {
+        'token': token,
+        'peer_id': peerId,
+        if (alias != null) 'alias': alias,
+      });
+      return result['code'] == 200;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  /// 取消收藏。成功返回 true。
+  Future<bool> removeFavorite(String peerId) async {
+    try {
+      final token = await getToken();
+      if (token.isEmpty || peerId.isEmpty) return false;
+      final result = await _post('/api/user/favorites/remove', {
+        'token': token,
+        'peer_id': peerId,
+      });
+      return result['code'] == 200;
+    } catch (_) {
+      return false;
+    }
+  }
+
   Future<bool> _verifyToken(String token) async {
     try {
       final tokenVersion = await _getSecureLocalOption(_tokenVersionKey);
