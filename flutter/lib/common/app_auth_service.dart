@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:encrypt/encrypt.dart' as encrypt_lib;
+import 'package:flutter_hbb/consts.dart';
 import 'package:flutter_hbb/models/platform_model.dart';
 import 'package:flutter_hbb/models/state_model.dart';
 import 'package:get/get.dart';
@@ -477,6 +478,8 @@ class AppAuthService {
           request.headers.set('X-Device-Id', deviceId);
         }
       } catch (_) {}
+      // 声明本端类型，避免服务器在登录绑定时把桌面端误标为移动端
+      request.headers.set('X-Client-Type', isDesktop ? 'desktop' : kAppMode);
       request.add(utf8.encode(jsonEncode(body)));
       final response = await request.close();
       final responseBody = await response.transform(utf8.decoder).join();
