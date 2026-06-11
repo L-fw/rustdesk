@@ -47,6 +47,7 @@ class AppAuthService {
     '参数错误': 'server_invalid_params',
     '服务器内部错误': 'server_internal_error',
     '请求过于频繁，请稍后再试': 'server_rate_limited',
+    '手机号与当前账号不匹配': 'deregister_phone_mismatch',
   };
 
   /// 尝试将服务器返回的消息翻译为当前语言
@@ -340,6 +341,30 @@ class AppAuthService {
         return null;
       }
       return _translateServerMsg(result['msg']) ?? translate('reset_failed');
+    } catch (e) {
+      return '${translate('network_error')}: $e';
+    }
+  }
+
+  /// 注销账号：手机号 + 验证码验证后永久删除当前登录账号
+  /// 返回 null 表示成功，返回错误信息表示失败
+  Future<String?> deleteAccount({
+    required String phone,
+    required String smsCode,
+  }) async {
+    try {
+      final token = await getToken();
+      if (token.isEmpty) return translate('login_failed');
+      final result = await _post('/api/user/account/delete', {
+        'token': token,
+        'phone': phone,
+        'sms_code': smsCode,
+      });
+      if (result['code'] == 200) {
+        await logout();
+        return null; // 成功
+      }
+      return _translateServerMsg(result['msg']) ?? translate('Failed');
     } catch (e) {
       return '${translate('network_error')}: $e';
     }

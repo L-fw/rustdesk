@@ -2629,6 +2629,27 @@ class _AccountState extends State<_Account> {
     }
   }
 
+  Future<void> _doDeregister() async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (_) => const _DeregisterAccountDialog(),
+    );
+    if (!mounted) return;
+    if (ok == true) {
+      // 账号已注销并登出，返回登录页
+      Navigator.of(context).pushAndRemoveUntil(
+        PageRouteBuilder(
+          pageBuilder: (_, __, ___) => const LoginTabPage(
+              windowSize: kDesktopMainWindowSize,
+              child: desktop_login.AppLoginPage()),
+          transitionDuration: Duration.zero,
+          reverseTransitionDuration: Duration.zero,
+        ),
+        (route) => false,
+      );
+    }
+  }
+
   Widget _accountSecurityCard(BuildContext context) {
     return _GCard(
       icon: Icons.shield_outlined,
@@ -2679,7 +2700,7 @@ class _AccountState extends State<_Account> {
           title: 'Deregister account',
           subtitle: 'acc_deregister_sub',
           button: OutlinedButton(
-            onPressed: () {},
+            onPressed: () => _doDeregister(),
             style: OutlinedButton.styleFrom(
               foregroundColor: const Color(0xFFEF4444),
               side: const BorderSide(color: Color(0xFFEF4444)),
@@ -2690,6 +2711,265 @@ class _AccountState extends State<_Account> {
             ),
             child: Text(translate('Deregister account')),
           ),
+        ),
+      ],
+    );
+  }
+}
+
+/// 注销账号对话框：需先验证绑定手机号与短信验证码，确认后永久删除账号。
+class _DeregisterAccountDialog extends StatefulWidget {
+  const _DeregisterAccountDialog({Key? key}) : super(key: key);
+
+  @override
+  State<_DeregisterAccountDialog> createState() =>
+      _DeregisterAccountDialogState();
+}
+
+class _DeregisterAccountDialogState extends State<_DeregisterAccountDialog> {
+  static const Color _dangerColor = Color(0xFFEF4444);
+
+  final _phoneController = TextEditingController();
+  final _smsCodeController = TextEditingController();
+  final _authService = AppAuthService();
+
+  bool _isLoading = false;
+  bool _isSendingSms = false;
+  String? _errorMsg;
+  int _countdown = 0;
+  Timer? _countdownTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadBoundPhone();
+  }
+
+  Future<void> _loadBoundPhone() async {
+    final info = await _authService.getUserInfo();
+    final phone = info?['phone']?.toString().trim() ?? '';
+    if (mounted && phone.isNotEmpty) {
+      setState(() => _phoneController.text = phone);
+    }
+  }
+
+  @override
+  void dispose() {
+    _phoneController.dispose();
+    _smsCodeController.dispose();
+    _countdownTimer?.cancel();
+    super.dispose();
+  }
+
+  void _startCountdown() {
+    setState(() => _countdown = 60);
+    _countdownTimer?.cancel();
+    _countdownTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (_countdown <= 1) {
+        timer.cancel();
+        if (mounted) setState(() => _countdown = 0);
+      } else {
+        if (mounted) setState(() => _countdown--);
+      }
+    });
+  }
+
+  Future<void> _sendSmsCode() async {
+    final phone = _phoneController.text.trim();
+    if (phone.isEmpty) {
+      setState(() => _errorMsg = translate('please_enter_phone'));
+      return;
+    }
+    if (phone.length != 11) {
+      setState(() => _errorMsg = translate('phone_must_be_11_digits'));
+      return;
+    }
+    setState(() {
+      _isSendingSms = true;
+      _errorMsg = null;
+    });
+    final error = await _authService.sendSmsCode(phone: phone);
+    if (!mounted) return;
+    setState(() => _isSendingSms = false);
+    if (error != null) {
+      setState(() => _errorMsg = error);
+      return;
+    }
+    _startCountdown();
+  }
+
+  Future<void> _submit() async {
+    final phone = _phoneController.text.trim();
+    final smsCode = _smsCodeController.text.trim();
+
+    if (phone.isEmpty) {
+      setState(() => _errorMsg = translate('please_enter_phone'));
+      return;
+    }
+    if (phone.length != 11) {
+      setState(() => _errorMsg = translate('phone_must_be_11_digits'));
+      return;
+    }
+    if (smsCode.isEmpty) {
+      setState(() => _errorMsg = translate('please_enter_sms_code'));
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+      _errorMsg = null;
+    });
+
+    final error = await _authService.deleteAccount(
+      phone: phone,
+      smsCode: smsCode,
+    );
+
+    if (!mounted) return;
+    setState(() => _isLoading = false);
+    if (error != null) {
+      setState(() => _errorMsg = error);
+      return;
+    }
+    showToast(translate('deregister_success'));
+    Navigator.of(context).pop(true);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return AlertDialog(
+      title: Text(translate('Deregister account')),
+      content: SingleChildScrollView(
+        child: SizedBox(
+          width: 360,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: _dangerColor.withOpacity(0.08),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Icon(Icons.warning_amber_rounded,
+                        color: _dangerColor, size: 20),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        translate('deregister_warning'),
+                        style: const TextStyle(
+                            color: _dangerColor, fontSize: 13),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: _phoneController,
+                keyboardType: TextInputType.phone,
+                textInputAction: TextInputAction.next,
+                inputFormatters: [
+                  FilteringTextInputFormatter.digitsOnly,
+                  LengthLimitingTextInputFormatter(11),
+                ],
+                decoration: InputDecoration(
+                  labelText: translate('Phone Number'),
+                  prefixIcon: const Icon(Icons.phone_android, size: 20),
+                ),
+              ),
+              const SizedBox(height: 12),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _smsCodeController,
+                      keyboardType: TextInputType.number,
+                      textInputAction: TextInputAction.done,
+                      onSubmitted: (_) => _submit(),
+                      inputFormatters: [
+                        FilteringTextInputFormatter.digitsOnly,
+                        LengthLimitingTextInputFormatter(6),
+                      ],
+                      decoration: InputDecoration(
+                        labelText: translate('Verification code'),
+                        prefixIcon: const Icon(Icons.sms_outlined, size: 20),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  SizedBox(
+                    height: 48,
+                    child: ElevatedButton(
+                      onPressed:
+                          (_countdown > 0 || _isSendingSms || _isLoading)
+                              ? null
+                              : _sendSmsCode,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: _accentColor,
+                        foregroundColor: Colors.white,
+                        disabledBackgroundColor: Colors.grey.shade300,
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10)),
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        elevation: 0,
+                      ),
+                      child: Text(
+                        _countdown > 0
+                            ? '${_countdown}s'
+                            : translate('get_sms_code'),
+                        style: const TextStyle(fontSize: 13),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              if (_errorMsg != null) ...[
+                const SizedBox(height: 12),
+                Text(
+                  _errorMsg!,
+                  style: const TextStyle(color: Colors.red, fontSize: 13),
+                ),
+              ],
+              const SizedBox(height: 8),
+              Text(
+                translate('sms_hint'),
+                style: TextStyle(
+                  fontSize: 12,
+                  color: isDark ? Colors.white54 : Colors.black45,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed:
+              _isLoading ? null : () => Navigator.of(context).pop(false),
+          child: Text(translate('Cancel')),
+        ),
+        ElevatedButton(
+          onPressed: _isLoading ? null : _submit,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: _dangerColor,
+            foregroundColor: Colors.white,
+            elevation: 0,
+          ),
+          child: _isLoading
+              ? const SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(
+                      strokeWidth: 2.5, color: Colors.white),
+                )
+              : Text(translate('confirm_deregister')),
         ),
       ],
     );

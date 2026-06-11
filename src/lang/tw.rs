@@ -982,5 +982,9 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
         ("acc_forgot_pwd_sub", "透過驗證身份重設密碼"),
         ("acc_logout_sub", "退出目前的賬戶，返回登入頁面"),
         ("acc_deregister_sub", "永久刪除賬戶及所有資料，請謹慎操作"),
+        ("deregister_warning", "註銷後賬戶及所有資料將被永久刪除且無法恢復，請謹慎操作。"),
+        ("confirm_deregister", "確認註銷"),
+        ("deregister_success", "賬號已註銷"),
+        ("deregister_phone_mismatch", "手機號與目前賬號不匹配"),
     ].iter().cloned().collect();
 }
