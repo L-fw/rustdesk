@@ -126,6 +126,14 @@ class _AppLoginPageState extends State<AppLoginPage>
     return RegExp(r'^[A-Za-z0-9_]+$').hasMatch(value);
   }
 
+  /// Check if an error indicates the bound activation code is unusable
+  /// (expired / invalid / disabled) and can be replaced by entering a new one.
+  bool _isActivationCodeError(String error) {
+    return error == translate('activation_code_expired_error') ||
+        error == translate('server_invalid_activation_code') ||
+        error == translate('server_activation_code_disabled');
+  }
+
   /// Check if an error message is password-related (language-agnostic)
   bool _isPasswordError(String error) {
     final lower = error.toLowerCase();
@@ -387,7 +395,7 @@ class _AppLoginPageState extends State<AppLoginPage>
     if (mounted) {
       setState(() => _isLoading = false);
       if (error != null) {
-        if (error == translate('activation_code_expired_error')) {
+        if (_isActivationCodeError(error)) {
           final newCode = await _showActivationCodeDialog();
           if (!mounted) return;
           if (newCode == null) {
@@ -469,7 +477,7 @@ class _AppLoginPageState extends State<AppLoginPage>
     if (mounted) {
       setState(() => _isLoading = false);
       if (error != null) {
-        if (error == translate('activation_code_expired_error')) {
+        if (_isActivationCodeError(error)) {
           final newCode = await _showActivationCodeDialog();
           if (!mounted) return;
           if (newCode == null) {

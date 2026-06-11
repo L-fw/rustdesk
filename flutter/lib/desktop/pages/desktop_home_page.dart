@@ -395,7 +395,11 @@ class _DesktopHomePageState extends State<DesktopHomePage>
           }
           _selectedNav.value = key;
           if (key == 'devices') _loadMyDevices();
-          if (key == 'recent') _loadMySessions();
+          if (key == 'recent') {
+            _loadMySessions();
+            // 同步收藏数据，使"最近连接"中的收藏星标能反映当前收藏状态
+            _loadMyFavorites();
+          }
           if (key == 'favorites') _loadMyFavorites();
         },
         child: Container(
@@ -966,7 +970,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
   }
 
   Widget _smallIconBtn(IconData icon,
-      {required VoidCallback onTap, String? tooltip}) {
+      {required VoidCallback onTap, String? tooltip, Color? color}) {
     final btn = Material(
       color: Colors.transparent,
       child: InkWell(
@@ -979,7 +983,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
             border: Border.all(color: const Color(0xFFE5E7EB)),
             borderRadius: BorderRadius.circular(6),
           ),
-          child: Icon(icon, size: 16, color: const Color(0xFF6B7280)),
+          child: Icon(icon, size: 16, color: color ?? const Color(0xFF6B7280)),
         ),
       ),
     );
@@ -997,6 +1001,11 @@ class _DesktopHomePageState extends State<DesktopHomePage>
         if (sessions == null && !_mySessionsLoading.value) {
           WidgetsBinding.instance
               .addPostFrameCallback((_) => _loadMySessions());
+        }
+        // 确保收藏数据已加载，使收藏星标状态正确显示
+        if (_myFavorites.value == null && !_myFavoritesLoading.value) {
+          WidgetsBinding.instance
+              .addPostFrameCallback((_) => _loadMyFavorites());
         }
         return ValueListenableBuilder<bool>(
           valueListenable: _mySessionsLoading,
@@ -1492,12 +1501,23 @@ class _DesktopHomePageState extends State<DesktopHomePage>
                   ),
                 ),
                 const SizedBox(width: 8),
-                _smallIconBtn(
-                  Icons.star_border,
-                  tooltip: translate('Add to Favorites'),
-                  onTap: remoteId.isEmpty
-                      ? () {}
-                      : () => _toggleFavorite(remoteId, false),
+                // 收藏星标：根据当前收藏状态显示实心/空心，再次点击可取消收藏
+                ValueListenableBuilder<List<MyFavorite>?>(
+                  valueListenable: _myFavorites,
+                  builder: (_, favorites, __) {
+                    final isFav = remoteId.isNotEmpty &&
+                        (favorites?.any((f) => f.peerId == remoteId) ?? false);
+                    return _smallIconBtn(
+                      isFav ? Icons.star : Icons.star_border,
+                      tooltip: translate(isFav
+                          ? 'Remove from Favorites'
+                          : 'Add to Favorites'),
+                      color: isFav ? const Color(0xFFFBBF24) : null,
+                      onTap: remoteId.isEmpty
+                          ? () {}
+                          : () => _toggleFavorite(remoteId, isFav),
+                    );
+                  },
                 ),
               ],
             ),

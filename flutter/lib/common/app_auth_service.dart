@@ -41,6 +41,7 @@ class AppAuthService {
     '激活码无效': 'server_invalid_activation_code',
     '激活码已过期': 'activation_code_expired_error',
     '激活码已被使用': 'server_activation_code_used',
+    '激活码已被禁用': 'server_activation_code_disabled',
     '账号已被禁用': 'server_account_disabled',
     '手机号格式错误': 'server_invalid_phone_format',
     '参数错误': 'server_invalid_params',
