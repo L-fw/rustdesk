@@ -403,7 +403,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
           if (key == 'favorites') _loadMyFavorites();
         },
         child: Container(
-          margin: const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
+          margin: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           decoration: BoxDecoration(
             color: isSelected
@@ -2772,7 +2772,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
               ),
               const Spacer(),
               Tooltip(
-                message: translate('Remove from favorites'),
+                message: translate('Remove from Favorites'),
                 child: InkWell(
                   borderRadius: BorderRadius.circular(12),
                   onTap: () => _toggleFavorite(fav.peerId, true),
