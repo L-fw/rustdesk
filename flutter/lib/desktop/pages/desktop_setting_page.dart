@@ -3569,20 +3569,6 @@ class _AdvancedState extends State<_Advanced> {
               ),
               child: Text(translate('Restore defaults')),
             ),
-            const SizedBox(width: 12),
-            ElevatedButton(
-              onPressed: () => showToast(translate('Successful')),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: MyTheme.accent,
-                foregroundColor: Colors.white,
-                elevation: 0,
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 22, vertical: 14),
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8)),
-              ),
-              child: Text(translate('Save settings')),
-            ),
           ],
         ),
       ),
