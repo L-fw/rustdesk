@@ -937,7 +937,9 @@ class _SafetyState extends State<_Safety> with AutomaticKeepAliveClientMixin {
           const SizedBox(width: 12),
           InkWell(
             borderRadius: BorderRadius.circular(20),
-            onTap: locked ? _unlock : null,
+            // Acts as a two-way switch: tap to unlock when locked, tap again to
+            // re-lock (re-protect) the security settings when unlocked.
+            onTap: locked ? _unlock : () => setState(() => locked = true),
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
               decoration: BoxDecoration(
@@ -948,11 +950,13 @@ class _SafetyState extends State<_Safety> with AutomaticKeepAliveClientMixin {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(locked ? Icons.lock_outline : Icons.check_circle_outline,
+                  Icon(locked ? Icons.lock_outline : Icons.lock_open_outlined,
                       size: 15, color: _accentColor),
                   const SizedBox(width: 5),
                   Text(
-                    translate(locked ? 'Unlock Security Settings' : 'Enabled'),
+                    translate(locked
+                        ? 'Unlock Security Settings'
+                        : 'Lock Security Settings'),
                     style: const TextStyle(
                         fontSize: 12,
                         color: _accentColor,
@@ -2600,6 +2604,30 @@ class _AccountState extends State<_Account> {
     }
   }
 
+  Future<void> _doForgotPassword() async {
+    // Reuses the public phone + SMS reset-password dialog from the login page.
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (_) => desktop_login.DesktopChangePasswordDialog(
+        title: translate('Forgot Password'),
+      ),
+    );
+    if (!mounted) return;
+    if (ok == true) {
+      // Password changed; force re-login.
+      Navigator.of(context).pushAndRemoveUntil(
+        PageRouteBuilder(
+          pageBuilder: (_, __, ___) => const LoginTabPage(
+              windowSize: kDesktopMainWindowSize,
+              child: desktop_login.AppLoginPage()),
+          transitionDuration: Duration.zero,
+          reverseTransitionDuration: Duration.zero,
+        ),
+        (route) => false,
+      );
+    }
+  }
+
   Future<void> _doLogout() async {
     final confirmed = await gFFI.dialogManager.show<bool>(
       (setState, close, context) {
@@ -2666,7 +2694,7 @@ class _AccountState extends State<_Account> {
           context,
           title: 'Forgot Password',
           subtitle: 'acc_forgot_pwd_sub',
-          onTap: () {},
+          onTap: () => _doForgotPassword(),
         ),
       ],
     );
@@ -3168,6 +3196,87 @@ class _AdvancedState extends State<_Advanced> {
     );
   }
 
+  // Per-session "user default" options rendered on this page. Resetting one to
+  // an empty value removes the override and falls back to its built-in default.
+  static const List<String> _userDefaultKeys = [
+    kOptionViewOnly,
+    kOptionPrivacyMode,
+    kOptionDisableAudio,
+    kOptionCollapseToolbar,
+    kOptionLockAfterSessionEnd,
+    kKeyReverseMouseWheel,
+    kOptionSwapLeftRightMouse,
+    kOptionShowRemoteCursor,
+    kOptionShowQualityMonitor,
+    kOptionI444,
+    kKeyUseAllMyDisplaysForTheRemoteSession,
+    kOptionEnableFileCopyPaste,
+    kOptionDisableClipboard,
+  ];
+
+  // Shared (server) options rendered on this page.
+  static const List<String> _serverOptionKeys = [
+    kOptionAllowRemoveWallpaper,
+    kOptionEnableHwcodec,
+    kOptionEnableAbr,
+    kOptionAllowAlwaysSoftwareRender,
+    kOptionDirectxCapture,
+    kOptionAllowAutoUpdate,
+    kOptionAllowLinuxHeadless,
+  ];
+
+  // Local (this device) options rendered on this page.
+  static const List<String> _localOptionKeys = [
+    kOptionEnableConfirmClosingTabs,
+    kOptionOpenNewConnInTabs,
+    kOptionTextureRender,
+    kOptionD3DRender,
+    kOptionEnableUdpPunch,
+    kOptionEnableIpv6Punch,
+    kOptionKeepAwakeDuringOutgoingSessions,
+  ];
+
+  // Restore every option shown on this page back to its built-in default. An
+  // empty value removes the stored override for each config scope. Skips
+  // options that are fixed/locked by the deployment.
+  Future<void> _restoreDefaults() async {
+    final confirmed = await gFFI.dialogManager.show<bool>(
+      (setState, close, context) {
+        return CustomAlertDialog(
+          title: Text(translate('Restore defaults')),
+          content: Text(translate('restore_defaults_tip')),
+          actions: [
+            dialogButton('Cancel', onPressed: () => close(false), isOutline: true),
+            dialogButton('OK', onPressed: () => close(true)),
+          ],
+        );
+      },
+    );
+    if (confirmed != true) return;
+    for (final k in _userDefaultKeys) {
+      if (!isOptionFixed(k)) {
+        await bind.mainSetUserDefaultOption(key: k, value: '');
+      }
+    }
+    for (final k in _serverOptionKeys) {
+      if (!isOptionFixed(k)) {
+        await bind.mainSetOption(key: k, value: '');
+      }
+    }
+    for (final k in _localOptionKeys) {
+      if (!isOptionFixed(k)) {
+        await bind.mainSetLocalOption(key: k, value: '');
+      }
+    }
+    // Re-validate hardware codec availability since its option may have changed.
+    if (bind.mainHasHwcodec() || bind.mainHasVram()) {
+      bind.mainCheckHwcodec();
+    }
+    if (!mounted) return;
+    setState(() {});
+    showToast(translate('Restored to default'));
+  }
+
   @override
   Widget build(BuildContext context) {
     final scrollController = ScrollController();
@@ -3449,7 +3558,7 @@ class _AdvancedState extends State<_Advanced> {
           mainAxisAlignment: MainAxisAlignment.end,
           children: [
             OutlinedButton(
-              onPressed: () => showToast(translate('Restored to default')),
+              onPressed: _restoreDefaults,
               style: OutlinedButton.styleFrom(
                 foregroundColor: const Color(0xFF374151),
                 side: const BorderSide(color: Color(0xFFE5E7EB)),
