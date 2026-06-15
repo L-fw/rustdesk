@@ -1277,15 +1277,32 @@ class _DesktopHomePageState extends State<DesktopHomePage>
         ),
       );
     } else {
-      content = ListView.separated(
+      // 用单个 Table 承载表头 + 所有数据行，列宽由 _recentColumnWidths 统一控制，
+      // 表头与数据行天然对齐；内容列用 IntrinsicColumnWidth 按内容自适应，
+      // 整个表格在 SingleChildScrollView 内垂直滚动（表头随内容滚动）。
+      content = SingleChildScrollView(
         padding: EdgeInsets.zero,
-        itemCount: sessions.length + 1,
-        separatorBuilder: (_, __) =>
-            const Divider(height: 1, color: Color(0xFFF3F4F6)),
-        itemBuilder: (_, i) {
-          if (i == sessions.length) return _recentTableFooter();
-          return _recentTableRow(context, sessions[i]);
-        },
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 8),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Table(
+                columnWidths: _recentColumnWidths,
+                defaultVerticalAlignment: TableCellVerticalAlignment.middle,
+                border: const TableBorder(
+                  horizontalInside:
+                      BorderSide(color: Color(0xFFF3F4F6), width: 1),
+                ),
+                children: [
+                  _recentTableHeader(),
+                  for (final s in sessions) _recentTableRow(context, s),
+                ],
+              ),
+              _recentTableFooter(),
+            ],
+          ),
+        ),
       );
     }
     return Container(
@@ -1300,45 +1317,50 @@ class _DesktopHomePageState extends State<DesktopHomePage>
           ),
         ],
       ),
-      child: Column(
-        children: [
-          _recentTableHeader(),
-          const Divider(height: 1, color: Color(0xFFEDEFF3)),
-          Expanded(child: content),
-        ],
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: content,
       ),
     );
   }
 
-  Widget _recentTableHeader() {
+  // 最近连接表格的列宽策略：设备列吃掉剩余空间，其余内容列按内容自适应，
+  // 操作列固定宽度。表头与每一行共用这套配置，保证列对齐。
+  static const Map<int, TableColumnWidth> _recentColumnWidths = {
+    0: FlexColumnWidth(1), // 设备
+    1: IntrinsicColumnWidth(), // 目标ID
+    2: IntrinsicColumnWidth(), // 连接类型
+    3: IntrinsicColumnWidth(), // 状态
+    4: IntrinsicColumnWidth(), // 连接时间
+    5: IntrinsicColumnWidth(), // 时长
+    6: FixedColumnWidth(176), // 操作（含单元格内边距，可容纳 160 宽的按钮区）
+  };
+
+  // 表头单元格统一内边距，与数据行保持一致
+  static const EdgeInsets _recentCellPadding =
+      EdgeInsets.symmetric(horizontal: 8, vertical: 14);
+
+  TableRow _recentTableHeader() {
     const style = TextStyle(
       fontSize: 13,
       fontWeight: FontWeight.w600,
       color: Color(0xFF6B7280),
     );
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      decoration: const BoxDecoration(
-        color: Color(0xFFF9FAFB),
-        borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
-      ),
-      child: Row(
-        children: [
-          Expanded(flex: 3, child: Text(translate('Device'), style: style)),
-          Expanded(flex: 2, child: Text(translate('Target ID'), style: style)),
-          Expanded(
-              flex: 2,
-              child: Text(translate('Connection type'), style: style)),
-          Expanded(flex: 1, child: Text(translate('Status'), style: style)),
-          Expanded(
-              flex: 2, child: Text(translate('Connect time'), style: style)),
-          Expanded(flex: 1, child: Text(translate('Duration'), style: style)),
-          SizedBox(
-            width: 160,
-            child: Text(translate('Actions'), style: style),
-          ),
-        ],
-      ),
+    Widget cell(String text) => Padding(
+          padding: _recentCellPadding,
+          child: Text(text, style: style),
+        );
+    return TableRow(
+      decoration: const BoxDecoration(color: Color(0xFFF9FAFB)),
+      children: [
+        cell(translate('Device')),
+        cell(translate('Target ID')),
+        cell(translate('Connection type')),
+        cell(translate('Status')),
+        cell(translate('Connect time')),
+        cell(translate('Duration')),
+        cell(translate('Actions')),
+      ],
     );
   }
 
@@ -1361,122 +1383,114 @@ class _DesktopHomePageState extends State<DesktopHomePage>
     );
   }
 
-  Widget _recentTableRow(BuildContext context, MySession session) {
+  TableRow _recentTableRow(BuildContext context, MySession session) {
     final remoteId = session.remoteId;
     final displayName = remoteId.isEmpty ? '---' : remoteId;
     final active = session.active;
 
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      child: Row(
-        children: [
-          // Device
-          Expanded(
-            flex: 3,
-            child: Row(
-              children: [
-                Container(
-                  width: 36,
-                  height: 36,
-                  decoration: BoxDecoration(
-                    color: MyTheme.accent,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Icon(_clientTypeIcon(session.remoteClientType),
-                      color: Colors.white, size: 20),
+    return TableRow(
+      children: [
+        // Device
+        Padding(
+          padding: _recentCellPadding,
+          child: Row(
+            children: [
+              Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  color: MyTheme.accent,
+                  borderRadius: BorderRadius.circular(8),
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    displayName,
-                    style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: Color(0xFF1F2937)),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
+                child: Icon(_clientTypeIcon(session.remoteClientType),
+                    color: Colors.white, size: 20),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  displayName,
+                  style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF1F2937)),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
-          // Target ID
-          Expanded(
-            flex: 2,
-            child: Text(
-              _formatPeerId(remoteId),
-              style: const TextStyle(
-                  fontSize: 13, color: Color(0xFF374151)),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
+        ),
+        // Target ID
+        Padding(
+          padding: _recentCellPadding,
+          child: Text(
+            _formatPeerId(remoteId),
+            style: const TextStyle(fontSize: 13, color: Color(0xFF374151)),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
-          // Connection type (direction)
-          Expanded(
-            flex: 2,
-            child: Text(
-              _directionLabel(session.direction),
-              style: const TextStyle(
-                  fontSize: 13, color: Color(0xFF374151)),
-            ),
+        ),
+        // Connection type (direction)
+        Padding(
+          padding: _recentCellPadding,
+          child: Text(
+            _directionLabel(session.direction),
+            style: const TextStyle(fontSize: 13, color: Color(0xFF374151)),
           ),
-          // Status (session active vs ended)
-          Expanded(
-            flex: 1,
-            child: Row(
-              children: [
-                Container(
-                  width: 7,
-                  height: 7,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: active
-                        ? const Color(0xFF22C55E)
-                        : const Color(0xFFCBD5E1),
-                  ),
+        ),
+        // Status (session active vs ended)
+        Padding(
+          padding: _recentCellPadding,
+          child: Row(
+            children: [
+              Container(
+                width: 7,
+                height: 7,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: active
+                      ? const Color(0xFF22C55E)
+                      : const Color(0xFFCBD5E1),
                 ),
-                const SizedBox(width: 6),
-                Text(
-                  active
-                      ? translate('In session')
-                      : translate('Ended'),
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: active
-                        ? const Color(0xFF22C55E)
-                        : const Color(0xFF9CA3AF),
-                  ),
+              ),
+              const SizedBox(width: 6),
+              Text(
+                active ? translate('In session') : translate('Ended'),
+                style: TextStyle(
+                  fontSize: 13,
+                  color: active
+                      ? const Color(0xFF22C55E)
+                      : const Color(0xFF9CA3AF),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
-          // Connect time
-          Expanded(
-            flex: 2,
-            child: Text(
-              _formatIsoTime(session.startTime),
-              style: const TextStyle(
-                  fontSize: 13, color: Color(0xFF374151)),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
+        ),
+        // Connect time
+        Padding(
+          padding: _recentCellPadding,
+          child: Text(
+            _formatIsoTime(session.startTime),
+            style: const TextStyle(fontSize: 13, color: Color(0xFF374151)),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
-          // Duration
-          Expanded(
-            flex: 1,
-            child: Text(
-              _formatDurationSecs(session.durationSec),
-              style: const TextStyle(
-                  fontSize: 13, color: Color(0xFF374151)),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
+        ),
+        // Duration
+        Padding(
+          padding: _recentCellPadding,
+          child: Text(
+            _formatDurationSecs(session.durationSec),
+            style: const TextStyle(fontSize: 13, color: Color(0xFF374151)),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
-          // Actions
-          SizedBox(
-            width: 160,
-            child: Row(
-              children: [
+        ),
+        // Actions
+        Padding(
+          padding: _recentCellPadding,
+          child: Row(
+            children: [
                 SizedBox(
                   height: 32,
                   child: ElevatedButton(
@@ -1523,8 +1537,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
             ),
           ),
         ],
-      ),
-    );
+      );
   }
 
   String _directionLabel(String direction) {
