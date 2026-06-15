@@ -3685,200 +3685,40 @@ class _Update extends StatefulWidget {
 }
 
 class _UpdateState extends State<_Update> {
-  // Shared accent used for the surrounding chrome of this page.
-  static const Color _accent = Colors.purple;
-
-  bool get _isDark => Theme.of(context).brightness == Brightness.dark;
-
-  // A surface color for plain cards that adapts to light/dark themes.
-  Color get _cardColor =>
-      _isDark ? Colors.white.withOpacity(0.04) : Colors.white;
-
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(32, 28, 32, 36),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _updateSection(context),
-            const SizedBox(height: 16),
-            _checkUpdateRow(context),
-            const SizedBox(height: 32),
-            _sectionHeader(
-              context,
-              title: translate('Releases'),
-              subtitle: translate('Download different versions of LinkEase'),
-            ),
-            const SizedBox(height: 18),
-            _releaseItem(
-              context,
-              icon: Icons.people_outline,
-              accent: const Color(0xFF3b82f6),
-              title: translate('User Edition'),
-              subtitle: translate('Tools for regular users'),
-              url: 'https://jyyxt.cloud/releases/share',
-            ),
-            const SizedBox(height: 14),
-            _releaseItem(
-              context,
-              icon: Icons.chat_bubble_outline,
-              accent: const Color(0xFF16a34a),
-              title: translate('Support Edition'),
-              subtitle: translate('Dedicated tools for support staff'),
-              url: 'https://jyyxt.cloud/releases/tech',
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  // Card wrapper shared by the status / toggle rows so they stay visually
-  // consistent (same radius, border and soft shadow).
-  Widget _plainCard({required Widget child}) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
-      decoration: BoxDecoration(
-        color: _cardColor,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(
-          color: _isDark
-              ? Colors.white.withOpacity(0.06)
-              : Colors.black.withOpacity(0.04),
-        ),
-        boxShadow: _isDark
-            ? null
-            : [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.03),
-                  blurRadius: 12,
-                  offset: const Offset(0, 3),
-                ),
-              ],
-      ),
-      child: child,
-    );
-  }
-
-  // Rounded square icon badge used by the status and toggle rows.
-  Widget _iconBadge(IconData icon, Color color, {double size = 42}) {
-    return Container(
-      width: size,
-      height: size,
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.12),
-        borderRadius: BorderRadius.circular(size * 0.28),
-      ),
-      child: Icon(icon, size: size * 0.5, color: color),
-    );
-  }
-
-  Widget _sectionHeader(
-    BuildContext context, {
-    required String title,
-    required String subtitle,
-  }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+    final scrollController = ScrollController();
+    return ListView(
+      controller: scrollController,
       children: [
-        Text(
-          title,
-          style: TextStyle(
-            fontSize: _kTitleFontSize,
-            fontWeight: FontWeight.w600,
-            color: Theme.of(context).textTheme.bodyLarge?.color,
-          ),
-        ),
-        const SizedBox(height: 6),
-        Text(
-          subtitle,
-          style: TextStyle(
-            fontSize: 12,
-            color:
-                Theme.of(context).textTheme.bodySmall?.color?.withOpacity(0.6),
-          ),
-        ),
+        _settingsPageHeader('Update', 'Keep your software up to date'),
+        _updateStatusCard(context),
+        _checkUpdateCard(context),
+        _releasesCard(context),
       ],
-    );
+    ).marginOnly(bottom: _kListViewBottomMargin);
   }
 
-  Widget _checkUpdateRow(BuildContext context) {
-    final value = mainGetLocalBoolOptionSync(kOptionEnableCheckUpdate);
-    final isOptFixed = isOptionFixed(kOptionEnableCheckUpdate);
-    return _plainCard(
-      child: Row(
-        children: [
-          _iconBadge(Icons.system_update_outlined, _accent),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(translate('Check for software update on startup'),
-                    style: const TextStyle(
-                        fontSize: 14, fontWeight: FontWeight.w600)),
-                const SizedBox(height: 3),
-                Text(translate('check_update_tip'),
-                    style: const TextStyle(
-                        fontSize: 12, color: Color(0xFF9CA3AF))),
-              ],
-            ),
-          ),
-          const SizedBox(width: 12),
-          Switch(
-            value: value,
-            activeColor: MyTheme.accent,
-            onChanged: isOptFixed
-                ? null
-                : (b) async {
-                    await mainSetLocalBoolOption(kOptionEnableCheckUpdate, b);
-                    setState(() {});
-                  },
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _updateSection(BuildContext context) {
+  // Top card: reacts to the global update state, showing either an
+  // "up to date" status or an "update available" call-to-action. Uses the
+  // shared [_GCard] so it matches the other settings pages.
+  Widget _updateStatusCard(BuildContext context) {
     return Obx(() {
       final updateUrl = stateGlobal.updateUrl.value;
       if (updateUrl.isEmpty) {
-        // Up to date — calm, reassuring status card.
-        const okColor = Color(0xFF16a34a);
-        return _plainCard(
-          child: Row(
-            children: [
-              _iconBadge(Icons.check_circle_outline, okColor),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      translate('Your version is up to date'),
-                      style: const TextStyle(
-                          fontSize: 15, fontWeight: FontWeight.w600),
-                    ),
-                    const SizedBox(height: 3),
-                    FutureBuilder<String>(
-                      future: bind.mainGetVersion(),
-                      builder: (context, snapshot) {
-                        final version = snapshot.data ?? '';
-                        return Text(
-                          '${translate('Version')}: $version',
-                          style: const TextStyle(
-                              fontSize: 12, color: Color(0xFF9CA3AF)),
-                        );
-                      },
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
+        // Up to date — calm, reassuring status card with the current version.
+        return FutureBuilder<String>(
+          future: bind.mainGetVersion(),
+          builder: (context, snapshot) {
+            final version = snapshot.data ?? '';
+            return _GCard(
+              icon: Icons.check_circle_outline,
+              iconColor: const Color(0xFF22C55E),
+              title: 'Your version is up to date',
+              subtitle:
+                  version.isEmpty ? null : '${translate('Version')}: $version',
+            );
+          },
         );
       }
 
@@ -3890,76 +3730,89 @@ class _UpdateState extends State<_Update> {
           : bind.mainGetNewVersion();
       final isToUpdate = (isWindows || isMacOS) && bind.mainIsInstalled();
       final btnText = isToUpdate ? 'Update' : 'Download';
-      final accent = MyTheme.accent;
 
-      return Container(
-        padding: const EdgeInsets.all(18),
-        decoration: BoxDecoration(
-          color: accent.withOpacity(_isDark ? 0.14 : 0.08),
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: accent.withOpacity(0.25)),
-        ),
-        child: Row(
-          children: [
-            _iconBadge(Icons.rocket_launch_outlined, accent, size: 46),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    translate('New version available'),
-                    style: const TextStyle(
-                        fontSize: 15, fontWeight: FontWeight.w600),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    '${translate("new-version-of-{${bind.mainGetAppNameSync()}}-tip")} ($versionText).',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Theme.of(context)
-                          .textTheme
-                          .bodySmall
-                          ?.color
-                          ?.withOpacity(0.7),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(width: 12),
-            ElevatedButton(
-              onPressed: () async {
-                final url = serverDownloadUrl.isNotEmpty
-                    ? serverDownloadUrl
-                    : updateUrl;
-                if (isToUpdate) {
-                  handleUpdate(updateUrl, directDownloadUrl: serverDownloadUrl);
-                } else if (url.isNotEmpty) {
-                  await launchUrl(Uri.parse(url),
-                      mode: LaunchMode.externalApplication);
-                }
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: accent,
-                foregroundColor: Colors.white,
-                elevation: 0,
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 22, vertical: 12),
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8)),
-              ),
-              child: Text(translate(btnText),
-                  style: const TextStyle(
-                      fontSize: 14, fontWeight: FontWeight.w600)),
-            ),
-          ],
+      return _GCard(
+        icon: Icons.rocket_launch_outlined,
+        iconColor: MyTheme.accent,
+        title: 'New version available',
+        subtitle:
+            '${translate("new-version-of-{${bind.mainGetAppNameSync()}}-tip")} ($versionText).',
+        trailing: SizedBox(
+          height: 40,
+          child: ElevatedButton(
+            onPressed: () async {
+              final url =
+                  serverDownloadUrl.isNotEmpty ? serverDownloadUrl : updateUrl;
+              if (isToUpdate) {
+                handleUpdate(updateUrl, directDownloadUrl: serverDownloadUrl);
+              } else if (url.isNotEmpty) {
+                await launchUrl(Uri.parse(url),
+                    mode: LaunchMode.externalApplication);
+              }
+            },
+            style: _gCardButtonStyle,
+            child: Text(translate(btnText),
+                style:
+                    const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+          ),
         ),
       );
     });
   }
 
-  Widget _releaseItem(
+  // "Check for updates on startup" preference, rendered as a trailing switch
+  // exactly like the other toggle cards (e.g. the General → Service card).
+  Widget _checkUpdateCard(BuildContext context) {
+    final value = mainGetLocalBoolOptionSync(kOptionEnableCheckUpdate);
+    final isOptFixed = isOptionFixed(kOptionEnableCheckUpdate);
+    return _GCard(
+      icon: Icons.system_update_outlined,
+      iconColor: const Color(0xFF8B5CF6),
+      title: 'Check for software update on startup',
+      subtitle: 'check_update_tip',
+      trailing: Switch(
+        value: value,
+        activeColor: MyTheme.accent,
+        onChanged: isOptFixed
+            ? null
+            : (b) async {
+                await mainSetLocalBoolOption(kOptionEnableCheckUpdate, b);
+                setState(() {});
+              },
+      ),
+    );
+  }
+
+  // Downloadable editions grouped in a single card body, each a row with its
+  // own colored icon badge and a download button.
+  Widget _releasesCard(BuildContext context) {
+    return _GCard(
+      icon: Icons.download_outlined,
+      iconColor: const Color(0xFF3B82F6),
+      title: 'Releases',
+      subtitle: 'Download different versions of LinkEase',
+      children: [
+        _releaseRow(
+          context,
+          icon: Icons.people_outline,
+          accent: const Color(0xFF3B82F6),
+          title: 'User Edition',
+          subtitle: 'Tools for regular users',
+          url: 'https://jyyxt.cloud/releases/share',
+        ),
+        _releaseRow(
+          context,
+          icon: Icons.support_agent_outlined,
+          accent: const Color(0xFF16A34A),
+          title: 'Support Edition',
+          subtitle: 'Dedicated tools for support staff',
+          url: 'https://jyyxt.cloud/releases/tech',
+        ),
+      ],
+    );
+  }
+
+  Widget _releaseRow(
     BuildContext context, {
     required IconData icon,
     required Color accent,
@@ -3967,74 +3820,49 @@ class _UpdateState extends State<_Update> {
     required String subtitle,
     required String url,
   }) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
-      decoration: BoxDecoration(
-        color: accent.withOpacity(_isDark ? 0.12 : 0.08),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: accent.withOpacity(0.2), width: 1),
-      ),
-      child: Row(
-        children: [
-          // Icon wrap — rounded circle
-          Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              color: accent.withOpacity(0.15),
-              borderRadius: BorderRadius.circular(22),
-            ),
-            child: Icon(icon, size: 22, color: accent),
+    return Row(
+      children: [
+        Container(
+          width: 36,
+          height: 36,
+          decoration: BoxDecoration(
+            color: accent.withOpacity(0.12),
+            borderRadius: BorderRadius.circular(10),
           ),
-          const SizedBox(width: 16),
-          // Title + subtitle
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: TextStyle(
-                    fontSize: _kContentFontSize,
-                    fontWeight: FontWeight.w600,
-                    color: Theme.of(context).textTheme.bodyLarge?.color,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  subtitle,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Theme.of(context)
-                        .textTheme
-                        .bodySmall
-                        ?.color
-                        ?.withOpacity(0.55),
-                  ),
-                ),
-              ],
-            ),
+          child: Icon(icon, size: 19, color: accent),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                translate(title),
+                style: const TextStyle(
+                    fontSize: _kContentFontSize, fontWeight: FontWeight.w600),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                translate(subtitle),
+                style:
+                    const TextStyle(fontSize: 12, color: Color(0xFF9CA3AF)),
+              ),
+            ],
           ),
-          const SizedBox(width: 12),
-          // Solid filled download button
-          ElevatedButton.icon(
+        ),
+        const SizedBox(width: 12),
+        SizedBox(
+          height: 36,
+          child: ElevatedButton.icon(
             onPressed: () => launchUrlString(url),
-            icon: const Icon(Icons.download_outlined,
-                size: 14, color: Colors.white),
+            icon: const Icon(Icons.download_outlined, size: 15),
             label: Text(translate('Go to Download'),
-                style: const TextStyle(fontSize: 13, color: Colors.white)),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: accent,
-              foregroundColor: Colors.white,
-              elevation: 0,
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-              shape:
-                  RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-            ),
+                style:
+                    const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+            style: _gCardButtonStyle,
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }
