@@ -999,6 +999,13 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
         ("confirm_deregister", "確認註銷"),
         ("deregister_success", "賬號已註銷"),
         ("deregister_phone_mismatch", "手機號與目前賬號不匹配"),
+        ("current_username_label", "目前使用者名稱"),
+        ("new_username_label", "新使用者名稱"),
+        ("username_rule_tip", "使用者名稱需為 1-20 位字元，只能包含英文和數字"),
+        ("verify_identity_password", "請輸入登入密碼以驗證身份"),
+        ("username_unchanged", "新使用者名稱不能與目前的相同"),
+        ("change_username_success", "使用者名稱修改成功"),
+        ("change_username_failed", "使用者名稱修改失敗"),
         ("check_update_tip", "啟動時檢查軟體更新"),
     ].iter().cloned().collect();
 }

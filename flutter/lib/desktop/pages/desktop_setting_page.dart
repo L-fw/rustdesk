@@ -2429,7 +2429,7 @@ class _AccountState extends State<_Account> {
       icon: Icons.account_circle_outlined,
       title: 'Account Info',
       trailing: OutlinedButton.icon(
-        onPressed: () {},
+        onPressed: () => _doEditProfile(),
         icon: const Icon(Icons.edit_outlined, size: 16),
         label: Text(translate('Edit profile')),
         style: OutlinedButton.styleFrom(
@@ -2580,6 +2580,20 @@ class _AccountState extends State<_Account> {
         ],
       ),
     );
+  }
+
+  Future<void> _doEditProfile() async {
+    final currentUsername = _userInfo?['username']?.toString() ?? '';
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (_) => _EditProfileDialog(currentUsername: currentUsername),
+    );
+    if (!mounted) return;
+    if (ok == true) {
+      showToast(translate('change_username_success'));
+      // 重新加载用户信息以刷新卡片中显示的用户名
+      await _loadUserInfo();
+    }
   }
 
   Future<void> _doChangePassword() async {
@@ -2746,6 +2760,176 @@ class _AccountState extends State<_Account> {
 }
 
 /// 注销账号对话框：需先验证绑定手机号与短信验证码，确认后永久删除账号。
+/// 编辑资料对话框：当前仅支持修改用户名（凭登录密码验证身份）。
+class _EditProfileDialog extends StatefulWidget {
+  final String currentUsername;
+  const _EditProfileDialog({Key? key, required this.currentUsername})
+      : super(key: key);
+
+  @override
+  State<_EditProfileDialog> createState() => _EditProfileDialogState();
+}
+
+class _EditProfileDialogState extends State<_EditProfileDialog> {
+  final _usernameController = TextEditingController();
+  final _passwordController = TextEditingController();
+  final _authService = AppAuthService();
+
+  bool _obscurePassword = true;
+  bool _isLoading = false;
+  String? _errorMsg;
+
+  @override
+  void dispose() {
+    _usernameController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
+
+  // 取服务端校验（中文/英文/数字）与客户端习惯的交集：1-20 位英文或数字，
+  // 既能通过服务端 isValidUsername，又避免输入法叠字问题。
+  bool _isUsernameValid(String value) {
+    if (value.length < 1 || value.length > 20) return false;
+    return RegExp(r'^[A-Za-z0-9]+$').hasMatch(value);
+  }
+
+  Future<void> _submit() async {
+    final newUsername = _usernameController.text.trim();
+    final password = _passwordController.text;
+
+    if (newUsername.isEmpty) {
+      setState(() => _errorMsg = translate('please_enter_username'));
+      return;
+    }
+    if (!_isUsernameValid(newUsername)) {
+      setState(() => _errorMsg = translate('username_rule_tip'));
+      return;
+    }
+    if (newUsername == widget.currentUsername) {
+      setState(() => _errorMsg = translate('username_unchanged'));
+      return;
+    }
+    if (password.isEmpty) {
+      setState(() => _errorMsg = translate('please_enter_password'));
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+      _errorMsg = null;
+    });
+
+    final error = await _authService.changeUsername(
+      newUsername: newUsername,
+      password: password,
+    );
+
+    if (!mounted) return;
+    setState(() => _isLoading = false);
+    if (error != null) {
+      setState(() => _errorMsg = error);
+      return;
+    }
+    Navigator.of(context).pop(true);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text(translate('Edit profile')),
+      content: SingleChildScrollView(
+        child: SizedBox(
+          width: 360,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (widget.currentUsername.isNotEmpty) ...[
+                Text(
+                  '${translate('current_username_label')}: ${widget.currentUsername}',
+                  style: const TextStyle(
+                      fontSize: 13, color: Color(0xFF9CA3AF)),
+                ),
+                const SizedBox(height: 12),
+              ],
+              TextField(
+                controller: _usernameController,
+                textInputAction: TextInputAction.next,
+                inputFormatters: [
+                  FilteringTextInputFormatter.allow(RegExp(r'[A-Za-z0-9]')),
+                  LengthLimitingTextInputFormatter(20),
+                ],
+                decoration: InputDecoration(
+                  labelText: translate('new_username_label'),
+                  prefixIcon: const Icon(Icons.person_outline, size: 20),
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: _passwordController,
+                obscureText: _obscurePassword,
+                textInputAction: TextInputAction.done,
+                onSubmitted: (_) => _submit(),
+                inputFormatters: [
+                  FilteringTextInputFormatter.deny(RegExp(r'[一-鿿]')),
+                ],
+                decoration: InputDecoration(
+                  labelText: translate('verify_identity_password'),
+                  prefixIcon: const Icon(Icons.lock_outline, size: 20),
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      _obscurePassword
+                          ? Icons.visibility_off_outlined
+                          : Icons.visibility_outlined,
+                      size: 20,
+                      color: Colors.grey,
+                    ),
+                    onPressed: () => setState(
+                        () => _obscurePassword = !_obscurePassword),
+                  ),
+                ),
+              ),
+              if (_errorMsg != null) ...[
+                const SizedBox(height: 12),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    _errorMsg!,
+                    style: const TextStyle(color: Colors.red, fontSize: 13),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed:
+              _isLoading ? null : () => Navigator.of(context).pop(false),
+          child: Text(translate('Cancel')),
+        ),
+        ElevatedButton(
+          onPressed: _isLoading ? null : _submit,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: _accentColor,
+            foregroundColor: Colors.white,
+            elevation: 0,
+          ),
+          child: _isLoading
+              ? const SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(
+                      strokeWidth: 2.5, color: Colors.white),
+                )
+              : Text(translate('confirm_change_btn')),
+        ),
+      ],
+    );
+  }
+}
+
 class _DeregisterAccountDialog extends StatefulWidget {
   const _DeregisterAccountDialog({Key? key}) : super(key: key);
 

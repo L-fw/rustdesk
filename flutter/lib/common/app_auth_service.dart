@@ -48,6 +48,8 @@ class AppAuthService {
     '服务器内部错误': 'server_internal_error',
     '请求过于频繁，请稍后再试': 'server_rate_limited',
     '手机号与当前账号不匹配': 'deregister_phone_mismatch',
+    '新用户名不能与当前用户名相同': 'username_unchanged',
+    '用户名需为 1-20 位字符，只能包含中文、英文和数字': 'username_rule_tip',
   };
 
   /// 尝试将服务器返回的消息翻译为当前语言
@@ -365,6 +367,46 @@ class AppAuthService {
         return null; // 成功
       }
       return _translateServerMsg(result['msg']) ?? translate('change_pwd_failed');
+    } catch (e) {
+      return '${translate('network_error')}: $e';
+    }
+  }
+
+  /// 修改用户名：凭登录密码验证身份后，将当前账号的用户名改为新用户名。
+  /// 成功后会同步更新本地缓存的用户信息与 current_user_name（用于本地"最近连接"
+  /// 目录隔离），token 保持不变，无需重新登录。
+  /// 返回 null 表示成功，返回错误信息表示失败。
+  Future<String?> changeUsername({
+    required String newUsername,
+    required String password,
+  }) async {
+    try {
+      final token = await getToken();
+      if (token.isEmpty) return translate('login_failed');
+      final result = await _post('/api/user/username/change', {
+        'token': token,
+        'password': password,
+        'new_username': newUsername,
+      });
+      if (result['code'] == 200) {
+        final serverUser = result['user'];
+        final resolvedName = (serverUser is Map && serverUser['username'] != null)
+            ? serverUser['username'].toString()
+            : newUsername;
+        // 更新本地缓存的用户信息，使设置页与各处显示同步刷新
+        final info = await getUserInfo() ?? <String, dynamic>{};
+        info['username'] = resolvedName;
+        await _setSecureLocalOption(_userInfoKey, jsonEncode(info));
+        // 同步用户名到 Rust 侧：会触发本地 peers 目录迁移并保持隔离一致
+        final displayName = _extractUserName(Map<String, dynamic>.from(info));
+        currentUserName.value = displayName;
+        await bind.mainSetLocalOption(
+            key: 'current_user_name', value: displayName);
+        bind.mainLoadRecentPeers();
+        return null; // 成功
+      }
+      return _translateServerMsg(result['msg']) ??
+          translate('change_username_failed');
     } catch (e) {
       return '${translate('network_error')}: $e';
     }

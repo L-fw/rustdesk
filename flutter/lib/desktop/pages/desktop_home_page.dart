@@ -1346,9 +1346,13 @@ class _DesktopHomePageState extends State<DesktopHomePage>
       fontWeight: FontWeight.w600,
       color: Color(0xFF6B7280),
     );
+    // 标题栏文字居中（在各自列宽内水平居中）
     Widget cell(String text) => Padding(
           padding: _recentCellPadding,
-          child: Text(text, style: style),
+          child: Center(
+            widthFactor: 1,
+            child: Text(text, style: style, textAlign: TextAlign.center),
+          ),
         );
     return TableRow(
       decoration: const BoxDecoration(color: Color(0xFFF9FAFB)),
