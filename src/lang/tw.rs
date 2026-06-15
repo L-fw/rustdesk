@@ -86,7 +86,7 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
         ("id_change_tip", "僅能使用以下字元：a-z、A-Z、0-9、 - (dash)、_ (底線)。第一個字元必須為 a-z 或 A-Z。長度介於 6 到 16 之間。"),
         ("Website", "網站"),
         ("About", "關於"),
-        ("Slogan_tip", "在這個混沌的世界中用心製作！"),
+        ("Slogan_tip", "用匠心致初心，以初心馭佳影！"),
         ("Privacy Statement", "隱私權宣告"),
         ("Mute", "靜音"),
         ("Build Date", "建構日期"),
@@ -699,6 +699,12 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
         ("Clear Wayland screen selection", "清除 Wayland 的螢幕選擇"),
         ("clear_Wayland_screen_selection_tip", "清除 Wayland 的螢幕選擇後，您可以重新選擇分享的螢幕。"),
         ("confirm_clear_Wayland_screen_selection_tip", "是否確認清除 Wayland 的分享螢幕選擇？"),
+        ("confirm-clear-shortcuts-inhibitor-permission-tip", "是否確認重設鍵盤快速鍵權限？"),
+        ("Reset keyboard shortcuts permission", "重設鍵盤快速鍵權限"),
+        ("clear-shortcuts-inhibitor-permission-tip", "重設後，下次需要時將再次提示您授予鍵盤快速鍵權限。"),
+        ("Restore defaults", "還原預設值"),
+        ("Restored to default", "已還原為預設設定"),
+        ("restore_defaults_tip", "這將把本頁所有進階功能重設為預設值，是否繼續？"),
         ("android_new_voice_call_tip", "收到新的語音通話請求。如果您接受，音訊將切換為語音通訊。"),
         ("texture_render_tip", "使用紋理繪製，讓圖片更加順暢。如果您遭遇繪製問題，可嘗試關閉此選項。"),
         ("Use texture rendering", "使用紋理繪製"),
@@ -993,5 +999,6 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
         ("confirm_deregister", "確認註銷"),
         ("deregister_success", "賬號已註銷"),
         ("deregister_phone_mismatch", "手機號與目前賬號不匹配"),
+        ("check_update_tip", "啟動時檢查軟體更新"),
     ].iter().cloned().collect();
 }
