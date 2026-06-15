@@ -4004,49 +4004,56 @@ class _UpdateState extends State<_Update> {
     required String subtitle,
     required String url,
   }) {
-    return Row(
-      children: [
-        Container(
-          width: 36,
-          height: 36,
-          decoration: BoxDecoration(
-            color: accent.withOpacity(0.12),
-            borderRadius: BorderRadius.circular(10),
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8F9FB),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 38,
+            height: 38,
+            decoration: BoxDecoration(
+              color: accent.withOpacity(0.12),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(icon, size: 20, color: accent),
           ),
-          child: Icon(icon, size: 19, color: accent),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                translate(title),
-                style: const TextStyle(
-                    fontSize: _kContentFontSize, fontWeight: FontWeight.w600),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                translate(subtitle),
-                style:
-                    const TextStyle(fontSize: 12, color: Color(0xFF9CA3AF)),
-              ),
-            ],
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  translate(title),
+                  style: const TextStyle(
+                      fontSize: 14, fontWeight: FontWeight.w600),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  translate(subtitle),
+                  style: const TextStyle(
+                      fontSize: 12, color: Color(0xFF9CA3AF)),
+                ),
+              ],
+            ),
           ),
-        ),
-        const SizedBox(width: 12),
-        SizedBox(
-          height: 36,
-          child: ElevatedButton.icon(
-            onPressed: () => launchUrlString(url),
-            icon: const Icon(Icons.download_outlined, size: 15),
-            label: Text(translate('Go to Download'),
-                style:
-                    const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
-            style: _gCardButtonStyle,
+          const SizedBox(width: 12),
+          SizedBox(
+            height: 36,
+            child: ElevatedButton.icon(
+              onPressed: () => launchUrlString(url),
+              icon: const Icon(Icons.download_outlined, size: 16),
+              label: Text(translate('Go to Download'),
+                  style: const TextStyle(
+                      fontSize: 13, fontWeight: FontWeight.w600)),
+              style: _gCardButtonStyle,
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }
