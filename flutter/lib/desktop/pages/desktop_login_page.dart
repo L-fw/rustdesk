@@ -1675,6 +1675,259 @@ class _ForgotPasswordDialogState extends State<DesktopChangePasswordDialog> {
     );
   }
 }
+
+/// 修改密码弹窗（账户设置内使用）：仅需旧密码、新密码、确认新密码，不需要手机号。
+class DesktopChangeOwnPasswordDialog extends StatefulWidget {
+  final String title;
+  DesktopChangeOwnPasswordDialog({Key? key, this.title = ''}) : super(key: key);
+
+  @override
+  State<DesktopChangeOwnPasswordDialog> createState() =>
+      _DesktopChangeOwnPasswordDialogState();
+}
+
+class _DesktopChangeOwnPasswordDialogState
+    extends State<DesktopChangeOwnPasswordDialog> {
+  final _oldPasswordController = TextEditingController();
+  final _passwordController = TextEditingController();
+  final _confirmPasswordController = TextEditingController();
+
+  final _authService = AppAuthService();
+
+  bool _obscureOldPassword = true;
+  bool _obscurePassword = true;
+  bool _obscureConfirmPassword = true;
+  bool _isLoading = false;
+  String? _errorMsg;
+  String? _passwordFormatError;
+  String? _confirmPasswordError;
+
+  @override
+  void dispose() {
+    _oldPasswordController.dispose();
+    _passwordController.dispose();
+    _confirmPasswordController.dispose();
+    super.dispose();
+  }
+
+  String? _validatePasswordFormat(String value) {
+    if (value.isEmpty) return null;
+    if (value.length < 6 || value.length > 20) {
+      return translate('password_length_tip');
+    }
+    final hasLetter = value.contains(RegExp(r'[A-Za-z]'));
+    final hasDigit = value.contains(RegExp(r'\d'));
+    if (!hasLetter || !hasDigit) {
+      return translate('password_letter_digit_tip');
+    }
+    return null;
+  }
+
+  Future<void> _submit() async {
+    final oldPassword = _oldPasswordController.text;
+    final password = _passwordController.text;
+    final confirmPassword = _confirmPasswordController.text;
+
+    if (oldPassword.isEmpty) {
+      setState(() => _errorMsg = translate('please_enter_old_password'));
+      return;
+    }
+    if (password.isEmpty) {
+      setState(() => _errorMsg = translate('please_enter_new_password'));
+      return;
+    }
+    if (password.length < 6 || password.length > 20) {
+      setState(() => _errorMsg = translate('password_length_tip'));
+      return;
+    }
+    final hasLetter = password.contains(RegExp(r'[A-Za-z]'));
+    final hasDigit = password.contains(RegExp(r'\d'));
+    if (!hasLetter || !hasDigit) {
+      setState(() => _errorMsg = translate('password_letter_digit_tip'));
+      return;
+    }
+    if (password != confirmPassword) {
+      setState(() => _errorMsg = translate('password_not_match'));
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+      _errorMsg = null;
+    });
+
+    final error = await _authService.changePassword(
+      oldPassword: oldPassword,
+      newPassword: password,
+    );
+
+    if (!mounted) return;
+    setState(() => _isLoading = false);
+    if (error != null) {
+      setState(() => _errorMsg = error);
+      return;
+    }
+    Navigator.of(context).pop(true);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text(widget.title),
+      content: SingleChildScrollView(
+        child: SizedBox(
+          width: 360,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: _oldPasswordController,
+                obscureText: _obscureOldPassword,
+                textInputAction: TextInputAction.next,
+                inputFormatters: [
+                  FilteringTextInputFormatter.deny(RegExp(r'[一-鿿]')),
+                ],
+                decoration: InputDecoration(
+                  labelText: translate('old_password_label'),
+                  prefixIcon: const Icon(Icons.lock_outline, size: 20),
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      _obscureOldPassword
+                          ? Icons.visibility_off_outlined
+                          : Icons.visibility_outlined,
+                      size: 20,
+                      color: Colors.grey,
+                    ),
+                    onPressed: () => setState(
+                        () => _obscureOldPassword = !_obscureOldPassword),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: _passwordController,
+                obscureText: _obscurePassword,
+                textInputAction: TextInputAction.next,
+                inputFormatters: [
+                  FilteringTextInputFormatter.deny(RegExp(r'[一-鿿]')),
+                ],
+                onChanged: (value) {
+                  final error = _validatePasswordFormat(value);
+                  if (error != _passwordFormatError) {
+                    setState(() => _passwordFormatError = error);
+                  }
+                },
+                decoration: InputDecoration(
+                  labelText: translate('new_password_label'),
+                  prefixIcon: const Icon(Icons.lock_outline, size: 20),
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      _obscurePassword
+                          ? Icons.visibility_off_outlined
+                          : Icons.visibility_outlined,
+                      size: 20,
+                      color: Colors.grey,
+                    ),
+                    onPressed: () => setState(
+                        () => _obscurePassword = !_obscurePassword),
+                  ),
+                ),
+              ),
+              if (_passwordFormatError != null) ...[
+                const SizedBox(height: 6),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    _passwordFormatError!,
+                    style: const TextStyle(color: Colors.red, fontSize: 12),
+                  ),
+                ),
+              ],
+              const SizedBox(height: 12),
+              TextField(
+                controller: _confirmPasswordController,
+                obscureText: _obscureConfirmPassword,
+                textInputAction: TextInputAction.done,
+                onSubmitted: (_) => _submit(),
+                inputFormatters: [
+                  FilteringTextInputFormatter.deny(RegExp(r'[一-鿿]')),
+                ],
+                onChanged: (value) {
+                  final error =
+                      (value.isNotEmpty && value != _passwordController.text)
+                          ? translate('password_not_match')
+                          : null;
+                  if (error != _confirmPasswordError) {
+                    setState(() => _confirmPasswordError = error);
+                  }
+                },
+                decoration: InputDecoration(
+                  labelText: translate('confirm_new_password_label'),
+                  prefixIcon: const Icon(Icons.lock_outline, size: 20),
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      _obscureConfirmPassword
+                          ? Icons.visibility_off_outlined
+                          : Icons.visibility_outlined,
+                      size: 20,
+                      color: Colors.grey,
+                    ),
+                    onPressed: () => setState(() =>
+                        _obscureConfirmPassword = !_obscureConfirmPassword),
+                  ),
+                ),
+              ),
+              if (_confirmPasswordError != null) ...[
+                const SizedBox(height: 6),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    _confirmPasswordError!,
+                    style: const TextStyle(color: Colors.red, fontSize: 12),
+                  ),
+                ),
+              ],
+              if (_errorMsg != null) ...[
+                const SizedBox(height: 12),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    _errorMsg!,
+                    style: const TextStyle(color: Colors.red, fontSize: 13),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed:
+              _isLoading ? null : () => Navigator.of(context).pop(false),
+          child: Text(translate('Cancel')),
+        ),
+        ElevatedButton(
+          onPressed: _isLoading ? null : _submit,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: _kPrimaryColor,
+            foregroundColor: Colors.white,
+            elevation: 0,
+          ),
+          child: _isLoading
+              ? const SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(
+                      strokeWidth: 2.5, color: Colors.white),
+                )
+              : Text(translate('confirm_change_btn')),
+        ),
+      ],
+    );
+  }
+}
+
 /// 用户名输入过滤器：只允许英文、数字和下划线，不允许中文。
 /// IME 组字期间不干预，避免输入法叠字问题。
 class _UsernameInputFormatter extends TextInputFormatter {

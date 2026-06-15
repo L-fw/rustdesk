@@ -346,6 +346,30 @@ class AppAuthService {
     }
   }
 
+  /// 修改密码：凭旧密码验证当前登录账号后设置新密码
+  /// 返回 null 表示成功，返回错误信息表示失败
+  Future<String?> changePassword({
+    required String oldPassword,
+    required String newPassword,
+  }) async {
+    try {
+      final token = await getToken();
+      if (token.isEmpty) return translate('login_failed');
+      final result = await _post('/api/user/password/change', {
+        'token': token,
+        'old_password': oldPassword,
+        'new_password': newPassword,
+      });
+      if (result['code'] == 200) {
+        await logout();
+        return null; // 成功
+      }
+      return _translateServerMsg(result['msg']) ?? translate('change_pwd_failed');
+    } catch (e) {
+      return '${translate('network_error')}: $e';
+    }
+  }
+
   /// 注销账号：手机号 + 验证码验证后永久删除当前登录账号
   /// 返回 null 表示成功，返回错误信息表示失败
   Future<String?> deleteAccount({
