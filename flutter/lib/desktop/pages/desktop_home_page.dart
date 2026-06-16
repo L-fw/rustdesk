@@ -1324,15 +1324,15 @@ class _DesktopHomePageState extends State<DesktopHomePage>
     );
   }
 
-  // 最近连接表格的列宽策略：设备列吃掉剩余空间，其余内容列按内容自适应，
-  // 操作列固定宽度。表头与每一行共用这套配置，保证列对齐。
+  // 最近连接表格的列宽策略：各内容列按比例均匀分配宽度，操作列固定宽度。
+  // 表头与每一行共用这套配置，保证列对齐。
   static const Map<int, TableColumnWidth> _recentColumnWidths = {
-    0: FlexColumnWidth(1), // 设备
-    1: IntrinsicColumnWidth(), // 目标ID
-    2: IntrinsicColumnWidth(), // 连接类型
-    3: IntrinsicColumnWidth(), // 状态
-    4: IntrinsicColumnWidth(), // 连接时间
-    5: IntrinsicColumnWidth(), // 时长
+    0: FlexColumnWidth(2.4), // 设备
+    1: FlexColumnWidth(1.4), // 目标ID
+    2: FlexColumnWidth(1.2), // 连接类型
+    3: FlexColumnWidth(1.3), // 状态
+    4: FlexColumnWidth(1.8), // 连接时间
+    5: FlexColumnWidth(1.1), // 时长
     6: FixedColumnWidth(176), // 操作（含单元格内边距，可容纳 160 宽的按钮区）
   };
 
@@ -1346,13 +1346,10 @@ class _DesktopHomePageState extends State<DesktopHomePage>
       fontWeight: FontWeight.w600,
       color: Color(0xFF6B7280),
     );
-    // 标题栏文字居中（在各自列宽内水平居中）
+    // 标题栏文字居中，与数据行内容（同样居中）逐列对齐
     Widget cell(String text) => Padding(
           padding: _recentCellPadding,
-          child: Center(
-            widthFactor: 1,
-            child: Text(text, style: style, textAlign: TextAlign.center),
-          ),
+          child: Text(text, style: style, textAlign: TextAlign.center),
         );
     return TableRow(
       decoration: const BoxDecoration(color: Color(0xFFF9FAFB)),
@@ -1398,6 +1395,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
         Padding(
           padding: _recentCellPadding,
           child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Container(
                 width: 36,
@@ -1410,7 +1408,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
                     color: Colors.white, size: 20),
               ),
               const SizedBox(width: 12),
-              Expanded(
+              Flexible(
                 child: Text(
                   displayName,
                   style: const TextStyle(
@@ -1429,6 +1427,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
           padding: _recentCellPadding,
           child: Text(
             _formatPeerId(remoteId),
+            textAlign: TextAlign.center,
             style: const TextStyle(fontSize: 13, color: Color(0xFF374151)),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
@@ -1439,6 +1438,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
           padding: _recentCellPadding,
           child: Text(
             _directionLabel(session.direction),
+            textAlign: TextAlign.center,
             style: const TextStyle(fontSize: 13, color: Color(0xFF374151)),
           ),
         ),
@@ -1446,6 +1446,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
         Padding(
           padding: _recentCellPadding,
           child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Container(
                 width: 7,
@@ -1475,6 +1476,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
           padding: _recentCellPadding,
           child: Text(
             _formatIsoTime(session.startTime),
+            textAlign: TextAlign.center,
             style: const TextStyle(fontSize: 13, color: Color(0xFF374151)),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
@@ -1485,6 +1487,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
           padding: _recentCellPadding,
           child: Text(
             _formatDurationSecs(session.durationSec),
+            textAlign: TextAlign.center,
             style: const TextStyle(fontSize: 13, color: Color(0xFF374151)),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
@@ -1494,6 +1497,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
         Padding(
           padding: _recentCellPadding,
           child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
                 SizedBox(
                   height: 32,
