@@ -2856,7 +2856,7 @@ class _EditProfileDialogState extends State<_EditProfileDialog> {
                 controller: _usernameController,
                 textInputAction: TextInputAction.next,
                 inputFormatters: [
-                  FilteringTextInputFormatter.allow(RegExp(r'[A-Za-z0-9]')),
+                  _ProfileUsernameInputFormatter(),
                   LengthLimitingTextInputFormatter(20),
                 ],
                 decoration: InputDecoration(
@@ -5405,3 +5405,26 @@ void changeSocks5Proxy() async {
 }
 
 //#endregion
+
+/// 编辑资料-用户名输入过滤器：只允许英文和数字，不允许中文。
+/// IME 组字期间不干预（composing 非空时原样返回），避免中文输入法叠字/错误注入。
+class _ProfileUsernameInputFormatter extends TextInputFormatter {
+  static final _disallowedPattern = RegExp(r'[^A-Za-z0-9]');
+
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    if (newValue.composing != TextRange.empty) return newValue;
+
+    final filtered = newValue.text.replaceAll(_disallowedPattern, '');
+    if (filtered == newValue.text) return newValue;
+
+    return newValue.copyWith(
+      text: filtered,
+      selection: TextSelection.collapsed(offset: filtered.length),
+      composing: TextRange.empty,
+    );
+  }
+}

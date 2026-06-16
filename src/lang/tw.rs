@@ -1007,5 +1007,6 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
         ("change_username_success", "使用者名稱修改成功"),
         ("change_username_failed", "使用者名稱修改失敗"),
         ("check_update_tip", "啟動時檢查軟體更新"),
+        ("check_update_tip", "保持軟體更新！"),
     ].iter().cloned().collect();
 }

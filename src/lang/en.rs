@@ -528,5 +528,6 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
         ("login_welcome_back", "Welcome back!"),
         ("login_welcome_subtitle", "Sign in to {} and keep managing your remote devices"),
         ("register_welcome_subtitle", "Register {} with your phone number to securely manage your remote devices"),
+        ("Keep your software up to date", "Keep your software up to date!"),
     ].iter().cloned().collect();
 }
