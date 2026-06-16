@@ -195,6 +195,51 @@ class _DesktopHomePageState extends State<DesktopHomePage>
   final ValueNotifier<String> _favGroupFilter = ValueNotifier('all');
   final ValueNotifier<String> _favTypeFilter = ValueNotifier('all');
 
+  // Online status for the home page "recent sessions" cards. The local
+  // recentPeersModel never carries a live online flag for this deployment, so
+  // we derive it from the account server the same way Favorites does
+  // (server-side wsClients). Holds the set of currently-online peer ids.
+  final ValueNotifier<Set<String>> _recentOnline = ValueNotifier(<String>{});
+  bool _recentOnlineLoading = false;
+  Set<String> _lastRecentOnlineIds = <String>{};
+  Timer? _recentOnlineTimer;
+
+  // Refresh online status for the currently-known recent peers. Reads ids from
+  // the recent peers model and asks the server which are online.
+  Future<void> _loadRecentOnline() async {
+    if (_recentOnlineLoading) return;
+    if (AppAuthService().currentUserName.value.isEmpty) {
+      if (_recentOnline.value.isNotEmpty) _recentOnline.value = <String>{};
+      return;
+    }
+    final ids = gFFI.recentPeersModel.peers
+        .map((p) => p.id)
+        .where((id) => id.isNotEmpty)
+        .toList();
+    if (ids.isEmpty) {
+      if (_recentOnline.value.isNotEmpty) _recentOnline.value = <String>{};
+      return;
+    }
+    _recentOnlineLoading = true;
+    try {
+      final online = await AppAuthService().fetchPeersOnline(ids);
+      if (online != null && mounted) {
+        _recentOnline.value = online;
+      }
+    } finally {
+      _recentOnlineLoading = false;
+    }
+  }
+
+  // Trigger a refresh when the visible peer-id set changes (e.g. recent peers
+  // finished loading). The periodic timer keeps the status fresh afterwards.
+  void _maybeRefreshRecentOnline(List<String> ids) {
+    final set = ids.toSet();
+    if (setEquals(set, _lastRecentOnlineIds)) return;
+    _lastRecentOnlineIds = set;
+    WidgetsBinding.instance.addPostFrameCallback((_) => _loadRecentOnline());
+  }
+
   // Recent sessions view mode on the home page: false = card grid, true = list.
   // Persisted independently from the shared [peerCardUiType] so the home page
   // keeps "card" as its default and isn't affected by the view chosen on the
@@ -408,6 +453,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
             return;
           }
           _selectedNav.value = key;
+          if (key == 'home') _loadRecentOnline();
           if (key == 'devices') _loadMyDevices();
           if (key == 'recent') {
             _loadMySessions();
@@ -2025,6 +2071,10 @@ class _DesktopHomePageState extends State<DesktopHomePage>
               // actually render so "Select All" and the selected-count match.
               Provider.of<PeerTabModel>(context, listen: false)
                   .setCurrentTabCachedPeers(filtered);
+              // Query the server for online status once the recent peer set is
+              // known / changes (online flag is server-backed, like Favorites).
+              _maybeRefreshRecentOnline(
+                  peers.peers.map((p) => p.id).toList());
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -2260,7 +2310,6 @@ class _DesktopHomePageState extends State<DesktopHomePage>
             : (peer.hostname.isNotEmpty ? peer.hostname : peer.id));
     final platformLabel =
         peer.platform.isEmpty ? translate('Unknown') : peer.platform;
-    final online = peer.online;
 
     return Consumer<PeerTabModel>(
       builder: (context, model, _) {
@@ -2314,30 +2363,40 @@ class _DesktopHomePageState extends State<DesktopHomePage>
                         const Spacer(),
                         // Hide the online indicator while the checkbox sits at
                         // the top-right to avoid visual overlap.
-                        if (!isMultiSelect) ...[
-                          Container(
-                            width: 7,
-                            height: 7,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: online
-                                  ? const Color(0xFF22C55E)
-                                  : const Color(0xFFCBD5E1),
-                            ),
+                        if (!isMultiSelect)
+                          ValueListenableBuilder<Set<String>>(
+                            valueListenable: _recentOnline,
+                            builder: (_, onlineSet, __) {
+                              final online = onlineSet.contains(peer.id);
+                              return Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Container(
+                                    width: 7,
+                                    height: 7,
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      color: online
+                                          ? const Color(0xFF22C55E)
+                                          : const Color(0xFFCBD5E1),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    online
+                                        ? translate('Online')
+                                        : translate('Offline'),
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      color: online
+                                          ? const Color(0xFF22C55E)
+                                          : const Color(0xFF9CA3AF),
+                                    ),
+                                  ),
+                                ],
+                              );
+                            },
                           ),
-                          const SizedBox(width: 6),
-                          Text(
-                            online
-                                ? translate('Online')
-                                : translate('Offline'),
-                            style: TextStyle(
-                              fontSize: 11,
-                              color: online
-                                  ? const Color(0xFF22C55E)
-                                  : const Color(0xFF9CA3AF),
-                            ),
-                          ),
-                        ],
                       ],
                     ),
                     const SizedBox(height: 14),
@@ -2554,7 +2613,6 @@ class _DesktopHomePageState extends State<DesktopHomePage>
             : (peer.hostname.isNotEmpty ? peer.hostname : peer.id));
     final platformLabel =
         peer.platform.isEmpty ? translate('Unknown') : peer.platform;
-    final online = peer.online;
 
     return Consumer<PeerTabModel>(
       builder: (context, model, _) {
@@ -2650,32 +2708,40 @@ class _DesktopHomePageState extends State<DesktopHomePage>
                       ),
                     ),
                   ),
-                  // Online status
+                  // Online status (server-backed, like Favorites)
                   Expanded(
                     flex: 2,
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 7,
-                          height: 7,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: online
-                                ? const Color(0xFF22C55E)
-                                : const Color(0xFFCBD5E1),
-                          ),
-                        ),
-                        const SizedBox(width: 6),
-                        Text(
-                          online ? translate('Online') : translate('Offline'),
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: online
-                                ? const Color(0xFF22C55E)
-                                : const Color(0xFF9CA3AF),
-                          ),
-                        ),
-                      ],
+                    child: ValueListenableBuilder<Set<String>>(
+                      valueListenable: _recentOnline,
+                      builder: (_, onlineSet, __) {
+                        final online = onlineSet.contains(peer.id);
+                        return Row(
+                          children: [
+                            Container(
+                              width: 7,
+                              height: 7,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: online
+                                    ? const Color(0xFF22C55E)
+                                    : const Color(0xFFCBD5E1),
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              online
+                                  ? translate('Online')
+                                  : translate('Offline'),
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: online
+                                    ? const Color(0xFF22C55E)
+                                    : const Color(0xFF9CA3AF),
+                              ),
+                            ),
+                          ],
+                        );
+                      },
                     ),
                   ),
                   // Actions (hidden in multi-select; the whole row is tappable
@@ -3724,6 +3790,14 @@ class _DesktopHomePageState extends State<DesktopHomePage>
     super.initState();
     _recentListView.value =
         bind.getLocalFlutterOption(k: _kHomeRecentViewKey) == 'list';
+    // Keep the home page recent cards' online status fresh (mirrors the
+    // Favorites refresh cadence). Only queries while the home pane is shown.
+    _recentOnlineTimer =
+        periodic_immediate(const Duration(seconds: 8), () async {
+      if (_selectedNav.value == 'home') {
+        await _loadRecentOnline();
+      }
+    });
     _updateTimer = periodic_immediate(const Duration(seconds: 1), () async {
       await gFFI.serverModel.fetchID();
       final error = await bind.mainGetError();
@@ -3949,6 +4023,8 @@ class _DesktopHomePageState extends State<DesktopHomePage>
     _uniLinksSubscription?.cancel();
     Get.delete<RxBool>(tag: 'stop-service');
     _updateTimer?.cancel();
+    _recentOnlineTimer?.cancel();
+    _recentOnline.dispose();
     _selectedNav.dispose();
     _homeRemoteIdController.dispose();
     _recentSearchCtrl.dispose();

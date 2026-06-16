@@ -507,6 +507,28 @@ class AppAuthService {
     }
   }
 
+  /// 批量查询给定 peer id 当前是否在线。判断逻辑与收藏一致（服务器端基于
+  /// WebSocket 在连状态 wsClients）。返回在线的 id 集合；请求失败返回 null。
+  Future<Set<String>?> fetchPeersOnline(List<String> peerIds) async {
+    try {
+      if (peerIds.isEmpty) return <String>{};
+      final token = await getToken();
+      if (token.isEmpty) return null;
+      final result = await _post('/api/user/peers/online', {
+        'token': token,
+        'peer_ids': peerIds,
+      });
+      if (result['code'] == 200 && result['data'] is Map) {
+        final online = (result['data']['online'] as List?) ?? const [];
+        return online.map((e) => e.toString()).toSet();
+      }
+      if (result['code'] == 401) await logout();
+      return null;
+    } catch (_) {
+      return null;
+    }
+  }
+
   /// 添加收藏。成功返回 true。
   Future<bool> addFavorite(String peerId, {String? alias}) async {
     try {
