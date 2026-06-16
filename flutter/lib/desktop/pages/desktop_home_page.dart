@@ -195,6 +195,20 @@ class _DesktopHomePageState extends State<DesktopHomePage>
   final ValueNotifier<String> _favGroupFilter = ValueNotifier('all');
   final ValueNotifier<String> _favTypeFilter = ValueNotifier('all');
 
+  // Recent sessions view mode on the home page: false = card grid, true = list.
+  // Persisted independently from the shared [peerCardUiType] so the home page
+  // keeps "card" as its default and isn't affected by the view chosen on the
+  // standard peer-tab page.
+  static const String _kHomeRecentViewKey = 'home-recent-view';
+  final ValueNotifier<bool> _recentListView = ValueNotifier(false);
+
+  void _setRecentView(bool listMode) {
+    if (_recentListView.value == listMode) return;
+    _recentListView.value = listMode;
+    bind.setLocalFlutterOption(
+        k: _kHomeRecentViewKey, v: listMode ? 'list' : 'card');
+  }
+
   @override
   Widget build(BuildContext context) {
     super.build(context);
@@ -2032,8 +2046,8 @@ class _DesktopHomePageState extends State<DesktopHomePage>
                               const PeerSearchBar(),
                               const SizedBox(width: 8),
                               _multiSelectToggle(context),
-                              const SizedBox(width: 4),
-                              const PeerViewDropdown(),
+                              const SizedBox(width: 8),
+                              _recentViewToggle(),
                             ],
                           ),
                   ),
@@ -2050,16 +2064,21 @@ class _DesktopHomePageState extends State<DesktopHomePage>
                       ),
                     )
                   else
-                    Wrap(
-                      spacing: 16,
-                      runSpacing: 16,
-                      children: filtered
-                          .take(12)
-                          .map((p) => SizedBox(
-                                width: 240,
-                                child: _bigPeerCard(p),
-                              ))
-                          .toList(),
+                    ValueListenableBuilder<bool>(
+                      valueListenable: _recentListView,
+                      builder: (_, isList, __) => isList
+                          ? _recentPeerList(context, filtered)
+                          : Wrap(
+                              spacing: 16,
+                              runSpacing: 16,
+                              children: filtered
+                                  .take(12)
+                                  .map((p) => SizedBox(
+                                        width: 240,
+                                        child: _bigPeerCard(p),
+                                      ))
+                                  .toList(),
+                            ),
                     ),
                 ],
               );
@@ -2436,6 +2455,258 @@ class _DesktopHomePageState extends State<DesktopHomePage>
                   ),
                 ),
             ],
+          ),
+        );
+      },
+    );
+  }
+
+  // A small two-state segmented toggle (card grid / list) shown in the recent
+  // sessions toolbar. Selecting a mode takes effect immediately and is
+  // remembered across launches via [_kHomeRecentViewKey].
+  Widget _recentViewToggle() {
+    return ValueListenableBuilder<bool>(
+      valueListenable: _recentListView,
+      builder: (_, isList, __) {
+        Widget seg(IconData icon, bool listMode, String tip) {
+          final selected = isList == listMode;
+          return Tooltip(
+            message: tip,
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                borderRadius: BorderRadius.circular(6),
+                onTap: () => _setRecentView(listMode),
+                child: Container(
+                  padding: const EdgeInsets.all(6),
+                  decoration: BoxDecoration(
+                    color: selected ? MyTheme.accent : Colors.transparent,
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Icon(
+                    icon,
+                    size: 18,
+                    color:
+                        selected ? Colors.white : const Color(0xFF6B7280),
+                  ),
+                ),
+              ),
+            ),
+          );
+        }
+
+        return Container(
+          padding: const EdgeInsets.all(2),
+          decoration: BoxDecoration(
+            color: const Color(0xFFF1F3F6),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              seg(Icons.grid_view_rounded, false, translate('Big tiles')),
+              const SizedBox(width: 2),
+              seg(Icons.view_list_rounded, true, translate('List')),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  // List-style rendering of recent peers (one row each) used when the view
+  // toggle is set to "list". Mirrors the card path: same 12-item cap, same
+  // connect / menu / multi-select behaviour.
+  Widget _recentPeerList(BuildContext context, List<Peer> peers) {
+    final items = peers.take(12).toList();
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: Column(
+          children: [
+            for (int i = 0; i < items.length; i++) ...[
+              if (i > 0)
+                const Divider(height: 1, color: Color(0xFFF3F4F6)),
+              _recentPeerListRow(context, items[i]),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _recentPeerListRow(BuildContext context, Peer peer) {
+    final displayName = peer.alias.isNotEmpty
+        ? peer.alias
+        : (peer.username.isNotEmpty && peer.hostname.isNotEmpty
+            ? '${peer.username}@${peer.hostname}'
+            : (peer.hostname.isNotEmpty ? peer.hostname : peer.id));
+    final platformLabel =
+        peer.platform.isEmpty ? translate('Unknown') : peer.platform;
+    final online = peer.online;
+
+    return Consumer<PeerTabModel>(
+      builder: (context, model, _) {
+        final isMultiSelect = model.multiSelectionMode;
+        final isSelected =
+            isMultiSelect && model.selectedPeers.any((p) => p.id == peer.id);
+        return Material(
+          color: isSelected ? const Color(0xFFEFF4FF) : Colors.white,
+          child: InkWell(
+            onTap: isMultiSelect ? () => model.select(peer) : null,
+            child: Padding(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              child: Row(
+                children: [
+                  if (isMultiSelect) ...[
+                    Container(
+                      width: 22,
+                      height: 22,
+                      decoration: BoxDecoration(
+                        color: isSelected ? MyTheme.accent : Colors.white,
+                        borderRadius: BorderRadius.circular(6),
+                        border: Border.all(
+                          color: isSelected
+                              ? MyTheme.accent
+                              : const Color(0xFFD1D5DB),
+                          width: 1.5,
+                        ),
+                      ),
+                      child: isSelected
+                          ? const Icon(Icons.check,
+                              size: 14, color: Colors.white)
+                          : null,
+                    ),
+                    const SizedBox(width: 12),
+                  ],
+                  Container(
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFEFF4FF),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Icon(_platformIcon(peer.platform),
+                        color: MyTheme.accent, size: 20),
+                  ),
+                  const SizedBox(width: 12),
+                  // Name + id
+                  Expanded(
+                    flex: 3,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          displayName,
+                          style: const TextStyle(
+                              fontSize: 14, fontWeight: FontWeight.w600),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          peer.id,
+                          style: const TextStyle(
+                              fontSize: 12, color: Color(0xFF6B7280)),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ),
+                  ),
+                  // Platform pill
+                  Expanded(
+                    flex: 2,
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFEFF4FF),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          platformLabel,
+                          style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w500,
+                              color: MyTheme.accent),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ),
+                  ),
+                  // Online status
+                  Expanded(
+                    flex: 2,
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 7,
+                          height: 7,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: online
+                                ? const Color(0xFF22C55E)
+                                : const Color(0xFFCBD5E1),
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          online ? translate('Online') : translate('Offline'),
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: online
+                                ? const Color(0xFF22C55E)
+                                : const Color(0xFF9CA3AF),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  // Actions (hidden in multi-select; the whole row is tappable
+                  // to toggle selection there).
+                  if (!isMultiSelect) ...[
+                    SizedBox(
+                      height: 32,
+                      child: ElevatedButton(
+                        onPressed: () => _connectFromRecent(context, peer.id),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: MyTheme.accent,
+                          foregroundColor: Colors.white,
+                          elevation: 0,
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                        child: Text(
+                          translate('Connect'),
+                          style: const TextStyle(
+                              fontSize: 13, fontWeight: FontWeight.w500),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    _peerCardMenuButton(context, peer),
+                  ],
+                ],
+              ),
+            ),
           ),
         );
       },
@@ -3451,6 +3722,8 @@ class _DesktopHomePageState extends State<DesktopHomePage>
   @override
   void initState() {
     super.initState();
+    _recentListView.value =
+        bind.getLocalFlutterOption(k: _kHomeRecentViewKey) == 'list';
     _updateTimer = periodic_immediate(const Duration(seconds: 1), () async {
       await gFFI.serverModel.fetchID();
       final error = await bind.mainGetError();
