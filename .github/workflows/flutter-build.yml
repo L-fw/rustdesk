@@ -55,7 +55,7 @@ env:
   UPLOAD_ARTIFACT: "${{ inputs.upload-artifact }}"
   SIGN_BASE_URL: "${{ secrets.SIGN_BASE_URL }}-2"
   CERT_PFX_BASE64: "${{ secrets.CERT_PFX_BASE64 }}"
-  GAMWING_API_KEY: "${{ secrets.GAMWING_API_KEY }}"
+  LinkEase_API_KEY: "${{ secrets.LinkEase_API_KEY }}"
 
 jobs:
   generate-bridge:
