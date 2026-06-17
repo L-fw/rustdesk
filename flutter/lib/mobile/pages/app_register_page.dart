@@ -3,7 +3,9 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter_hbb/common/app_auth_service.dart';
+import 'package:flutter_hbb/consts.dart';
 
 import '../../common.dart';
 import '../../models/platform_model.dart';
@@ -617,13 +619,8 @@ class _AppRegisterPageState extends State<AppRegisterPage>
                     ),
                   ),
                   GestureDetector(
-                    onTap: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (_) => const terms_pages.TermsOfServicePage(),
-                        ),
-                      );
-                    },
+                    onTap: () => launchUrl(Uri.parse(kTermsOfServiceUrl),
+                        mode: LaunchMode.externalApplication),
                     child: Text(
                       translate('terms_link_label'),
                       style: const TextStyle(
@@ -640,14 +637,8 @@ class _AppRegisterPageState extends State<AppRegisterPage>
                     ),
                   ),
                   GestureDetector(
-                    onTap: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (_) =>
-                              const privacy_pages.PrivacyPolicyPage(),
-                        ),
-                      );
-                    },
+                    onTap: () => launchUrl(Uri.parse(kPrivacyPolicyUrl),
+                        mode: LaunchMode.externalApplication),
                     child: Text(
                       translate('privacy_link_label'),
                       style: const TextStyle(

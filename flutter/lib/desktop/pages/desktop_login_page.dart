@@ -4,6 +4,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter_hbb/common/app_auth_service.dart';
 import 'package:flutter_hbb/consts.dart';
 import 'package:flutter_hbb/desktop/pages/desktop_register_page.dart';
@@ -1142,11 +1143,8 @@ class _AppLoginPageState extends State<AppLoginPage>
                   MouseRegion(
                     cursor: SystemMouseCursors.click,
                     child: GestureDetector(
-                      onTap: () => Navigator.of(context).push(PageRouteBuilder(
-                          pageBuilder: (_, __, ___) =>
-                              const terms_pages.TermsOfServicePage(),
-                          transitionDuration: Duration.zero,
-                          reverseTransitionDuration: Duration.zero)),
+                      onTap: () => launchUrl(Uri.parse(kTermsOfServiceUrl),
+                          mode: LaunchMode.externalApplication),
                       child: Text(translate('terms_link_label'),
                           style:
                               TextStyle(fontSize: 12, color: _kPrimaryColor)),
@@ -1161,11 +1159,8 @@ class _AppLoginPageState extends State<AppLoginPage>
                   MouseRegion(
                     cursor: SystemMouseCursors.click,
                     child: GestureDetector(
-                      onTap: () => Navigator.of(context).push(PageRouteBuilder(
-                          pageBuilder: (_, __, ___) =>
-                              const privacy_pages.PrivacyPolicyPage(),
-                          transitionDuration: Duration.zero,
-                          reverseTransitionDuration: Duration.zero)),
+                      onTap: () => launchUrl(Uri.parse(kPrivacyPolicyUrl),
+                          mode: LaunchMode.externalApplication),
                       child: Text(translate('privacy_link_label'),
                           style:
                               TextStyle(fontSize: 12, color: _kPrimaryColor)),

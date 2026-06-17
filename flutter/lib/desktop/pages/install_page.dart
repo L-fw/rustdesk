@@ -1,10 +1,9 @@
 import 'dart:convert';
-import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_hbb/common.dart';
+import 'package:flutter_hbb/consts.dart';
 import 'package:flutter_hbb/desktop/widgets/tabbar_widget.dart';
 import 'package:flutter_hbb/models/platform_model.dart';
 import 'package:flutter_hbb/models/state_model.dart';
@@ -197,16 +196,7 @@ class _InstallPageBodyState extends State<_InstallPageBody>
                               .marginOnly(bottom: em),
                           InkWell(
                             hoverColor: Colors.transparent,
-                            onTap: () async {
-                              final html = await rootBundle.loadString(
-                                  'assets/terms_of_service.html');
-                              final dir = await Directory.systemTemp
-                                  .createTemp('rustdesk_terms_');
-                              final file =
-                                  File(join(dir.path, 'terms_of_service.html'));
-                              await file.writeAsString(html);
-                              launchUrlString(Uri.file(file.path).toString());
-                            },
+                            onTap: () => launchUrlString(kTermsOfServiceUrl),
                             child: Tooltip(
                               message: 'about:blank',
                               child: Row(children: [

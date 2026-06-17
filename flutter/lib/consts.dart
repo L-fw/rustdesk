@@ -4,6 +4,10 @@ import 'package:flutter_hbb/common.dart';
 import 'package:flutter_hbb/models/state_model.dart';
 import 'package:get/get.dart';
 
+/// 隐私政策与用户服务协议的在线地址（登录 / 注册 / 设置关于页 / 安装页共用）。
+const String kPrivacyPolicyUrl = 'https://jyyxt.cloud/privacy_policy';
+const String kTermsOfServiceUrl = 'https://jyyxt.cloud/terms_of_service';
+
 const int kMaxVirtualDisplayCount = 4;
 const int kAllVirtualDisplay = -1;
 const String kAppMode = String.fromEnvironment('APP_MODE', defaultValue: 'full');

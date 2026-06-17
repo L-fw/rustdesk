@@ -25,8 +25,6 @@ import '../widgets/dialog.dart';
 import 'app_login_page.dart';
 import 'home_page.dart';
 import 'scan_page.dart';
-import 'privacy_policy_page.dart';
-import 'terms_of_service.dart';
 
 class SettingsPage extends StatefulWidget implements PageShape {
   @override
@@ -955,26 +953,18 @@ class _SettingsState extends State<SettingsPage> with WidgetsBindingObserver {
                 leading: Icon(Icons.query_builder)),
             SettingsTile(
               title: Text(translate("Terms of Service")),
-              onPressed: (context) {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const TermsOfServicePage(),
-                  ),
-                );
+              onPressed: (context) async {
+                await launchUrl(Uri.parse(kTermsOfServiceUrl),
+                    mode: LaunchMode.externalApplication);
               },
               leading: Icon(Icons.description),
             ),
             SettingsTile(
               title: Text(translate("Privacy Statement")),
-              onPressed: (context) {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const PrivacyPolicyPage(),
-                  ),
-                );
-          },
+              onPressed: (context) async {
+                await launchUrl(Uri.parse(kPrivacyPolicyUrl),
+                    mode: LaunchMode.externalApplication);
+              },
               leading: Icon(Icons.privacy_tip),
             ),
             SettingsTile(

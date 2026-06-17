@@ -30,8 +30,6 @@ import '../../common/widgets/dialog.dart';
 import '../../common/widgets/login.dart';
 import '../../common/app_auth_service.dart';
 import 'desktop_login_page.dart' as desktop_login;
-import 'privacy_policy.dart' as privacy_pages;
-import 'terms_of_service.dart' as terms_pages;
 import 'login_tab_page.dart';
 
 const double _kTabWidth = 220;
@@ -4424,23 +4422,11 @@ class _AboutState extends State<_About> {
                     _linkPill(context,
                         icon: Icons.privacy_tip_outlined,
                         label: translate('Privacy Statement'),
-                        onTap: () {
-                          Navigator.of(context).push(PageRouteBuilder(
-                              pageBuilder: (_, __, ___) =>
-                                  const privacy_pages.PrivacyPolicyPage(),
-                              transitionDuration: Duration.zero,
-                              reverseTransitionDuration: Duration.zero));
-                        }),
+                        onTap: () => launchUrlString(kPrivacyPolicyUrl)),
                     _linkPill(context,
                         icon: Icons.description_outlined,
                         label: translate('Terms of Service'), // ✅ 原来是 '用户服务协议'
-                        onTap: () {
-                          Navigator.of(context).push(PageRouteBuilder(
-                              pageBuilder: (_, __, ___) =>
-                                  const terms_pages.TermsOfServicePage(),
-                              transitionDuration: Duration.zero,
-                              reverseTransitionDuration: Duration.zero));
-                        }),
+                        onTap: () => launchUrlString(kTermsOfServiceUrl)),
                     _linkPill(context,
                         icon: Icons.language,
                         label: translate('Website'),
