@@ -1,182 +1,174 @@
 <p align="center">
-  <img src="res/logo-header.svg" alt="RustDesk - Your remote desktop"><br>
-  <a href="#raw-steps-to-build">Build</a> •
-  <a href="#how-to-build-with-docker">Docker</a> •
-  <a href="#file-structure">Structure</a> •
-  <a href="#snapshot">Snapshot</a><br>
-  [<a href="docs/README-UA.md">Українська</a>] | [<a href="docs/README-CS.md">česky</a>] | [<a href="docs/README-ZH.md">中文</a>] | [<a href="docs/README-HU.md">Magyar</a>] | [<a href="docs/README-ES.md">Español</a>] | [<a href="docs/README-FA.md">فارسی</a>] | [<a href="docs/README-FR.md">Français</a>] | [<a href="docs/README-DE.md">Deutsch</a>] | [<a href="docs/README-PL.md">Polski</a>] | [<a href="docs/README-ID.md">Indonesian</a>] | [<a href="docs/README-FI.md">Suomi</a>] | [<a href="docs/README-ML.md">മലയാളം</a>] | [<a href="docs/README-JP.md">日本語</a>] | [<a href="docs/README-NL.md">Nederlands</a>] | [<a href="docs/README-IT.md">Italiano</a>] | [<a href="docs/README-RU.md">Русский</a>] | [<a href="docs/README-PTBR.md">Português (Brasil)</a>] | [<a href="docs/README-EO.md">Esperanto</a>] | [<a href="docs/README-KR.md">한국어</a>] | [<a href="docs/README-AR.md">العربي</a>] | [<a href="docs/README-VN.md">Tiếng Việt</a>] | [<a href="docs/README-DA.md">Dansk</a>] | [<a href="docs/README-GR.md">Ελληνικά</a>] | [<a href="docs/README-TR.md">Türkçe</a>] | [<a href="docs/README-NO.md">Norsk</a>] | [<a href="docs/README-RO.md">Română</a>]<br>
-  <b>We need your help to translate this README, <a href="https://github.com/rustdesk/rustdesk/tree/master/src/lang">RustDesk UI</a> and <a href="https://github.com/rustdesk/doc.rustdesk.com">RustDesk Doc</a> to your native language</b>
+  <img src="res/logo-header.svg" alt="LinkEase - 你的远程桌面"><br>
+  <a href="#项目简介">简介</a> •
+  <a href="#windows-端构建">Windows 构建</a> •
+  <a href="#android-端构建">Android 构建</a> •
+  <a href="#android-权限说明">权限</a> •
+  <a href="#项目结构">结构</a>
 </p>
 
 > [!Caution]
-> **Misuse Disclaimer:** <br>
-> The developers of RustDesk do not condone or support any unethical or illegal use of this software. Misuse, such as unauthorized access, control or invasion of privacy, is strictly against our guidelines. The authors are not responsible for any misuse of the application.
+> **免责声明：** <br>
+> 本应用仅供合法、正当的远程协助用途（如个人设备管理、IT 技术支持等）。您只能在获得设备所有者**明确同意**的前提下发起远程连接或操控。严禁用于未经授权的访问、监控、控制，或任何违反法律法规的行为，由此产生的一切后果由使用者自行承担。
 
+## 项目简介
 
-Chat with us: [Discord](https://discord.gg/nDceKgxnkV) | [Twitter](https://twitter.com/rustdesk) | [Reddit](https://www.reddit.com/r/rustdesk) | [YouTube](https://www.youtube.com/@rustdesk)
+**LinkEase** 是佳影寰球科技有限公司基于开源项目 [RustDesk](https://github.com/rustdesk/rustdesk) 二次开发的远程桌面解决方案，使用 Rust 编写，开箱即用，无需复杂配置。数据完全由你掌控，可使用自建的 rendezvous/relay 服务器，安全可靠。
 
-[![RustDesk Server Pro](https://img.shields.io/badge/RustDesk%20Server%20Pro-Advanced%20Features-blue)](https://rustdesk.com/pricing.html)
+核心功能：
 
-Yet another remote desktop solution, written in Rust. Works out of the box with no configuration required. You have full control of your data, with no concerns about security. You can use our rendezvous/relay server, [set up your own](https://rustdesk.com/server), or [write your own rendezvous/relay server](https://github.com/rustdesk/rustdesk-server-demo).
+- **远程屏幕查看**：实时查看被控设备的屏幕画面
+- **远程操控**：在获得对方授权后，对被控设备进行触控/键鼠模拟操作
+- **点对点 / 中继连接**：通过网络在两台设备间建立加密通信通道
 
-![image](https://user-images.githubusercontent.com/71636191/171661982-430285f0-2e12-4b1d-9957-4a58e375304d.png)
+本仓库仅维护 **Windows 桌面端** 与 **Android 移动端** 两个平台，UI 全部基于 Flutter 实现（已弃用旧版 Sciter UI）。
 
-RustDesk welcomes contribution from everyone. See [CONTRIBUTING.md](docs/CONTRIBUTING.md) for help getting started.
+> 账号服务由独立的后端服务提供，详见 `D:\git_rustdesk\server`（Node + SQLite）。
 
-[**FAQ**](https://github.com/rustdesk/rustdesk/wiki/FAQ)
+## 环境依赖
 
-[**BINARY DOWNLOAD**](https://github.com/rustdesk/rustdesk/releases)
+通用依赖：
 
-[**NIGHTLY BUILD**](https://github.com/rustdesk/rustdesk/releases/tag/nightly)
+- [Rust](https://www.rust-lang.org/tools/install) 开发环境
+- [Python 3](https://www.python.org/)（用于运行 `build.py` 构建脚本）
+- [Flutter SDK](https://docs.flutter.dev/get-started/install)
+- [vcpkg](https://github.com/microsoft/vcpkg)，并正确设置 `VCPKG_ROOT` 环境变量
+- C++ 构建工具链
 
-[<img src="https://f-droid.org/badge/get-it-on.png"
-    alt="Get it on F-Droid"
-    height="80">](https://f-droid.org/en/packages/com.carriez.flutter_hbb)
-[<img src="https://flathub.org/api/badge?svg&locale=en"
-    alt="Get it on Flathub"
-    height="80">](https://flathub.org/apps/com.rustdesk.RustDesk)
-
-## Dependencies
-
-Desktop versions use Flutter or Sciter (deprecated) for GUI, this tutorial is for Sciter only, since it is easier and more friendly to start. Check out our [CI](https://github.com/rustdesk/rustdesk/blob/master/.github/workflows/flutter-build.yml) for building Flutter version.
-
-Please download Sciter dynamic library yourself.
-
-[Windows](https://raw.githubusercontent.com/c-smile/sciter-sdk/master/bin.win/x64/sciter.dll) |
-[Linux](https://raw.githubusercontent.com/c-smile/sciter-sdk/master/bin.lnx/x64/libsciter-gtk.so) |
-[macOS](https://raw.githubusercontent.com/c-smile/sciter-sdk/master/bin.osx/libsciter.dylib)
-
-## Raw Steps to build
-
-- Prepare your Rust development env and C++ build env
-
-- Install [vcpkg](https://github.com/microsoft/vcpkg), and set `VCPKG_ROOT` env variable correctly
-
-  - Windows: vcpkg install libvpx:x64-windows-static libyuv:x64-windows-static opus:x64-windows-static aom:x64-windows-static
-  - Linux/macOS: vcpkg install libvpx libyuv opus aom
-
-- run `cargo run`
-
-## [Build](https://rustdesk.com/docs/en/dev/build/)
-
-## How to Build on Linux
-
-### Ubuntu 18 (Debian 10)
+通过 vcpkg 安装 C++ 依赖（`libvpx`、`libyuv`、`opus`、`aom`）：
 
 ```sh
-sudo apt install -y zip g++ gcc git curl wget nasm yasm libgtk-3-dev clang libxcb-randr0-dev libxdo-dev \
-        libxfixes-dev libxcb-shape0-dev libxcb-xfixes0-dev libasound2-dev libpulse-dev cmake make \
-        libclang-dev ninja-build libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev libpam0g-dev
+vcpkg install libvpx:x64-windows-static libyuv:x64-windows-static opus:x64-windows-static aom:x64-windows-static
 ```
 
-### openSUSE Tumbleweed
+## Windows 端构建
+
+1. 安装上述环境依赖，确认 `VCPKG_ROOT` 已正确配置。
+
+2. 构建并运行 Flutter 桌面版：
+
+   ```sh
+   python build.py --flutter
+   ```
+
+3. 发布版（release）构建：
+
+   ```sh
+   python build.py --flutter --release
+   ```
+
+常用可选参数：
+
+- `--hwcodec`  启用硬件编解码（推荐，可显著降低 CPU 占用）
+- `--vram`     启用 VRAM 优化（仅 Windows 可用）
+- `--portable` 生成 Windows 便携版
+- `--skip-portable-pack` 跳过打包，仅生成 Flutter + Windows 程序
+
+示例（带硬件编解码的发布版）：
 
 ```sh
-sudo zypper install gcc-c++ git curl wget nasm yasm gcc gtk3-devel clang libxcb-devel libXfixes-devel cmake alsa-lib-devel gstreamer-devel gstreamer-plugins-base-devel xdotool-devel pam-devel
+python build.py --flutter --release --hwcodec
 ```
 
-### Fedora 28 (CentOS 8)
+> 仅需快速调试 Rust 核心、使用旧版 Sciter UI 时，可执行 `cargo run`，但需自行下载 [sciter.dll](https://raw.githubusercontent.com/c-smile/sciter-sdk/master/bin.win/x64/sciter.dll) 并放入可执行文件目录。日常开发请优先使用 Flutter 版。
 
-```sh
-sudo yum -y install gcc-c++ git curl wget nasm yasm gcc gtk3-devel clang libxcb-devel libxdo-devel libXfixes-devel pulseaudio-libs-devel cmake alsa-lib-devel gstreamer1-devel gstreamer1-plugins-base-devel pam-devel
-```
+## Android 端构建
 
-### Arch (Manjaro)
+Android 端复用 Rust 核心 + Flutter UI。构建分为两步：先编译 Rust 原生依赖，再打包 APK。
 
-```sh
-sudo pacman -Syu --needed unzip git cmake gcc curl wget yasm nasm zip make pkg-config clang gtk3 xdotool libxcb libxfixes alsa-lib pipewire
-```
+1. 准备 Android SDK / NDK，并安装好 Flutter SDK。
 
-### Install vcpkg
+2. 编译 Android 端 Rust 原生库依赖：
 
-```sh
-git clone https://github.com/microsoft/vcpkg
-cd vcpkg
-git checkout 2023.04.15
-cd ..
-vcpkg/bootstrap-vcpkg.sh
-export VCPKG_ROOT=$HOME/vcpkg
-vcpkg/vcpkg install libvpx libyuv opus aom
-```
+   ```sh
+   cd flutter
+   ./build_android_deps.sh
+   ```
 
-### Fix libvpx (For Fedora)
+3. 构建 APK：
 
-```sh
-cd vcpkg/buildtrees/libvpx/src
-cd *
-./configure
-sed -i 's/CFLAGS+=-I/CFLAGS+=-fPIC -I/g' Makefile
-sed -i 's/CXXFLAGS+=-I/CXXFLAGS+=-fPIC -I/g' Makefile
-make
-cp libvpx.a $HOME/vcpkg/installed/x64-linux/lib/
-cd
-```
+   ```sh
+   ./build_android.sh
+   ```
 
-### Build
+   或直接使用 Flutter 命令：
 
-```sh
-curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
-source $HOME/.cargo/env
-git clone --recurse-submodules https://github.com/rustdesk/rustdesk
-cd rustdesk
-mkdir -p target/debug
-wget https://raw.githubusercontent.com/c-smile/sciter-sdk/master/bin.lnx/x64/libsciter-gtk.so
-mv libsciter-gtk.so target/debug
-VCPKG_ROOT=$HOME/vcpkg cargo run
-```
+   ```sh
+   cd flutter
+   flutter build apk        # 构建发布 APK
+   flutter run              # 连接设备进行调试运行
+   ```
 
-## How to build with Docker
+> F-Droid 版本可使用 `flutter/build_fdroid.sh` 进行构建。
 
-Begin by cloning the repository and building the Docker container:
+## Android 权限说明
 
-```sh
-git clone https://github.com/rustdesk/rustdesk
-cd rustdesk
-git submodule update --init --recursive
-docker build -t "rustdesk-builder" .
-```
+本应用在 Android 设备上可能申请以下权限，以实现相应功能；仅在使用相关功能时请求，且可随时在设备设置中撤销：
 
-Then, each time you need to build the application, run the following command:
+| 权限 | 用途 |
+| --- | --- |
+| 🌐 网络访问 | 建立远程连接 |
+| ♿ 无障碍服务 | 在被控制端模拟触控与键盘操作 |
+| 🪟 悬浮窗 | 显示远程控制操作工具栏 |
+| 📹 屏幕录制 | 在被控制端采集屏幕画面 |
 
-```sh
-docker run --rm -it -v $PWD:/home/user/rustdesk -v rustdesk-git-cache:/home/user/.cargo/git -v rustdesk-registry-cache:/home/user/.cargo/registry -e PUID="$(id -u)" -e PGID="$(id -g)" rustdesk-builder
-```
+> 应用不收集姓名、手机号等个人身份信息，也不收集位置信息或设备中的私人文件（除非您主动在会话中共享）。详见应用内《隐私政策》（`privacy_policy.html`）与《用户协议》（`terms_of_service.html`）。
 
-Note that the first build may take longer before dependencies are cached, subsequent builds will be faster. Additionally, if you need to specify different arguments to the build command, you may do so at the end of the command in the `<OPTIONAL-ARGS>` position. For instance, if you wanted to build an optimized release version, you would run the command above followed by `--release`. The resulting executable will be available in the target folder on your system, and can be run with:
+## 测试
 
-```sh
-target/debug/rustdesk
-```
+- Rust 测试：
 
-Or, if you're running a release executable:
+  ```sh
+  cargo test
+  ```
 
-```sh
-target/release/rustdesk
-```
+- Flutter 测试：
 
-Please ensure that you run these commands from the root of the RustDesk repository, or the application may not find the required resources. Also note that other cargo subcommands such as `install` or `run` are not currently supported via this method as they would install or run the program inside the container instead of the host.
+  ```sh
+  cd flutter
+  flutter test
+  ```
 
-## File Structure
+## 项目结构
 
-- **[libs/hbb_common](https://github.com/rustdesk/rustdesk/tree/master/libs/hbb_common)**: video codec, config, tcp/udp wrapper, protobuf, fs functions for file transfer, and some other utility functions
-- **[libs/scrap](https://github.com/rustdesk/rustdesk/tree/master/libs/scrap)**: screen capture
-- **[libs/enigo](https://github.com/rustdesk/rustdesk/tree/master/libs/enigo)**: platform specific keyboard/mouse control
-- **[libs/clipboard](https://github.com/rustdesk/rustdesk/tree/master/libs/clipboard)**: file copy and paste implementation for Windows, Linux, macOS.
-- **[src/ui](https://github.com/rustdesk/rustdesk/tree/master/src/ui)**: obsolete Sciter UI (deprecated)
-- **[src/server](https://github.com/rustdesk/rustdesk/tree/master/src/server)**: audio/clipboard/input/video services, and network connections
-- **[src/client.rs](https://github.com/rustdesk/rustdesk/tree/master/src/client.rs)**: start a peer connection
-- **[src/rendezvous_mediator.rs](https://github.com/rustdesk/rustdesk/tree/master/src/rendezvous_mediator.rs)**: Communicate with [rustdesk-server](https://github.com/rustdesk/rustdesk-server), wait for remote direct (TCP hole punching) or relayed connection
-- **[src/platform](https://github.com/rustdesk/rustdesk/tree/master/src/platform)**: platform specific code
-- **[flutter](https://github.com/rustdesk/rustdesk/tree/master/flutter)**: Flutter code for desktop and mobile
-- **[flutter/web/js](https://github.com/rustdesk/rustdesk/tree/master/flutter/web/v1/js)**: JavaScript for Flutter web client
+- **[libs/hbb_common](libs/hbb_common)**：视频编解码、配置、TCP/UDP 封装、protobuf、文件传输等通用工具函数
+- **[libs/scrap](libs/scrap)**：屏幕采集
+- **[libs/enigo](libs/enigo)**：平台相关的键鼠控制
+- **[libs/clipboard](libs/clipboard)**：跨平台剪贴板与文件复制粘贴实现
+- **[src/server](src/server)**：音频/剪贴板/输入/视频服务及网络连接
+- **[src/client.rs](src/client.rs)**：发起对端连接
+- **[src/rendezvous_mediator.rs](src/rendezvous_mediator.rs)**：与 [rustdesk-server](https://github.com/rustdesk/rustdesk-server) 通信，等待直连（TCP 打洞）或中继连接
+- **[src/platform](src/platform)**：平台相关代码
+- **[src/ui](src/ui)**：旧版 Sciter UI（已弃用）
+- **[flutter](flutter)**：桌面端与移动端的 Flutter 代码
+  - **[flutter/lib/desktop](flutter/lib/desktop)**：Windows 桌面端 UI
+  - **[flutter/lib/mobile](flutter/lib/mobile)**：Android 移动端 UI
+  - **[flutter/lib/common](flutter/lib/common)**、**[flutter/lib/models](flutter/lib/models)**：共享代码
 
-## Screenshots
+## 配置说明
 
-![Connection Manager](https://github.com/rustdesk/rustdesk/assets/28412477/db82d4e7-c4bc-4823-8e6f-6af7eadf7651)
+所有配置项位于 [libs/hbb_common/src/config.rs](libs/hbb_common/src/config.rs)，分为 4 类：
 
-![Connected to a Windows PC](https://github.com/rustdesk/rustdesk/assets/28412477/9baa91e9-3362-4d06-aa1a-7518edcbd7ea)
+- Settings（设置）
+- Local（本地）
+- Display（显示）
+- Built-in（内置）
 
-![File Transfer](https://github.com/rustdesk/rustdesk/assets/28412477/39511ad3-aa9a-4f8c-8947-1cce286a46ad)
+## 开源许可
 
-![TCP Tunneling](https://github.com/rustdesk/rustdesk/assets/28412477/78e8708f-e87e-4570-8373-1360033ea6c5)
+本应用基于 [RustDesk](https://github.com/rustdesk/rustdesk)（版权归属 RustDesk, Inc.）二次开发，遵循 **GNU AGPL-3.0** 许可证发布。
 
+- 原始项目：https://github.com/rustdesk/rustdesk
+- 修改版源码：https://github.com/L-fw/rustdesk
+
+依据 AGPL-3.0 协议，您有权获取、使用及修改上述源代码。
+
+## 联系我们
+
+- 公司：佳影寰球科技有限公司
+- 应用：LinkEase
+- 官网：[jygamwing.com](https://jygamwing.com/)
+
+---
+
+© 2026 佳影寰球科技有限公司 版权所有
