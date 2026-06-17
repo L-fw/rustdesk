@@ -86,6 +86,23 @@ class _DesktopHomePageState extends State<DesktopHomePage>
   final ValueNotifier<String> _recentSearch = ValueNotifier('');
   final ValueNotifier<String> _recentTimeFilter = ValueNotifier('all');
   final ValueNotifier<String> _recentTypeFilter = ValueNotifier('all');
+  // 最近连接表格的前端分页：当前页（0 起）与每页条数。
+  // 服务器仍一次性返回最新 200 条，这里只对筛选后的结果做本地切片分页。
+  // 每页条数可由用户在工具栏下拉选择，并持久化到本地选项。
+  static const List<int> _recentPageSizeOptions = [10, 20, 50, 100];
+  static const int _kDefaultRecentPageSize = 20;
+  static const String _kHomeRecentPageSizeKey = 'home-recent-page-size';
+  final ValueNotifier<int> _recentPageSize =
+      ValueNotifier(_kDefaultRecentPageSize);
+  final ValueNotifier<int> _recentPage = ValueNotifier(0);
+
+  void _setRecentPageSize(int size) {
+    if (_recentPageSize.value == size) return;
+    _recentPageSize.value = size;
+    _recentPage.value = 0; // 改变每页条数后回到第一页
+    bind.setLocalFlutterOption(
+        k: _kHomeRecentPageSizeKey, v: size.toString());
+  }
 
   // My devices page state
   final TextEditingController _devicesSearchCtrl = TextEditingController();
@@ -130,6 +147,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
     if (_mySessionsLoading.value) return;
     _mySessionsLoading.value = true;
     _mySessionsError.value = null;
+    _recentPage.value = 0;
     try {
       if (AppAuthService().currentUserName.value.isEmpty) {
         _mySessions.value = [];
@@ -1085,24 +1103,57 @@ class _DesktopHomePageState extends State<DesktopHomePage>
                         return ValueListenableBuilder<String>(
                           valueListenable: _recentTypeFilter,
                           builder: (_, typeFilter, __) {
-                            final all = sessions ?? <MySession>[];
-                            final filtered = _filterMySessions(
-                                all, query, timeFilter, typeFilter);
-                            return Padding(
-                              padding: const EdgeInsets.all(20),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  _recentSessionsHeader(context, filtered.length),
-                                  const SizedBox(height: 14),
-                                  _recentSessionsToolbar(context, filtered.length),
-                                  const SizedBox(height: 14),
-                                  Expanded(
-                                    child: _recentSessionsTable(context, filtered,
-                                        loading, error, sessions == null),
+                            return ValueListenableBuilder<int>(
+                              valueListenable: _recentPageSize,
+                              builder: (_, pageSize, __) {
+                                return ValueListenableBuilder<int>(
+                                  valueListenable: _recentPage,
+                                  builder: (_, pageRaw, __) {
+                                final all = sessions ?? <MySession>[];
+                                final filtered = _filterMySessions(
+                                    all, query, timeFilter, typeFilter);
+                                final total = filtered.length;
+                                // 总页数（至少 1 页），并把当前页钳制到合法范围，
+                                // 避免筛选/刷新后页码越界（此处只读取，不在 build 内写回）。
+                                final pageCount = total == 0
+                                    ? 1
+                                    : ((total + pageSize - 1) ~/ pageSize);
+                                final page = pageRaw.clamp(0, pageCount - 1);
+                                final start = page * pageSize;
+                                final end =
+                                    (start + pageSize).clamp(0, total);
+                                final pageItems = total == 0
+                                    ? <MySession>[]
+                                    : filtered.sublist(start, end);
+                                return Padding(
+                                  padding: const EdgeInsets.all(20),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      _recentSessionsHeader(context, total),
+                                      const SizedBox(height: 14),
+                                      _recentSessionsToolbar(context, total),
+                                      const SizedBox(height: 14),
+                                      Expanded(
+                                        child: _recentSessionsTable(
+                                            context,
+                                            pageItems,
+                                            loading,
+                                            error,
+                                            sessions == null),
+                                      ),
+                                      if (total > 0)
+                                        pageCount > 1
+                                            ? _recentPaginationBar(context,
+                                                page, pageCount, total)
+                                            : _recentTableFooter(),
+                                    ],
                                   ),
-                                ],
-                              ),
+                                );
+                                  },
+                                );
+                              },
                             );
                           },
                         );
@@ -1184,7 +1235,10 @@ class _DesktopHomePageState extends State<DesktopHomePage>
             child: TextField(
               controller: _recentSearchCtrl,
               style: const TextStyle(fontSize: 13),
-              onChanged: (v) => _recentSearch.value = v,
+              onChanged: (v) {
+                _recentSearch.value = v;
+                _recentPage.value = 0; // 改变筛选条件时回到第一页
+              },
               decoration: InputDecoration(
                 isDense: true,
                 hintText: translate('Search device or ID'),
@@ -1204,6 +1258,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
         const SizedBox(width: 12),
         _filterDropdown(
           value: _recentTimeFilter,
+          onChanged: () => _recentPage.value = 0,
           items: [
             ('all', translate('All time')),
             ('today', translate('Today')),
@@ -1214,12 +1269,15 @@ class _DesktopHomePageState extends State<DesktopHomePage>
         const SizedBox(width: 12),
         _filterDropdown(
           value: _recentTypeFilter,
+          onChanged: () => _recentPage.value = 0,
           items: [
             ('all', translate('All types')),
             ('desktop', translate('Desktop')),
             ('mobile', translate('Mobile')),
           ],
         ),
+        const SizedBox(width: 12),
+        _recentPageSizeDropdown(),
         const SizedBox(width: 12),
         _outlineButton(
           icon: Icons.refresh,
@@ -1239,6 +1297,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
   Widget _filterDropdown({
     required ValueNotifier<String> value,
     required List<(String, String)> items,
+    VoidCallback? onChanged,
   }) {
     return ValueListenableBuilder<String>(
       valueListenable: value,
@@ -1266,7 +1325,46 @@ class _DesktopHomePageState extends State<DesktopHomePage>
                       ))
                   .toList(),
               onChanged: (v) {
-                if (v != null) value.value = v;
+                if (v != null) {
+                  value.value = v;
+                  onChanged?.call();
+                }
+              },
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  // 每页条数选择器：可选 10/20/50/100，选择后回到第一页并持久化。
+  Widget _recentPageSizeDropdown() {
+    return ValueListenableBuilder<int>(
+      valueListenable: _recentPageSize,
+      builder: (_, current, __) {
+        return Container(
+          height: 38,
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: const Color(0xFFE5E7EB)),
+          ),
+          child: DropdownButtonHideUnderline(
+            child: DropdownButton<int>(
+              value: current,
+              isDense: true,
+              icon: const Icon(Icons.keyboard_arrow_down,
+                  size: 18, color: Color(0xFF6B7280)),
+              style: const TextStyle(fontSize: 13, color: Color(0xFF374151)),
+              items: _recentPageSizeOptions
+                  .map((n) => DropdownMenuItem(
+                        value: n,
+                        child: Text('${translate('Per page')} $n'),
+                      ))
+                  .toList(),
+              onChanged: (v) {
+                if (v != null) _setRecentPageSize(v);
               },
             ),
           ),
@@ -1362,7 +1460,6 @@ class _DesktopHomePageState extends State<DesktopHomePage>
                   for (final s in sessions) _recentTableRow(context, s),
                 ],
               ),
-              _recentTableFooter(),
             ],
           ),
         ),
@@ -1442,6 +1539,64 @@ class _DesktopHomePageState extends State<DesktopHomePage>
             translate('End of list'),
             style: const TextStyle(fontSize: 12, color: Color(0xFF9CA3AF)),
           ),
+        ],
+      ),
+    );
+  }
+
+  // 最近连接表格的分页条：上一页/下一页 + 当前页码（共 N 条）。
+  // page 为 0 起的当前页索引，已在调用处钳制到 [0, pageCount-1]。
+  Widget _recentPaginationBar(
+      BuildContext context, int page, int pageCount, int total) {
+    final canPrev = page > 0;
+    final canNext = page < pageCount - 1;
+
+    Widget navButton(IconData icon, bool enabled, VoidCallback onTap) {
+      final fg =
+          enabled ? const Color(0xFF374151) : const Color(0xFFCBD5E1);
+      return Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(8),
+          onTap: enabled ? onTap : null,
+          child: Container(
+            height: 32,
+            width: 32,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: const Color(0xFFE5E7EB)),
+            ),
+            child: Icon(icon, size: 18, color: fg),
+          ),
+        ),
+      );
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 12),
+      alignment: Alignment.center,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          navButton(Icons.chevron_left, canPrev,
+              () => _recentPage.value = page - 1),
+          const SizedBox(width: 14),
+          Text(
+            '${page + 1} / $pageCount',
+            style: const TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFF374151)),
+          ),
+          const SizedBox(width: 8),
+          Text(
+            '($total)',
+            style: const TextStyle(fontSize: 12, color: Color(0xFF9CA3AF)),
+          ),
+          const SizedBox(width: 14),
+          navButton(Icons.chevron_right, canNext,
+              () => _recentPage.value = page + 1),
         ],
       ),
     );
@@ -3793,6 +3948,13 @@ class _DesktopHomePageState extends State<DesktopHomePage>
     super.initState();
     _recentListView.value =
         bind.getLocalFlutterOption(k: _kHomeRecentViewKey) == 'list';
+    // 读取持久化的每页条数；非法/未设置时回落到默认值，并校验在允许范围内。
+    final savedPageSize = int.tryParse(
+        bind.getLocalFlutterOption(k: _kHomeRecentPageSizeKey));
+    if (savedPageSize != null &&
+        _recentPageSizeOptions.contains(savedPageSize)) {
+      _recentPageSize.value = savedPageSize;
+    }
     // Keep the home page recent cards' online status fresh (mirrors the
     // Favorites refresh cadence). Only queries while the home pane is shown.
     _recentOnlineTimer =
@@ -4034,6 +4196,8 @@ class _DesktopHomePageState extends State<DesktopHomePage>
     _recentSearch.dispose();
     _recentTimeFilter.dispose();
     _recentTypeFilter.dispose();
+    _recentPageSize.dispose();
+    _recentPage.dispose();
     _devicesSearchCtrl.dispose();
     _devicesSearch.dispose();
     _devicesTimeFilter.dispose();

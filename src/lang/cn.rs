@@ -60,6 +60,7 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
         ("Remote control", "远程控制"),
         ("Details", "详情"),
         ("End of list", "清单到列尾啦!"),
+        ("Per page", "每页"),
         ("No record", "无记录"),
         ("Address book", "地址簿"),
         ("Confirmation", "确认"),
