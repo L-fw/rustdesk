@@ -1401,11 +1401,11 @@ class _DesktopHomePageState extends State<DesktopHomePage>
 
   // 表头单元格统一内边距，与数据行保持一致
   static const EdgeInsets _recentCellPadding =
-      EdgeInsets.symmetric(horizontal: 8, vertical: 14);
+      EdgeInsets.symmetric(horizontal: 6, vertical: 14);
 
   TableRow _recentTableHeader() {
     const style = TextStyle(
-      fontSize: 13,
+      fontSize: 12,
       fontWeight: FontWeight.w600,
       color: Color(0xFF6B7280),
     );
@@ -1475,7 +1475,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
                 child: Text(
                   displayName,
                   style: const TextStyle(
-                      fontSize: 14,
+                      fontSize: 13,
                       fontWeight: FontWeight.w600,
                       color: Color(0xFF1F2937)),
                   maxLines: 1,
@@ -1491,7 +1491,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
           child: Text(
             _formatPeerId(remoteId),
             textAlign: TextAlign.center,
-            style: const TextStyle(fontSize: 13, color: Color(0xFF374151)),
+            style: const TextStyle(fontSize: 12, color: Color(0xFF374151)),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
@@ -1502,7 +1502,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
           child: Text(
             _directionLabel(session.direction),
             textAlign: TextAlign.center,
-            style: const TextStyle(fontSize: 13, color: Color(0xFF374151)),
+            style: const TextStyle(fontSize: 12, color: Color(0xFF374151)),
           ),
         ),
         // Status (session active vs ended)
@@ -1525,7 +1525,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
               Text(
                 active ? translate('In session') : translate('Ended'),
                 style: TextStyle(
-                  fontSize: 13,
+                  fontSize: 12,
                   color: active
                       ? const Color(0xFF22C55E)
                       : const Color(0xFF9CA3AF),
@@ -1540,7 +1540,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
           child: Text(
             _formatIsoTime(session.startTime),
             textAlign: TextAlign.center,
-            style: const TextStyle(fontSize: 13, color: Color(0xFF374151)),
+            style: const TextStyle(fontSize: 12, color: Color(0xFF374151)),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
@@ -1551,7 +1551,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
           child: Text(
             _formatDurationSecs(session.durationSec),
             textAlign: TextAlign.center,
-            style: const TextStyle(fontSize: 13, color: Color(0xFF374151)),
+            style: const TextStyle(fontSize: 12, color: Color(0xFF374151)),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
