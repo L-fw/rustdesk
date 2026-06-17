@@ -1,5 +1,4 @@
 <p align="center">
-  <img src="res/logo-header.svg" alt="LinkEase - 你的远程桌面"><br>
   <a href="#项目简介">简介</a> •
   <a href="#windows-端构建">Windows 构建</a> •
   <a href="#android-端构建">Android 构建</a> •
