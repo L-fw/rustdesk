@@ -59,6 +59,8 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
         ("Details", "詳情"),
         ("End of list", "清單已到列尾啦！"),
         ("Per page", "每頁"),
+        ("Previous page", "上一頁"),
+        ("Next page", "下一頁"),
         ("No record", "無記錄"),
         ("Address book", "通訊錄"),
         ("Confirmation", "確認"),

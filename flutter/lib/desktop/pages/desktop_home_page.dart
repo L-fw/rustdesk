@@ -1544,59 +1544,151 @@ class _DesktopHomePageState extends State<DesktopHomePage>
     );
   }
 
-  // 最近连接表格的分页条：上一页/下一页 + 当前页码（共 N 条）。
+  // 计算分页条上要显示的页码标记，逻辑与服务端 admin.html 的 updatePager 一致：
+  // 以当前页为中心展示一个最多 5 个页码的窗口，首/尾页固定显示，
+  // 中间不连续处用省略号（用 null 表示）。currentPage1 为 1 起的当前页。
+  List<int?> _recentPageTokens(int currentPage1, int totalPages) {
+    final tokens = <int?>[];
+    int start = currentPage1 - 2;
+    if (start < 1) start = 1;
+    int end = start + 4;
+    if (end > totalPages) end = totalPages;
+    if (end - start < 4) {
+      start = end - 4;
+      if (start < 1) start = 1;
+    }
+    if (start > 1) {
+      tokens.add(1);
+      if (start > 2) tokens.add(null); // 省略号
+    }
+    for (int i = start; i <= end; i++) {
+      tokens.add(i);
+    }
+    if (end < totalPages) {
+      if (end < totalPages - 1) tokens.add(null);
+      tokens.add(totalPages);
+    }
+    return tokens;
+  }
+
+  // 最近连接表格的分页条，形式参考服务端 admin.html：
+  // 左侧总数信息，右侧为 上一页 / 页码（带省略号、当前页高亮）/ 下一页。
   // page 为 0 起的当前页索引，已在调用处钳制到 [0, pageCount-1]。
   Widget _recentPaginationBar(
       BuildContext context, int page, int pageCount, int total) {
+    final current1 = page + 1; // 转成 1 起，便于与页码按钮对齐
     final canPrev = page > 0;
     final canNext = page < pageCount - 1;
 
-    Widget navButton(IconData icon, bool enabled, VoidCallback onTap) {
+    // 文字型按钮（上一页/下一页）。
+    Widget textButton(String label, bool enabled, VoidCallback onTap) {
       final fg =
-          enabled ? const Color(0xFF374151) : const Color(0xFFCBD5E1);
+          enabled ? const Color(0xFF374151) : const Color(0xFFC2C8D0);
       return Material(
         color: Colors.transparent,
         child: InkWell(
           borderRadius: BorderRadius.circular(8),
           onTap: enabled ? onTap : null,
           child: Container(
-            height: 32,
-            width: 32,
+            height: 28,
+            padding: const EdgeInsets.symmetric(horizontal: 10),
+            alignment: Alignment.center,
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: const Color(0xFFE5E7EB)),
+              border: Border.all(
+                  color: enabled
+                      ? const Color(0xFFE5E7EB)
+                      : const Color(0xFFEFF1F4)),
             ),
-            child: Icon(icon, size: 18, color: fg),
+            child: Text(label,
+                style: TextStyle(
+                    fontSize: 12, fontWeight: FontWeight.w500, color: fg)),
           ),
         ),
       );
     }
 
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 12),
-      alignment: Alignment.center,
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          navButton(Icons.chevron_left, canPrev,
-              () => _recentPage.value = page - 1),
-          const SizedBox(width: 14),
-          Text(
-            '${page + 1} / $pageCount',
-            style: const TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-                color: Color(0xFF374151)),
+    // 单个页码按钮，active 时用主题强调色填充。
+    Widget numButton(int n) {
+      final active = n == current1;
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 3),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(8),
+            onTap: active ? null : () => _recentPage.value = n - 1,
+            child: Container(
+              constraints: const BoxConstraints(minWidth: 28),
+              height: 28,
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: active ? MyTheme.accent : Colors.white,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                    color: active ? MyTheme.accent : const Color(0xFFE5E7EB)),
+                boxShadow: active
+                    ? [
+                        BoxShadow(
+                          color: MyTheme.accent.withOpacity(0.25),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        ),
+                      ]
+                    : null,
+              ),
+              child: Text(
+                '$n',
+                style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: active ? FontWeight.w600 : FontWeight.w500,
+                    color: active ? Colors.white : const Color(0xFF374151)),
+              ),
+            ),
           ),
-          const SizedBox(width: 8),
+        ),
+      );
+    }
+
+    final tokens = _recentPageTokens(current1, pageCount);
+    final numberWidgets = <Widget>[];
+    for (final t in tokens) {
+      if (t == null) {
+        numberWidgets.add(const Padding(
+          padding: EdgeInsets.symmetric(horizontal: 4),
+          child: Text('…',
+              style: TextStyle(fontSize: 13, color: Color(0xFF9CA3AF))),
+        ));
+      } else {
+        numberWidgets.add(numButton(t));
+      }
+    }
+
+    return Container(
+      padding: const EdgeInsets.only(top: 8, bottom: 2, left: 4, right: 4),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          // 左侧：当前页 / 总页数 · 共 N 条
           Text(
-            '($total)',
+            '$current1/$pageCount · ${translate('Total')} $total',
             style: const TextStyle(fontSize: 12, color: Color(0xFF9CA3AF)),
           ),
-          const SizedBox(width: 14),
-          navButton(Icons.chevron_right, canNext,
-              () => _recentPage.value = page + 1),
+          // 右侧：上一页 / 页码 / 下一页
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              textButton(translate('Previous page'), canPrev,
+                  () => _recentPage.value = page - 1),
+              const SizedBox(width: 8),
+              ...numberWidgets,
+              const SizedBox(width: 8),
+              textButton(translate('Next page'), canNext,
+                  () => _recentPage.value = page + 1),
+            ],
+          ),
         ],
       ),
     );
