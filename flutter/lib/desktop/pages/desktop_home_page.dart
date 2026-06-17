@@ -235,7 +235,10 @@ class _DesktopHomePageState extends State<DesktopHomePage>
   // finished loading). The periodic timer keeps the status fresh afterwards.
   void _maybeRefreshRecentOnline(List<String> ids) {
     final set = ids.toSet();
-    if (setEquals(set, _lastRecentOnlineIds)) return;
+    if (set.length == _lastRecentOnlineIds.length &&
+        set.containsAll(_lastRecentOnlineIds)) {
+      return;
+    }
     _lastRecentOnlineIds = set;
     WidgetsBinding.instance.addPostFrameCallback((_) => _loadRecentOnline());
   }
