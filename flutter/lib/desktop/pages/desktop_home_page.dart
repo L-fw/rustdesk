@@ -1126,7 +1126,9 @@ class _DesktopHomePageState extends State<DesktopHomePage>
                                     ? <MySession>[]
                                     : filtered.sublist(start, end);
                                 return Padding(
-                                  padding: const EdgeInsets.all(20),
+                                  // 底部留白收窄，避免分页栏下方出现大段空白
+                                  padding: const EdgeInsets.fromLTRB(
+                                      20, 20, 20, 6),
                                   child: Column(
                                     crossAxisAlignment:
                                         CrossAxisAlignment.start,
