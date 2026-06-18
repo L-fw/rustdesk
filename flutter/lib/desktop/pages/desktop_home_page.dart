@@ -2312,6 +2312,20 @@ class _DesktopHomePageState extends State<DesktopHomePage>
   // 同一对端的多次连接合并为一条，只保留最新的 [_kHomeRecentLimit] 条。
   // 展示字段（别名/平台/主机名）在本地最近连接模型中存在该对端时取本地数据，
   // 否则用会话记录自身构建一个最小 Peer。
+  // 服务器会话只携带客户端类型，本部署据此区分平台：
+  // desktop = Windows，full / share_only = Android。
+  String _platformFromClientType(String clientType) {
+    switch (clientType) {
+      case 'desktop':
+        return 'Windows';
+      case 'full':
+      case 'share_only':
+        return 'Android';
+      default:
+        return '';
+    }
+  }
+
   List<Peer> _recentPeersFromSessions(List<MySession>? sessions) {
     if (sessions == null || sessions.isEmpty) return const <Peer>[];
     final localById = <String, Peer>{
@@ -2322,8 +2336,18 @@ class _DesktopHomePageState extends State<DesktopHomePage>
     for (final s in sessions) {
       final id = s.remoteId;
       if (id.isEmpty || !seen.add(id)) continue;
-      result.add(
-          localById[id] ?? Peer.fromJson({'id': id, 'username': s.username}));
+      final local = localById[id];
+      // 平台优先按会话的客户端类型推导（始终可得）；未知时回退到本地记录。
+      var platform = _platformFromClientType(s.remoteClientType);
+      if (platform.isEmpty) platform = local?.platform ?? '';
+      result.add(Peer.fromJson({
+        'id': id,
+        'username':
+            (local?.username.isNotEmpty ?? false) ? local!.username : s.username,
+        'hostname': local?.hostname ?? '',
+        'alias': local?.alias ?? '',
+        'platform': platform,
+      }));
       if (result.length >= _kHomeRecentLimit) break;
     }
     return result;
@@ -2692,19 +2716,23 @@ class _DesktopHomePageState extends State<DesktopHomePage>
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    const SizedBox(height: 6),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 6, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFEFF4FF),
-                        borderRadius: BorderRadius.circular(4),
+                    // 平台未知时不显示标签（服务器会话不含平台信息）。
+                    if (peer.platform.isNotEmpty) ...[
+                      const SizedBox(height: 6),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFEFF4FF),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          platformLabel,
+                          style:
+                              TextStyle(fontSize: 10, color: MyTheme.accent),
+                        ),
                       ),
-                      child: Text(
-                        platformLabel,
-                        style: TextStyle(fontSize: 10, color: MyTheme.accent),
-                      ),
-                    ),
+                    ],
                     const SizedBox(height: 10),
                     Text(
                       peer.id,
@@ -2969,10 +2997,12 @@ class _DesktopHomePageState extends State<DesktopHomePage>
                       ],
                     ),
                   ),
-                  // Platform pill
+                  // Platform pill（平台未知时留空占位，保持各列对齐）。
                   Expanded(
                     flex: 2,
-                    child: Align(
+                    child: peer.platform.isEmpty
+                        ? const SizedBox.shrink()
+                        : Align(
                       alignment: Alignment.centerLeft,
                       child: Container(
                         padding: const EdgeInsets.symmetric(
