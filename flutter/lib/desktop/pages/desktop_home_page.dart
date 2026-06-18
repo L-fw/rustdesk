@@ -222,15 +222,16 @@ class _DesktopHomePageState extends State<DesktopHomePage>
   Set<String> _lastRecentOnlineIds = <String>{};
   Timer? _recentOnlineTimer;
 
-  // Refresh online status for the currently-known recent peers. Reads ids from
-  // the recent peers model and asks the server which are online.
+  // Refresh online status for the currently-displayed recent peers. The home
+  // page "recent connections" now comes from the account server's session
+  // history, so we ask the server which of those peers are online.
   Future<void> _loadRecentOnline() async {
     if (_recentOnlineLoading) return;
     if (AppAuthService().currentUserName.value.isEmpty) {
       if (_recentOnline.value.isNotEmpty) _recentOnline.value = <String>{};
       return;
     }
-    final ids = gFFI.recentPeersModel.peers
+    final ids = _recentPeersFromSessions(_mySessions.value)
         .map((p) => p.id)
         .where((id) => id.isNotEmpty)
         .toList();
@@ -474,7 +475,10 @@ class _DesktopHomePageState extends State<DesktopHomePage>
             return;
           }
           _selectedNav.value = key;
-          if (key == 'home') _loadRecentOnline();
+          if (key == 'home') {
+            _loadMySessions();
+            _loadRecentOnline();
+          }
           if (key == 'devices') _loadMyDevices();
           if (key == 'recent') {
             _loadMySessions();
@@ -2301,19 +2305,48 @@ class _DesktopHomePageState extends State<DesktopHomePage>
         '${two(dt.hour)}:${two(dt.minute)}';
   }
 
+  // 主页"最近连接"展示的条数上限：只取账号服务器会话历史中最新的 N 条。
+  static const int _kHomeRecentLimit = 3;
+
+  // 由账号服务器的会话历史（已按时间倒序）构建主页"最近连接"列表：
+  // 同一对端的多次连接合并为一条，只保留最新的 [_kHomeRecentLimit] 条。
+  // 展示字段（别名/平台/主机名）在本地最近连接模型中存在该对端时取本地数据，
+  // 否则用会话记录自身构建一个最小 Peer。
+  List<Peer> _recentPeersFromSessions(List<MySession>? sessions) {
+    if (sessions == null || sessions.isEmpty) return const <Peer>[];
+    final localById = <String, Peer>{
+      for (final p in gFFI.recentPeersModel.peers) p.id: p
+    };
+    final seen = <String>{};
+    final result = <Peer>[];
+    for (final s in sessions) {
+      final id = s.remoteId;
+      if (id.isEmpty || !seen.add(id)) continue;
+      result.add(
+          localById[id] ?? Peer.fromJson({'id': id, 'username': s.username}));
+      if (result.length >= _kHomeRecentLimit) break;
+    }
+    return result;
+  }
+
   Widget _buildRecentPeersSection(BuildContext context) {
     return ChangeNotifierProvider.value(
       value: gFFI.peerTabModel,
       child: ChangeNotifierProvider.value(
         value: gFFI.recentPeersModel,
-        child: Consumer<Peers>(
-          builder: (_, peers, __) {
+        // 数据源改为账号服务器的会话历史；本地最近连接模型仅用于补充
+        // 别名/平台/主机名等展示字段（见 _recentPeersFromSessions）。
+        child: ValueListenableBuilder<List<MySession>?>(
+          valueListenable: _mySessions,
+          builder: (_, sessions, __) {
             bind.mainLoadRecentPeers();
             return Obx(() {
               final query = peerSearchText.value.trim().toLowerCase();
+              // 取账号服务器最新的几条会话（同一对端去重），作为主页最近连接。
+              final recent = _recentPeersFromSessions(sessions);
               final filtered = query.isEmpty
-                  ? peers.peers
-                  : peers.peers.where((p) {
+                  ? recent
+                  : recent.where((p) {
                       return p.id.toLowerCase().contains(query) ||
                           p.username.toLowerCase().contains(query) ||
                           p.hostname.toLowerCase().contains(query) ||
@@ -2323,10 +2356,10 @@ class _DesktopHomePageState extends State<DesktopHomePage>
               // actually render so "Select All" and the selected-count match.
               Provider.of<PeerTabModel>(context, listen: false)
                   .setCurrentTabCachedPeers(filtered);
-              // Query the server for online status once the recent peer set is
-              // known / changes (online flag is server-backed, like Favorites).
+              // Query the server for online status for the displayed peers
+              // (online flag is server-backed, like Favorites).
               _maybeRefreshRecentOnline(
-                  peers.peers.map((p) => p.id).toList());
+                  recent.map((p) => p.id).toList());
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -4238,6 +4271,10 @@ class _DesktopHomePageState extends State<DesktopHomePage>
         _showLoginExpiredDialog();
       }
     });
+    // 主页"最近连接"现在来自账号服务器：先尝试加载一次，并在登录状态
+    // 变化（登录/退出/切换账号）时重新拉取，使列表跟随当前账号更新。
+    _loadMySessions();
+    ever(AppAuthService().currentUserName, (_) => _loadMySessions());
 
     // 检查登录状态
     _checkLoginStatus();
