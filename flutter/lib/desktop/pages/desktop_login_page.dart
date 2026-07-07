@@ -369,6 +369,17 @@ class _AppLoginPageState extends State<AppLoginPage>
     final username = _usernameController.text.trim();
     final password = _passwordController.text;
 
+    if (username.isEmpty && password.isEmpty) {
+      setState(() {
+        _errorMsg = translate('account_password_empty');
+        _invalidFields['username'] = true;
+        _invalidFields['password'] = true;
+      });
+      _shakeControllers['username']?.forward(from: 0);
+      _shakeControllers['password']?.forward(from: 0);
+      if (!_usernameFocus.hasFocus) _usernameFocus.requestFocus();
+      return;
+    }
     if (username.isEmpty) {
       _setFieldError('username', _usernameFocus, translate('please_enter_username'));
       return;
