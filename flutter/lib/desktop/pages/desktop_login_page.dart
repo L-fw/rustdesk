@@ -943,7 +943,7 @@ class _AppLoginPageState extends State<AppLoginPage>
           fieldKey: 'username',
           controller: _usernameController,
           focusNode: _usernameFocus,
-          label: translate('Username'),
+          label: translate('account_input_hint'),
           icon: Icons.person_outline,
           suffix: _buildAccountSwitcher(),
           inputFormatters: [

@@ -879,6 +879,7 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
         ("get_sms_code", "取得驗證碼"),
         ("register_btn", "註 冊"),
         ("please_enter_username", "請輸入使用者名稱"),
+        ("account_input_hint", "請輸入帳戶.."),
         ("username_format_tip", "使用者名稱需為1-20位字元，只能包含英文、數字和底線"),
         ("password_format_tip", "密碼需為6-20位字元，且包含字母和數字"),
         ("password_length_tip", "密碼需為6-20位字元"),

@@ -431,6 +431,7 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
         ("get_sms_code", "Get Verification Code"),
         ("register_btn", "Register"),
         ("please_enter_username", "Please enter a username"),
+        ("account_input_hint", "Please enter account.."),
         ("username_format_tip", "Username must be 1–20 characters and may only contain letters, numbers, and underscores"),
         ("password_format_tip", "Password must be 6–20 characters and contain both letters and numbers"),
         ("password_length_tip", "Password must be 6–20 characters"),
