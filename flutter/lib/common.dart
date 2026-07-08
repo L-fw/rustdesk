@@ -647,6 +647,14 @@ class MyTheme {
       // Synchronize the window theme of the system.
       updateSystemWindowTheme();
     }
+    // Many desktop pages resolve their colors through context-free getters
+    // (e.g. `MyTheme.pageBg`, `MyTheme.cardBg`) that branch on
+    // `currentThemeMode()` rather than on `Theme.of(context)`. Because they are
+    // not `Theme` dependents, `Get.changeThemeMode` alone does not rebuild them,
+    // so e.g. the settings sidebar/background kept the old colors until the page
+    // was re-entered. Force a full rebuild here (after the new theme has been
+    // persisted above, so the getters read the updated value) to refresh them.
+    Get.forceAppUpdate();
   }
 
   static ThemeMode currentThemeMode() {
