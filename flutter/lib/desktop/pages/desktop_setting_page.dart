@@ -2700,20 +2700,26 @@ class _AccountState extends State<_Account> {
         );
       },
     );
-    if (confirmed == true) {
+    if (confirmed != true) return;
+    // 先捕获 Navigator，避免在 await 之后跨异步间隙使用 context。
+    final navigator = Navigator.of(context);
+    // 即使某个 bind 调用抛异常，也要保证登录态被清理并跳转到登录界面，
+    // 不能让用户停留在设置页（此时登录态可能已部分清空）。
+    try {
       await AppAuthService().logout();
-      if (mounted) {
-        Navigator.of(context).pushAndRemoveUntil(
-          PageRouteBuilder(
-              pageBuilder: (_, __, ___) => const LoginTabPage(
-                  windowSize: kDesktopMainWindowSize,
-                  child: desktop_login.AppLoginPage()),
-              transitionDuration: Duration.zero,
-              reverseTransitionDuration: Duration.zero),
-          (route) => false,
-        );
-      }
+    } catch (e) {
+      debugPrint('logout failed: $e');
     }
+    if (!mounted) return;
+    navigator.pushAndRemoveUntil(
+      PageRouteBuilder(
+          pageBuilder: (_, __, ___) => const LoginTabPage(
+              windowSize: kDesktopMainWindowSize,
+              child: desktop_login.AppLoginPage()),
+          transitionDuration: Duration.zero,
+          reverseTransitionDuration: Duration.zero),
+      (route) => false,
+    );
   }
 
   Future<void> _doDeregister() async {
