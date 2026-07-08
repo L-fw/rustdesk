@@ -1286,12 +1286,6 @@ class _DesktopHomePageState extends State<DesktopHomePage>
         _recentPageSizeDropdown(),
         const SizedBox(width: 12),
         _outlineButton(
-          icon: Icons.refresh,
-          label: translate('Refresh'),
-          onTap: () => _loadMySessions(),
-        ),
-        const SizedBox(width: 12),
-        _outlineButton(
           icon: Icons.delete_outline,
           label: translate('Clear records'),
           onTap: count == 0 ? null : () => _confirmClearRecent(context),
