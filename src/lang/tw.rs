@@ -382,7 +382,7 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
         ("Insecure Connection", "非安全連線"),
         ("Scale original", "原始尺寸"),
         ("Scale adaptive", "適應視窗"),
-        ("General", "一般"),
+        ("General", "常規"),
         ("Security", "安全"),
         ("Theme", "主題"),
         ("Dark Theme", "黑暗主題"),

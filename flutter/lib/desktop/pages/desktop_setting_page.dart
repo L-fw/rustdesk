@@ -48,6 +48,53 @@ const Color _accentColor = MyTheme.accent;
 const String _kSettingPageControllerTag = 'settingPageController';
 const String _kSettingPageTabKeyTag = 'settingPageTabKey';
 
+// ── Theme-aware palette ──────────────────────────────────────────────────
+// This settings UI was originally laid out with hard-coded light colors, so it
+// stayed light-looking in dark mode. Each helper below resolves a semantic role
+// to a dark equivalent, while the LIGHT branch returns the exact original value
+// so the light appearance is unchanged. Dark values are aligned with
+// `MyTheme.darkTheme` (scaffold 0xFF18191E, card/surface 0xFF24252B).
+bool get _isDarkMode => MyTheme.currentThemeMode() == ThemeMode.dark;
+
+// Backgrounds
+Color get _pageBg =>
+    _isDarkMode ? const Color(0xFF18191E) : const Color(0xFFF3F5F8);
+Color get _cardBg => _isDarkMode ? const Color(0xFF24252B) : Colors.white;
+Color get _subtleBg =>
+    _isDarkMode ? const Color(0xFF2C2D34) : const Color(0xFFF8F9FB);
+Color get _accentTintBg =>
+    _isDarkMode ? const Color(0xFF1E2A3D) : const Color(0xFFEFF4FF);
+Color get _bannerBg =>
+    _isDarkMode ? const Color(0xFF1B2740) : const Color(0xFFEAF1FF);
+Color get _bannerBorder =>
+    _isDarkMode ? const Color(0xFF2C3E5E) : const Color(0xFFD3E1FF);
+
+// Borders & dividers
+Color get _hairlineColor =>
+    _isDarkMode ? const Color(0xFF303138) : const Color(0xFFEDEFF3);
+Color get _softBorderColor =>
+    _isDarkMode ? const Color(0xFF34353C) : const Color(0xFFE5E7EB);
+Color get _dividerColor =>
+    _isDarkMode ? const Color(0xFF2E2F36) : const Color(0xFFF0F1F4);
+
+// Text
+Color get _textStrongColor => _isDarkMode ? Colors.white : Colors.black;
+Color get _textPrimaryColor =>
+    _isDarkMode ? const Color(0xFFE6E6E9) : const Color(0xFF1F2937);
+Color get _textBodyColor =>
+    _isDarkMode ? const Color(0xFFCBCDD3) : const Color(0xFF374151);
+Color get _textSecondaryColor =>
+    _isDarkMode ? const Color(0xFFA5ABB3) : const Color(0xFF6B7280);
+Color get _textMutedColor =>
+    _isDarkMode ? const Color(0xFF8A9099) : const Color(0xFF9CA3AF);
+Color get _iconFaintColor =>
+    _isDarkMode ? const Color(0xFF6B7280) : const Color(0xFFC2C7D0);
+
+// Subtle card shadow (kept faint in light; a touch deeper on dark).
+Color get _cardShadowColor => _isDarkMode
+    ? Colors.black.withOpacity(0.25)
+    : Colors.black.withOpacity(0.03);
+
 class _TabInfo {
   late final SettingsTabKey key;
   late final String label;
@@ -338,10 +385,10 @@ class _DesktopSettingPageState extends State<DesktopSettingPage>
     final embedded = widget.embedded;
     final sidebar = Container(
       width: embedded ? _kEmbeddedTabWidth : _kTabWidth,
-      decoration: const BoxDecoration(
-        color: Colors.white,
+      decoration: BoxDecoration(
+        color: _cardBg,
         border: Border(
-          right: BorderSide(color: Color(0xFFEDEFF3), width: 1),
+          right: BorderSide(color: _hairlineColor, width: 1),
         ),
       ),
       child: embedded
@@ -376,7 +423,7 @@ class _DesktopSettingPageState extends State<DesktopSettingPage>
         sidebar,
         Expanded(
           child: Container(
-            color: const Color(0xFFF3F5F8),
+            color: _pageBg,
             child: PageView(
               controller: controller,
               physics: NeverScrollableScrollPhysics(),
@@ -388,12 +435,12 @@ class _DesktopSettingPageState extends State<DesktopSettingPage>
     );
     if (embedded) {
       return Container(
-        color: const Color(0xFFF3F5F8),
+        color: _pageBg,
         child: content,
       );
     }
     return Scaffold(
-      backgroundColor: const Color(0xFFF3F5F8),
+      backgroundColor: _pageBg,
       body: ConstrainedBox(
         constraints: const BoxConstraints(
           minWidth: 600,
@@ -433,9 +480,9 @@ class _DesktopSettingPageState extends State<DesktopSettingPage>
             width: double.infinity,
             padding: const EdgeInsets.symmetric(vertical: 14),
             decoration: BoxDecoration(
-              color: hover.value ? const Color(0xFFEFF4FF) : Colors.white,
-              border: const Border(
-                top: BorderSide(color: Color(0xFFEDEFF3), width: 1),
+              color: hover.value ? _accentTintBg : _cardBg,
+              border: Border(
+                top: BorderSide(color: _hairlineColor, width: 1),
               ),
             ),
             child: Row(
@@ -444,8 +491,7 @@ class _DesktopSettingPageState extends State<DesktopSettingPage>
                 Icon(
                   Icons.home_outlined,
                   size: 20,
-                  color:
-                      hover.value ? MyTheme.accent : const Color(0xFF6B7280),
+                  color: hover.value ? MyTheme.accent : _textSecondaryColor,
                 ),
                 const SizedBox(width: 8),
                 Text(
@@ -453,9 +499,7 @@ class _DesktopSettingPageState extends State<DesktopSettingPage>
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w500,
-                    color: hover.value
-                        ? MyTheme.accent
-                        : const Color(0xFF1F2937),
+                    color: hover.value ? MyTheme.accent : _textPrimaryColor,
                   ),
                 ),
               ],
@@ -516,10 +560,10 @@ class _DesktopSettingPageState extends State<DesktopSettingPage>
       padding: const EdgeInsets.only(left: 26, top: 16, bottom: 6),
       child: Text(
         translate(category),
-        style: const TextStyle(
+        style: TextStyle(
           fontSize: 12,
           fontWeight: FontWeight.w500,
-          color: Color(0xFF9CA3AF),
+          color: _textMutedColor,
         ),
       ),
     );
@@ -564,14 +608,14 @@ class _DesktopSettingPageState extends State<DesktopSettingPage>
             margin: const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
             decoration: BoxDecoration(
-              color: selected ? const Color(0xFFEFF4FF) : Colors.transparent,
+              color: selected ? _accentTintBg : Colors.transparent,
               borderRadius: BorderRadius.circular(8),
             ),
             child: Row(children: [
               Icon(
                 selected ? tab.selected : tab.unselected,
                 size: 19,
-                color: selected ? MyTheme.accent : const Color(0xFF6B7280),
+                color: selected ? MyTheme.accent : _textSecondaryColor,
               ),
               const SizedBox(width: 12),
               Text(
@@ -579,7 +623,7 @@ class _DesktopSettingPageState extends State<DesktopSettingPage>
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
-                  color: selected ? Colors.black : const Color(0xFF1F2937),
+                  color: selected ? _textStrongColor : _textPrimaryColor,
                 ),
               ),
             ]),
@@ -741,8 +785,8 @@ class _GeneralState extends State<_General> {
           children: [
             Text(
               label,
-              style: const TextStyle(
-                  fontSize: _kContentFontSize, color: Color(0xFF6B7280)),
+              style: TextStyle(
+                  fontSize: _kContentFontSize, color: _textSecondaryColor),
             ),
             Expanded(
               child: GestureDetector(
@@ -910,9 +954,9 @@ class _SafetyState extends State<_Safety> with AutomaticKeepAliveClientMixin {
           const EdgeInsets.fromLTRB(_kCardLeftMargin, 15, _kContentHMargin, 0),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       decoration: BoxDecoration(
-        color: const Color(0xFFEAF1FF),
+        color: _bannerBg,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFD3E1FF)),
+        border: Border.all(color: _bannerBorder),
       ),
       child: Row(
         children: [
@@ -929,7 +973,7 @@ class _SafetyState extends State<_Safety> with AutomaticKeepAliveClientMixin {
           Expanded(
             child: Text(
               translate('security_settings_banner_tip'),
-              style: const TextStyle(fontSize: 13, color: Color(0xFF374151)),
+              style: TextStyle(fontSize: 13, color: _textBodyColor),
             ),
           ),
           const SizedBox(width: 12),
@@ -1069,8 +1113,8 @@ class _SafetyState extends State<_Safety> with AutomaticKeepAliveClientMixin {
         children: [
           Text(
             translate('Permission scheme'),
-            style: const TextStyle(
-                fontSize: _kContentFontSize, color: Color(0xFF6B7280)),
+            style: TextStyle(
+                fontSize: _kContentFontSize, color: _textSecondaryColor),
           ),
           const SizedBox(height: 6),
           ComboBox(
@@ -1271,8 +1315,8 @@ class _SafetyState extends State<_Safety> with AutomaticKeepAliveClientMixin {
                   width: 104,
                   child: Text(
                     translate(label),
-                    style: const TextStyle(
-                        fontSize: _kContentFontSize, color: Color(0xFF6B7280)),
+                    style: TextStyle(
+                        fontSize: _kContentFontSize, color: _textSecondaryColor),
                   ),
                 ),
                 Expanded(child: control),
@@ -1963,8 +2007,8 @@ class _RemoteControlState extends State<_RemoteControl> {
               if (subtitle != null && subtitle.isNotEmpty) ...[
                 const SizedBox(height: 3),
                 Text(translate(subtitle),
-                    style: const TextStyle(
-                        fontSize: 12, color: Color(0xFF9CA3AF))),
+                    style: TextStyle(
+                        fontSize: 12, color: _textMutedColor)),
               ],
             ],
           ),
@@ -2163,10 +2207,12 @@ class _RemoteControlState extends State<_RemoteControl> {
         height: 118,
         padding: const EdgeInsets.fromLTRB(10, 10, 10, 12),
         decoration: BoxDecoration(
-          color: selected ? accent.withOpacity(0.06) : Colors.white,
+          color: selected
+              ? accent.withOpacity(_isDarkMode ? 0.16 : 0.06)
+              : _cardBg,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: selected ? accent : const Color(0xFFE5E7EB),
+            color: selected ? accent : _softBorderColor,
             width: selected ? 1.5 : 1,
           ),
         ),
@@ -2180,13 +2226,13 @@ class _RemoteControlState extends State<_RemoteControl> {
                     ? Icons.radio_button_checked
                     : Icons.radio_button_unchecked,
                 size: 16,
-                color: selected ? accent : const Color(0xFFC2C7D0),
+                color: selected ? accent : _iconFaintColor,
               ),
             ),
             const SizedBox(height: 2),
             Icon(icon,
                 size: 24,
-                color: selected ? accent : const Color(0xFF6B7280)),
+                color: selected ? accent : _textSecondaryColor),
             const SizedBox(height: 6),
             Text(
               translate(title),
@@ -2196,7 +2242,7 @@ class _RemoteControlState extends State<_RemoteControl> {
               style: TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
-                color: selected ? accent : const Color(0xFF374151),
+                color: selected ? accent : _textBodyColor,
               ),
             ),
             const SizedBox(height: 4),
@@ -2211,7 +2257,7 @@ class _RemoteControlState extends State<_RemoteControl> {
                   height: 1.3,
                   color: selected
                       ? accent.withOpacity(0.8)
-                      : const Color(0xFF9CA3AF),
+                      : _textMutedColor,
                 ),
               ),
             ),
@@ -2258,8 +2304,8 @@ class _RemoteControlState extends State<_RemoteControl> {
                           fontSize: 14, fontWeight: FontWeight.w600)),
                   const SizedBox(height: 3),
                   Text(translate('rc_trackpad_speed_sub'),
-                      style: const TextStyle(
-                          fontSize: 12, color: Color(0xFF9CA3AF))),
+                      style: TextStyle(
+                          fontSize: 12, color: _textMutedColor)),
                 ],
               ),
             ),
@@ -2312,19 +2358,20 @@ class _RemoteControlState extends State<_RemoteControl> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 14),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: _cardBg,
               borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: const Color(0xFFE5E7EB)),
+              border: Border.all(color: _softBorderColor),
             ),
             child: DropdownButtonHideUnderline(
               child: DropdownButton<String>(
                 value: groupValue,
                 isExpanded: true,
-                icon: const Icon(Icons.keyboard_arrow_down_rounded,
-                    color: Color(0xFF9CA3AF)),
+                icon: Icon(Icons.keyboard_arrow_down_rounded,
+                    color: _textMutedColor),
                 borderRadius: BorderRadius.circular(8),
-                style: const TextStyle(
-                    fontSize: 14, color: Color(0xFF374151)),
+                dropdownColor: _cardBg,
+                style: TextStyle(
+                    fontSize: 14, color: _textBodyColor),
                 onChanged: isOptFixed ? null : onChanged,
                 items: items
                     .map((e) => DropdownMenuItem<String>(
@@ -2498,11 +2545,11 @@ class _AccountState extends State<_Account> {
         children: [
           TextSpan(
               text: translate(label) + ': ',
-              style: const TextStyle(color: Color(0xFF9CA3AF))),
+              style: TextStyle(color: _textMutedColor)),
           TextSpan(
               text: value,
-              style: const TextStyle(
-                  color: Color(0xFF374151), fontWeight: FontWeight.w500)),
+              style: TextStyle(
+                  color: _textBodyColor, fontWeight: FontWeight.w500)),
         ],
       ),
     );
@@ -2533,14 +2580,14 @@ class _AccountState extends State<_Account> {
                             fontSize: 14, fontWeight: FontWeight.w600)),
                     const SizedBox(height: 3),
                     Text(translate(subtitle),
-                        style: const TextStyle(
-                            fontSize: 12, color: Color(0xFF9CA3AF))),
+                        style: TextStyle(
+                            fontSize: 12, color: _textMutedColor)),
                   ],
                 ),
               ),
               const SizedBox(width: 12),
-              const Icon(Icons.chevron_right,
-                  size: 20, color: Color(0xFFC2C7D0)),
+              Icon(Icons.chevron_right,
+                  size: 20, color: _iconFaintColor),
             ],
           ),
         ),
@@ -2568,8 +2615,8 @@ class _AccountState extends State<_Account> {
                         fontSize: 14, fontWeight: FontWeight.w600)),
                 const SizedBox(height: 3),
                 Text(translate(subtitle),
-                    style: const TextStyle(
-                        fontSize: 12, color: Color(0xFF9CA3AF))),
+                    style: TextStyle(
+                        fontSize: 12, color: _textMutedColor)),
               ],
             ),
           ),
@@ -3222,8 +3269,8 @@ class _AdvancedState extends State<_Advanced> {
                 if (subtitle != null && subtitle.isNotEmpty) ...[
                   const SizedBox(height: 3),
                   Text(translate(subtitle),
-                      style: const TextStyle(
-                          fontSize: 12, color: Color(0xFF9CA3AF))),
+                      style: TextStyle(
+                          fontSize: 12, color: _textMutedColor)),
                 ],
               ],
             ),
@@ -3361,11 +3408,11 @@ class _AdvancedState extends State<_Advanced> {
           const EdgeInsets.fromLTRB(_kCardLeftMargin, 14, _kContentHMargin, 0),
       padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: _cardBg,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
+            color: _cardShadowColor,
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -3483,7 +3530,7 @@ class _AdvancedState extends State<_Advanced> {
             const SizedBox(height: 4),
             Text(
               translate('advanced_features_tip'),
-              style: const TextStyle(fontSize: 12, color: Color(0xFF9CA3AF)),
+              style: TextStyle(fontSize: 12, color: _textMutedColor),
             ),
           ],
         ),
@@ -3742,8 +3789,8 @@ class _AdvancedState extends State<_Advanced> {
             OutlinedButton(
               onPressed: _restoreDefaults,
               style: OutlinedButton.styleFrom(
-                foregroundColor: const Color(0xFF374151),
-                side: const BorderSide(color: Color(0xFFE5E7EB)),
+                foregroundColor: _textBodyColor,
+                side: BorderSide(color: _softBorderColor),
                 padding:
                     const EdgeInsets.symmetric(horizontal: 22, vertical: 14),
                 shape: RoundedRectangleBorder(
@@ -4005,7 +4052,7 @@ class _UpdateState extends State<_Update> {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: const Color(0xFFF8F9FB),
+        color: _subtleBg,
         borderRadius: BorderRadius.circular(10),
       ),
       child: Row(
@@ -4032,8 +4079,8 @@ class _UpdateState extends State<_Update> {
                 const SizedBox(height: 2),
                 Text(
                   translate(subtitle),
-                  style: const TextStyle(
-                      fontSize: 12, color: Color(0xFF9CA3AF)),
+                  style: TextStyle(
+                      fontSize: 12, color: _textMutedColor),
                 ),
               ],
             ),
@@ -4566,7 +4613,7 @@ Widget _settingsPageHeader(String title, String subtitle) {
         const SizedBox(height: 6),
         Text(
           translate(subtitle),
-          style: const TextStyle(fontSize: 13, color: Color(0xFF9CA3AF)),
+          style: TextStyle(fontSize: 13, color: _textMutedColor),
         ),
       ],
     ),
@@ -4586,11 +4633,11 @@ Widget _GCard({
     margin: const EdgeInsets.fromLTRB(_kCardLeftMargin, 15, _kContentHMargin, 0),
     padding: const EdgeInsets.all(18),
     decoration: BoxDecoration(
-      color: Colors.white,
+      color: _cardBg,
       borderRadius: BorderRadius.circular(12),
       boxShadow: [
         BoxShadow(
-          color: Colors.black.withOpacity(0.03),
+          color: _cardShadowColor,
           blurRadius: 10,
           offset: const Offset(0, 2),
         ),
@@ -4624,8 +4671,8 @@ Widget _GCard({
                     const SizedBox(height: 3),
                     Text(
                       translate(subtitle),
-                      style: const TextStyle(
-                          fontSize: 12, color: Color(0xFF9CA3AF)),
+                      style: TextStyle(
+                          fontSize: 12, color: _textMutedColor),
                     ),
                   ],
                 ],
@@ -4639,7 +4686,7 @@ Widget _GCard({
           ],
         ),
         if (children.isNotEmpty) ...[
-          const Divider(height: 28, color: Color(0xFFF0F1F4)),
+          Divider(height: 28, color: _dividerColor),
           for (int i = 0; i < children.length; i++) ...[
             if (i > 0) const SizedBox(height: 12),
             children[i],
