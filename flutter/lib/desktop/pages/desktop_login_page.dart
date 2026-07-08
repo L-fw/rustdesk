@@ -136,6 +136,14 @@ class _AppLoginPageState extends State<AppLoginPage>
     }
   }
 
+  // 输入框吞掉不规范字符时的提示（延后到帧末，避免在过滤过程中 setState 并被 onChanged 清除）
+  void _onCharRejected(String key, FocusNode node) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _setFieldError(key, node, translate('please_enter_valid_characters'));
+    });
+  }
+
   bool _isUsernameValid(String value) {
     if (value.length < 1 || value.length > 20) return false;
     return RegExp(r'^[A-Za-z0-9_]+$').hasMatch(value);
@@ -1078,6 +1086,10 @@ class _AppLoginPageState extends State<AppLoginPage>
                 label: translate('Verification code'),
                 icon: Icons.sms_outlined,
                 keyboardType: TextInputType.number,
+                inputFormatters: [
+                  FilteringTextInputFormatter.digitsOnly,
+                  LengthLimitingTextInputFormatter(6),
+                ],
                 textInputAction: TextInputAction.done,
                 onSubmitted: (_) => _loginWithSms(),
               ),
@@ -1200,6 +1212,13 @@ class _AppLoginPageState extends State<AppLoginPage>
     ValueChanged<String>? onSubmitted, // ← 桌面新增：支持 Enter 提交
     TextInputAction? textInputAction,
   }) {
+    // 为字符过滤器包一层：当不规范字符被吞掉时，复用错误提示框提醒用户
+    final effectiveFormatters = inputFormatters
+        ?.map((f) => f is LengthLimitingTextInputFormatter
+            ? f
+            : _RejectNotifyingFormatter(
+                f, () => _onCharRejected(fieldKey, focusNode)))
+        .toList();
     return AnimatedBuilder(
       animation: Listenable.merge([
         focusNode,
@@ -1219,7 +1238,7 @@ class _AppLoginPageState extends State<AppLoginPage>
             focusNode: focusNode,
             obscureText: obscure,
             keyboardType: keyboardType,
-            inputFormatters: inputFormatters,
+            inputFormatters: effectiveFormatters,
             // 桌面：优先使用传入的 textInputAction，默认使用 done
             textInputAction: textInputAction ?? TextInputAction.done,
             onSubmitted: onSubmitted,
@@ -1374,6 +1393,14 @@ class _ForgotPasswordDialogState extends State<DesktopChangePasswordDialog> {
     super.dispose();
   }
 
+  // 输入框吞掉不规范字符时，复用本对话框的错误提示框提醒用户
+  void _notifyInvalidChar() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      setState(() => _errorMsg = translate('please_enter_valid_characters'));
+    });
+  }
+
   void _startCountdown() {
     setState(() => _countdown = 60);
     _countdownTimer?.cancel();
@@ -1497,7 +1524,9 @@ class _ForgotPasswordDialogState extends State<DesktopChangePasswordDialog> {
                 keyboardType: TextInputType.phone,
                 textInputAction: TextInputAction.next,
                 inputFormatters: [
-                  FilteringTextInputFormatter.digitsOnly,
+                  _RejectNotifyingFormatter(
+                      FilteringTextInputFormatter.digitsOnly,
+                      _notifyInvalidChar),
                   LengthLimitingTextInputFormatter(11),
                 ],
                 decoration: InputDecoration(
@@ -1514,6 +1543,12 @@ class _ForgotPasswordDialogState extends State<DesktopChangePasswordDialog> {
                       controller: _smsCodeController,
                       keyboardType: TextInputType.number,
                       textInputAction: TextInputAction.next,
+                      inputFormatters: [
+                        _RejectNotifyingFormatter(
+                            FilteringTextInputFormatter.digitsOnly,
+                            _notifyInvalidChar),
+                        LengthLimitingTextInputFormatter(6),
+                      ],
                       decoration: InputDecoration(
                         labelText: translate('Verification code'),
                         prefixIcon: Icon(Icons.sms_outlined, size: 20),
@@ -1552,7 +1587,10 @@ class _ForgotPasswordDialogState extends State<DesktopChangePasswordDialog> {
                 obscureText: _obscurePassword,
                 textInputAction: TextInputAction.next,
                 inputFormatters: [
-                  FilteringTextInputFormatter.deny(RegExp(r'[\u4e00-\u9fff]')),
+                  _RejectNotifyingFormatter(
+                      FilteringTextInputFormatter.deny(
+                          RegExp(r'[\u4e00-\u9fff]')),
+                      _notifyInvalidChar),
                 ],
                 onChanged: (value) {
                   final error = _validatePasswordFormat(value);
@@ -1593,7 +1631,10 @@ class _ForgotPasswordDialogState extends State<DesktopChangePasswordDialog> {
                 textInputAction: TextInputAction.done,
                 onSubmitted: (_) => _submit(),
                 inputFormatters: [
-                  FilteringTextInputFormatter.deny(RegExp(r'[\u4e00-\u9fff]')),
+                  _RejectNotifyingFormatter(
+                      FilteringTextInputFormatter.deny(
+                          RegExp(r'[\u4e00-\u9fff]')),
+                      _notifyInvalidChar),
                 ],
                 onChanged: (value) {
                   final error = (value.isNotEmpty && value != _passwordController.text)
@@ -1716,6 +1757,14 @@ class _DesktopChangeOwnPasswordDialogState
     super.dispose();
   }
 
+  // 输入框吞掉不规范字符时，复用本对话框的错误提示框提醒用户
+  void _notifyInvalidChar() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      setState(() => _errorMsg = translate('please_enter_valid_characters'));
+    });
+  }
+
   String? _validatePasswordFormat(String value) {
     if (value.isEmpty) return null;
     if (value.length < 6 || value.length > 20) {
@@ -1791,7 +1840,10 @@ class _DesktopChangeOwnPasswordDialogState
                 obscureText: _obscureOldPassword,
                 textInputAction: TextInputAction.next,
                 inputFormatters: [
-                  FilteringTextInputFormatter.deny(RegExp(r'[一-鿿]')),
+                  _RejectNotifyingFormatter(
+                      FilteringTextInputFormatter.deny(
+                          RegExp(r'[一-鿿]')),
+                      _notifyInvalidChar),
                 ],
                 decoration: InputDecoration(
                   labelText: translate('old_password_label'),
@@ -1815,7 +1867,10 @@ class _DesktopChangeOwnPasswordDialogState
                 obscureText: _obscurePassword,
                 textInputAction: TextInputAction.next,
                 inputFormatters: [
-                  FilteringTextInputFormatter.deny(RegExp(r'[一-鿿]')),
+                  _RejectNotifyingFormatter(
+                      FilteringTextInputFormatter.deny(
+                          RegExp(r'[一-鿿]')),
+                      _notifyInvalidChar),
                 ],
                 onChanged: (value) {
                   final error = _validatePasswordFormat(value);
@@ -1856,7 +1911,10 @@ class _DesktopChangeOwnPasswordDialogState
                 textInputAction: TextInputAction.done,
                 onSubmitted: (_) => _submit(),
                 inputFormatters: [
-                  FilteringTextInputFormatter.deny(RegExp(r'[一-鿿]')),
+                  _RejectNotifyingFormatter(
+                      FilteringTextInputFormatter.deny(
+                          RegExp(r'[一-鿿]')),
+                      _notifyInvalidChar),
                 ],
                 onChanged: (value) {
                   final error =
@@ -1931,6 +1989,27 @@ class _DesktopChangeOwnPasswordDialogState
         ),
       ],
     );
+  }
+}
+
+/// 包装字符过滤器：当内部过滤器吞掉不规范字符（导致文本变化）时触发回调，
+/// 用于复用页面原有的错误提示框提醒用户。不改变过滤结果本身。
+class _RejectNotifyingFormatter extends TextInputFormatter {
+  _RejectNotifyingFormatter(this.inner, this.onReject);
+
+  final TextInputFormatter inner;
+  final VoidCallback onReject;
+
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    final result = inner.formatEditUpdate(oldValue, newValue);
+    if (result.text != newValue.text) {
+      onReject();
+    }
+    return result;
   }
 }
 

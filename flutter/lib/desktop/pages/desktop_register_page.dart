@@ -119,6 +119,14 @@ class _DesktopRegisterPageState extends State<DesktopRegisterPage>
     }
   }
 
+  // 输入框吞掉不规范字符时的提示（延后到帧末，避免在过滤过程中 setState 并被 onChanged 清除）
+  void _onCharRejected(String key, FocusNode node) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _setFieldError(key, node, translate('please_enter_valid_characters'));
+    });
+  }
+
   void _startCountdown() {
     setState(() => _countdown = 60);
     _countdownTimer?.cancel();
@@ -547,6 +555,10 @@ class _DesktopRegisterPageState extends State<DesktopRegisterPage>
                           focusNode: _smsCodeFocus,
                           label: translate('Verification code'),
                           icon: Icons.verified_user_outlined,
+                          inputFormatters: [
+                            FilteringTextInputFormatter.digitsOnly,
+                            LengthLimitingTextInputFormatter(6),
+                          ],
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -899,6 +911,13 @@ class _DesktopRegisterPageState extends State<DesktopRegisterPage>
     ValueChanged<String>? onSubmitted, // ← 新增：支持可覆盖的提交操作
     TextInputAction? textInputAction,  // ← 新增：支持回车键行为自定义
   }) {
+    // 为字符过滤器包一层：当不规范字符被吞掉时，复用错误提示框提醒用户
+    final effectiveFormatters = inputFormatters
+        ?.map((f) => f is LengthLimitingTextInputFormatter
+            ? f
+            : _RejectNotifyingFormatter(
+                f, () => _onCharRejected(fieldKey, focusNode)))
+        .toList();
     return AnimatedBuilder(
       animation: Listenable.merge([
         focusNode,
@@ -919,7 +938,7 @@ class _DesktopRegisterPageState extends State<DesktopRegisterPage>
             obscureText: obscure,
             // 桌面端：仅在明确需要时传入 keyboardType
             keyboardType: keyboardType,
-            inputFormatters: inputFormatters,
+            inputFormatters: effectiveFormatters,
             // 桌面：配置指定的 action 和 onSubmitted
             textInputAction: textInputAction ?? TextInputAction.next,
             onSubmitted: onSubmitted ?? (_) => FocusScope.of(context).nextFocus(),
@@ -975,6 +994,27 @@ class _DesktopRegisterPageState extends State<DesktopRegisterPage>
     );
   }
 }
+/// 包装字符过滤器：当内部过滤器吞掉不规范字符（导致文本变化）时触发回调，
+/// 用于复用页面原有的错误提示框提醒用户。不改变过滤结果本身。
+class _RejectNotifyingFormatter extends TextInputFormatter {
+  _RejectNotifyingFormatter(this.inner, this.onReject);
+
+  final TextInputFormatter inner;
+  final VoidCallback onReject;
+
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    final result = inner.formatEditUpdate(oldValue, newValue);
+    if (result.text != newValue.text) {
+      onReject();
+    }
+    return result;
+  }
+}
+
 /// 用户名输入过滤器：只允许英文、数字和下划线，不允许中文。
 /// IME 组字期间不干预，避免输入法叠字问题。
 class _UsernameInputFormatter extends TextInputFormatter {
