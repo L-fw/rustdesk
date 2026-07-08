@@ -609,11 +609,14 @@ class _AppLoginPageState extends State<AppLoginPage>
       child: Focus(
         autofocus: true,
         child: Scaffold(
-          backgroundColor: const Color(0xFFEEF4FF),
+          backgroundColor:
+              isDark ? MyTheme.pageBg : const Color(0xFFEEF4FF),
           body: Container(
-            decoration: const BoxDecoration(
+            decoration: BoxDecoration(
               image: DecorationImage(
-                image: AssetImage('assets/login_background.png'),
+                image: AssetImage(isDark
+                    ? 'assets/login_background_dark.png'
+                    : 'assets/login_background.png'),
                 fit: BoxFit.cover,
               ),
             ),
@@ -635,8 +638,10 @@ class _AppLoginPageState extends State<AppLoginPage>
   // ─────────────────────── 左侧品牌面板 ───────────────────────
 
   Widget _buildBrandingPanel() {
-    const titleColor = Color(0xFF1B2233);
-    const subColor = Color(0xFF8A93A6);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final titleColor = isDark ? Colors.white : const Color(0xFF1B2233);
+    final subColor =
+        isDark ? const Color(0xFFA5ABB3) : const Color(0xFF8A93A6);
     return Padding(
       padding: const EdgeInsets.fromLTRB(52, 40, 28, 40),
       child: Column(
@@ -657,7 +662,7 @@ class _AppLoginPageState extends State<AppLoginPage>
               const SizedBox(width: 12),
               Text(
                 bind.mainGetAppNameSync(),
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.bold,
                   color: titleColor,
@@ -673,7 +678,7 @@ class _AppLoginPageState extends State<AppLoginPage>
               padding:
                   const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.65),
+                color: Colors.white.withOpacity(isDark ? 0.12 : 0.65),
                 borderRadius: BorderRadius.circular(20),
               ),
               child: Row(
@@ -709,18 +714,26 @@ class _AppLoginPageState extends State<AppLoginPage>
           // 底部安全提示
           Row(
             children: [
-              const Expanded(
-                child: Divider(color: Color(0x22000000), endIndent: 14),
+              Expanded(
+                child: Divider(
+                    color: isDark
+                        ? const Color(0x22FFFFFF)
+                        : const Color(0x22000000),
+                    endIndent: 14),
               ),
               const Icon(Icons.shield_outlined,
                   size: 15, color: _kPrimaryColor),
               const SizedBox(width: 7),
               Text(
                 translate('brand_secure_access'),
-                style: const TextStyle(fontSize: 12.5, color: subColor),
+                style: TextStyle(fontSize: 12.5, color: subColor),
               ),
-              const Expanded(
-                child: Divider(color: Color(0x22000000), indent: 14),
+              Expanded(
+                child: Divider(
+                    color: isDark
+                        ? const Color(0x22FFFFFF)
+                        : const Color(0x22000000),
+                    indent: 14),
               ),
             ],
           ),
@@ -730,6 +743,7 @@ class _AppLoginPageState extends State<AppLoginPage>
   }
 
   Widget _buildFeatureItem(IconData icon, String title, String subtitle) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     // 与上方徽章使用相同的左侧缩进，确保左对齐
     return Padding(
       padding: const EdgeInsets.only(left: _kBrandIndent),
@@ -741,7 +755,7 @@ class _AppLoginPageState extends State<AppLoginPage>
           height: 44,
           alignment: Alignment.center,
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.85),
+            color: Colors.white.withOpacity(isDark ? 0.10 : 0.85),
             borderRadius: BorderRadius.circular(12),
             boxShadow: [
               BoxShadow(
@@ -759,17 +773,19 @@ class _AppLoginPageState extends State<AppLoginPage>
           children: [
             Text(
               title,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 15,
                 fontWeight: FontWeight.w600,
-                color: Color(0xFF1B2233),
+                color: isDark ? Colors.white : const Color(0xFF1B2233),
               ),
             ),
             const SizedBox(height: 3),
             Text(
               subtitle,
-              style: const TextStyle(
-                  fontSize: 12, color: Color(0xFF8A93A6)),
+              style: TextStyle(
+                  fontSize: 12,
+                  color:
+                      isDark ? const Color(0xFFA5ABB3) : const Color(0xFF8A93A6)),
             ),
           ],
         ),
@@ -786,7 +802,7 @@ class _AppLoginPageState extends State<AppLoginPage>
       child: Container(
         width: 380,
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: MyTheme.cardBg,
           borderRadius: BorderRadius.circular(18),
           boxShadow: [
             BoxShadow(
@@ -814,10 +830,10 @@ class _AppLoginPageState extends State<AppLoginPage>
                 Center(
                   child: Text(
                     translate('login_welcome_back'),
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 23,
                       fontWeight: FontWeight.bold,
-                      color: Color(0xFF1B2233),
+                      color: isDark ? Colors.white : const Color(0xFF1B2233),
                     ),
                   ),
                 ),
@@ -826,8 +842,11 @@ class _AppLoginPageState extends State<AppLoginPage>
                   child: Text(
                     translate('login_welcome_subtitle')
                         .replaceFirst('{}', bind.mainGetAppNameSync()),
-                    style: const TextStyle(
-                        fontSize: 12.5, color: Color(0xFF8A93A6)),
+                    style: TextStyle(
+                        fontSize: 12.5,
+                        color: isDark
+                            ? const Color(0xFFA5ABB3)
+                            : const Color(0xFF8A93A6)),
                   ),
                 ),
                 const SizedBox(height: 22),
@@ -836,13 +855,15 @@ class _AppLoginPageState extends State<AppLoginPage>
                 Container(
                   padding: const EdgeInsets.all(4),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFF1F4F9),
+                    color: isDark
+                        ? const Color(0xFF2C2D34)
+                        : const Color(0xFFF1F4F9),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: TabBar(
                     controller: _tabController,
                     indicator: BoxDecoration(
-                      color: Colors.white,
+                      color: isDark ? const Color(0xFF3A3B42) : Colors.white,
                       borderRadius: BorderRadius.circular(9),
                       boxShadow: [
                         BoxShadow(
@@ -853,7 +874,9 @@ class _AppLoginPageState extends State<AppLoginPage>
                       ],
                     ),
                     labelColor: _kPrimaryColor,
-                    unselectedLabelColor: const Color(0xFF8A93A6),
+                    unselectedLabelColor: isDark
+                        ? const Color(0xFFA5ABB3)
+                        : const Color(0xFF8A93A6),
                     labelStyle: const TextStyle(
                         fontSize: 13, fontWeight: FontWeight.w600),
                     unselectedLabelStyle: const TextStyle(fontSize: 13),
@@ -911,7 +934,11 @@ class _AppLoginPageState extends State<AppLoginPage>
                 ],
 
                 const SizedBox(height: 18),
-                const Divider(height: 1, color: Color(0x14000000)),
+                Divider(
+                    height: 1,
+                    color: isDark
+                        ? const Color(0x14FFFFFF)
+                        : const Color(0x14000000)),
                 const SizedBox(height: 14),
 
                 // Register Link
@@ -920,8 +947,10 @@ class _AppLoginPageState extends State<AppLoginPage>
                   children: [
                     Text(
                       translate('no_account_prompt'),
-                      style: const TextStyle(
-                        color: Color(0xFF8A93A6),
+                      style: TextStyle(
+                        color: isDark
+                            ? const Color(0xFFA5ABB3)
+                            : const Color(0xFF8A93A6),
                         fontSize: 13,
                       ),
                     ),
@@ -1225,6 +1254,7 @@ class _AppLoginPageState extends State<AppLoginPage>
         if (_shakeControllers[fieldKey] != null) _shakeControllers[fieldKey]!,
       ]),
       builder: (context, _) {
+        final isDark = Theme.of(context).brightness == Brightness.dark;
         final hasFocus = focusNode.hasFocus;
         final isInvalid = _invalidFields[fieldKey] == true;
         final shake = _shakeControllers[fieldKey];
@@ -1259,22 +1289,33 @@ class _AppLoginPageState extends State<AppLoginPage>
                   size: 20,
                   color: isInvalid
                       ? Colors.red
-                      : (hasFocus ? _kPrimaryColor : const Color(0xFF9AA3B2))),
+                      : (hasFocus
+                          ? _kPrimaryColor
+                          : (isDark
+                              ? const Color(0xFF8A9099)
+                              : const Color(0xFF9AA3B2)))),
               suffixIcon: suffix,
               filled: true,
               fillColor: isInvalid
-                  ? const Color(0xFFFFF5F5)
-                  : const Color(0xFFF6F8FB),
+                  ? (isDark
+                      ? const Color(0xFF3A2626)
+                      : const Color(0xFFFFF5F5))
+                  : (isDark
+                      ? const Color(0xFF2C2D34)
+                      : const Color(0xFFF6F8FB)),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(11),
-                borderSide: BorderSide(color: Colors.grey.shade300),
+                borderSide: BorderSide(
+                    color: isDark ? Colors.white24 : Colors.grey.shade300),
               ),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(11),
                 borderSide: BorderSide(
                     color: isInvalid
                         ? Colors.red
-                        : const Color(0xFFE3E8F0)),
+                        : (isDark
+                            ? const Color(0xFF34353C)
+                            : const Color(0xFFE3E8F0))),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(11),
