@@ -564,8 +564,8 @@ class _DesktopHomePageState extends State<DesktopHomePage>
                     shape: BoxShape.circle,
                     border: Border.all(color: const Color(0xFFE5E7EB)),
                   ),
-                  child:
-                      Icon(Icons.shield_outlined, color: MyTheme.accent, size: 18),
+                  child: Icon(Icons.contact_support_rounded,
+                      color: MyTheme.accent, size: 18),
                 ),
                 const SizedBox(width: 10),
                 Expanded(
