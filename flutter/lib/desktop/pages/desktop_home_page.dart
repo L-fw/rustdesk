@@ -282,7 +282,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
     final isIncomingOnly = bind.isIncomingOnly();
     return _buildBlock(
       child: Container(
-        color: const Color(0xFFF3F5F8),
+        color: MyTheme.pageBg,
         constraints: const BoxConstraints(minWidth: 900, minHeight: 560),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -307,10 +307,10 @@ class _DesktopHomePageState extends State<DesktopHomePage>
   Widget buildLeftPane(BuildContext context) {
     return Container(
       width: 220,
-      decoration: const BoxDecoration(
-        color: Colors.white,
+      decoration: BoxDecoration(
+        color: MyTheme.cardBg,
         border: Border(
-          right: BorderSide(color: Color(0xFFEDEFF3), width: 1),
+          right: BorderSide(color: MyTheme.hairline, width: 1),
         ),
       ),
       child: Column(
@@ -346,7 +346,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
           child: Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: const Color(0xFFEFF4FF),
+              color: MyTheme.accentTintBg,
               borderRadius: BorderRadius.circular(12),
             ),
             child: Row(
@@ -387,8 +387,8 @@ class _DesktopHomePageState extends State<DesktopHomePage>
                             horizontal: 6, vertical: 2),
                         decoration: BoxDecoration(
                           color: loggedIn
-                              ? const Color(0xFFD7E4FF)
-                              : const Color(0xFFE6E8EC),
+                              ? MyTheme.accentTintBg
+                              : MyTheme.subtleBg,
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: Text(
@@ -399,7 +399,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
                             fontSize: 10,
                             color: loggedIn
                                 ? MyTheme.accent
-                                : const Color(0xFF6B7280),
+                                : MyTheme.textSecondary,
                           ),
                         ),
                       ),
@@ -492,7 +492,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           decoration: BoxDecoration(
             color: isSelected
-                ? const Color(0xFFEFF4FF)
+                ? MyTheme.accentTintBg
                 : Colors.transparent,
             borderRadius: BorderRadius.circular(8),
           ),
@@ -503,7 +503,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
                 size: 19,
                 color: isSelected
                     ? MyTheme.accent
-                    : const Color(0xFF6B7280),
+                    : MyTheme.textSecondary,
               ),
               const SizedBox(width: 12),
               Text(
@@ -513,8 +513,8 @@ class _DesktopHomePageState extends State<DesktopHomePage>
                   fontWeight:
                       isSelected ? FontWeight.w600 : FontWeight.w500,
                   color: isSelected
-                      ? Colors.black
-                      : const Color(0xFF1F2937),
+                      ? MyTheme.textStrong
+                      : MyTheme.textPrimary,
                 ),
               ),
             ],
@@ -549,10 +549,10 @@ class _DesktopHomePageState extends State<DesktopHomePage>
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
             decoration: BoxDecoration(
               color: hover.value
-                  ? const Color(0xFFEFF4FF)
-                  : const Color(0xFFF9FAFB),
+                  ? MyTheme.accentTintBg
+                  : MyTheme.subtleBg,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: const Color(0xFFEDEFF3)),
+              border: Border.all(color: MyTheme.hairline),
             ),
             child: Row(
               children: [
@@ -560,9 +560,9 @@ class _DesktopHomePageState extends State<DesktopHomePage>
                   width: 32,
                   height: 32,
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: MyTheme.cardBg,
                     shape: BoxShape.circle,
-                    border: Border.all(color: const Color(0xFFE5E7EB)),
+                    border: Border.all(color: MyTheme.softBorder),
                   ),
                   child: Icon(Icons.contact_support_rounded,
                       color: MyTheme.accent, size: 18),
@@ -580,14 +580,14 @@ class _DesktopHomePageState extends State<DesktopHomePage>
                       const SizedBox(height: 2),
                       Text(
                         translate('Get help and support'),
-                        style: const TextStyle(
-                            fontSize: 11, color: Color(0xFF9CA3AF)),
+                        style: TextStyle(
+                            fontSize: 11, color: MyTheme.textMuted),
                       ),
                     ],
                   ),
                 ),
-                const Icon(Icons.chevron_right,
-                    size: 18, color: Color(0xFF9CA3AF)),
+                Icon(Icons.chevron_right,
+                    size: 18, color: MyTheme.textMuted),
               ],
             ),
           ),
@@ -600,7 +600,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
 
   Widget buildRightPane(BuildContext context) {
     return Container(
-      color: const Color(0xFFF3F5F8),
+      color: MyTheme.pageBg,
       child: ValueListenableBuilder<String>(
         valueListenable: _selectedNav,
         builder: (_, selected, __) {
@@ -622,9 +622,9 @@ class _DesktopHomePageState extends State<DesktopHomePage>
           return Column(
             children: [
               Expanded(child: body),
-              const Divider(height: 1, color: Color(0xFFEDEFF3)),
+              Divider(height: 1, color: MyTheme.hairline),
               Container(
-                color: Colors.white,
+                color: MyTheme.cardBg,
                 padding:
                     const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 child: Row(
@@ -672,7 +672,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(icon, size: 56, color: const Color(0xFFCBD5E1)),
+          Icon(icon, size: 56, color: MyTheme.iconFaint),
           const SizedBox(height: 16),
           Text(
             title,
@@ -682,7 +682,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
           const SizedBox(height: 8),
           Text(
             translate('Coming soon'),
-            style: const TextStyle(fontSize: 13, color: Color(0xFF9CA3AF)),
+            style: TextStyle(fontSize: 13, color: MyTheme.textMuted),
           ),
         ],
       ),
@@ -693,11 +693,11 @@ class _DesktopHomePageState extends State<DesktopHomePage>
     return Container(
       padding: const EdgeInsets.all(22),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: MyTheme.cardBg,
         borderRadius: BorderRadius.circular(14),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: MyTheme.cardShadow,
             blurRadius: 12,
             offset: const Offset(0, 2),
           ),
@@ -714,7 +714,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
           const SizedBox(height: 6),
           Text(
             translate('home_control_remote_tip'),
-            style: const TextStyle(fontSize: 12, color: Color(0xFF6B7280)),
+            style: TextStyle(fontSize: 12, color: MyTheme.textSecondary),
           ),
           const SizedBox(height: 18),
           Row(
@@ -726,20 +726,20 @@ class _DesktopHomePageState extends State<DesktopHomePage>
                   style: const TextStyle(fontSize: 15),
                   decoration: InputDecoration(
                     hintText: translate('Enter Remote ID'),
-                    hintStyle: const TextStyle(
-                        color: Color(0xFF9CA3AF), fontSize: 14),
+                    hintStyle: TextStyle(
+                        color: MyTheme.textMuted, fontSize: 14),
                     isDense: true,
                     contentPadding: const EdgeInsets.symmetric(
                         horizontal: 14, vertical: 14),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8),
                       borderSide:
-                          const BorderSide(color: Color(0xFFE5E7EB)),
+                          BorderSide(color: MyTheme.softBorder),
                     ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8),
                       borderSide:
-                          const BorderSide(color: Color(0xFFE5E7EB)),
+                          BorderSide(color: MyTheme.softBorder),
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8),
@@ -796,7 +796,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
       height: 46,
       width: 46,
       decoration: BoxDecoration(
-        border: Border.all(color: const Color(0xFFE5E7EB)),
+        border: Border.all(color: MyTheme.softBorder),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Tooltip(
@@ -847,10 +847,10 @@ class _DesktopHomePageState extends State<DesktopHomePage>
                         ? Transform.rotate(
                             angle: pi,
                             child: Icon(IconFont.more,
-                                size: 16, color: const Color(0xFF6B7280)),
+                                size: 16, color: MyTheme.textSecondary),
                           )
                         : Icon(IconFont.more,
-                            size: 16, color: const Color(0xFF6B7280)),
+                            size: 16, color: MyTheme.textSecondary),
                   ),
                 ));
           },
@@ -869,11 +869,11 @@ class _DesktopHomePageState extends State<DesktopHomePage>
           return Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: MyTheme.cardBg,
               borderRadius: BorderRadius.circular(14),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.04),
+                  color: MyTheme.cardShadow,
                   blurRadius: 12,
                   offset: const Offset(0, 2),
                 ),
@@ -886,15 +886,15 @@ class _DesktopHomePageState extends State<DesktopHomePage>
                 Row(
                   children: [
                     Text(translate('Local ID'),
-                        style: const TextStyle(
+                        style: TextStyle(
                             fontSize: 14,
-                            color: Color(0xFF374151),
+                            color: MyTheme.textBody,
                             fontWeight: FontWeight.w600)),
                     const SizedBox(width: 4),
                     Tooltip(
                       message: translate('local_id_tip'),
-                      child: const Icon(Icons.info_outline,
-                          size: 14, color: Color(0xFF9CA3AF)),
+                      child: Icon(Icons.info_outline,
+                          size: 14, color: MyTheme.textMuted),
                     ),
                   ],
                 ),
@@ -919,13 +919,13 @@ class _DesktopHomePageState extends State<DesktopHomePage>
                 Row(
                   children: [
                     Text(translate('One-time Password'),
-                        style: const TextStyle(
-                            fontSize: 12, color: Color(0xFF6B7280))),
+                        style: TextStyle(
+                            fontSize: 12, color: MyTheme.textSecondary)),
                     const SizedBox(width: 4),
                     Tooltip(
                       message: translate('one_time_password_tip'),
-                      child: const Icon(Icons.info_outline,
-                          size: 12, color: Color(0xFF9CA3AF)),
+                      child: Icon(Icons.info_outline,
+                          size: 12, color: MyTheme.textMuted),
                     ),
                   ],
                 ),
@@ -945,7 +945,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
                           padding: const EdgeInsets.symmetric(
                               horizontal: 12, vertical: 10),
                           decoration: BoxDecoration(
-                            color: const Color(0xFFF5F6F8),
+                            color: MyTheme.subtleBg,
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Obx(() => Text(
@@ -1004,9 +1004,9 @@ class _DesktopHomePageState extends State<DesktopHomePage>
     return Tooltip(
       message: translate('More'),
       child: Material(
-        color: Colors.white,
+        color: MyTheme.cardBg,
         shape: RoundedRectangleBorder(
-          side: const BorderSide(color: Color(0xFFE5E7EB)),
+          side: BorderSide(color: MyTheme.softBorder),
           borderRadius: BorderRadius.circular(8),
         ),
         child: Builder(
@@ -1029,7 +1029,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
               width: 34,
               child: Center(
                 child: Icon(IconFont.more,
-                    size: 14, color: const Color(0xFF6B7280)),
+                    size: 14, color: MyTheme.textSecondary),
               ),
             ),
           ),
@@ -1065,10 +1065,10 @@ class _DesktopHomePageState extends State<DesktopHomePage>
           margin: const EdgeInsets.only(left: 4),
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            border: Border.all(color: const Color(0xFFE5E7EB)),
+            border: Border.all(color: MyTheme.softBorder),
             borderRadius: BorderRadius.circular(6),
           ),
-          child: Icon(icon, size: 16, color: color ?? const Color(0xFF6B7280)),
+          child: Icon(icon, size: 16, color: color ?? MyTheme.textSecondary),
         ),
       ),
     );
@@ -1221,7 +1221,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
         const SizedBox(width: 8),
         Text(
           '($count)',
-          style: const TextStyle(fontSize: 15, color: Color(0xFF6B7280)),
+          style: TextStyle(fontSize: 15, color: MyTheme.textSecondary),
         ),
       ],
     );
@@ -1234,9 +1234,9 @@ class _DesktopHomePageState extends State<DesktopHomePage>
           child: Container(
             height: 38,
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: MyTheme.cardBg,
               borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: const Color(0xFFE5E7EB)),
+              border: Border.all(color: MyTheme.softBorder),
             ),
             child: TextField(
               controller: _recentSearchCtrl,
@@ -1248,10 +1248,10 @@ class _DesktopHomePageState extends State<DesktopHomePage>
               decoration: InputDecoration(
                 isDense: true,
                 hintText: translate('Search device or ID'),
-                hintStyle: const TextStyle(
-                    color: Color(0xFF9CA3AF), fontSize: 13),
-                prefixIcon: const Icon(Icons.search,
-                    size: 18, color: Color(0xFF9CA3AF)),
+                hintStyle: TextStyle(
+                    color: MyTheme.textMuted, fontSize: 13),
+                prefixIcon: Icon(Icons.search,
+                    size: 18, color: MyTheme.textMuted),
                 prefixIconConstraints:
                     const BoxConstraints(minWidth: 36, minHeight: 36),
                 border: InputBorder.none,
@@ -1306,18 +1306,18 @@ class _DesktopHomePageState extends State<DesktopHomePage>
           height: 38,
           padding: const EdgeInsets.symmetric(horizontal: 12),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: MyTheme.cardBg,
             borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: const Color(0xFFE5E7EB)),
+            border: Border.all(color: MyTheme.softBorder),
           ),
           child: DropdownButtonHideUnderline(
             child: DropdownButton<String>(
               value: current,
               isDense: true,
-              icon: const Icon(Icons.keyboard_arrow_down,
-                  size: 18, color: Color(0xFF6B7280)),
-              style: const TextStyle(
-                  fontSize: 13, color: Color(0xFF374151)),
+              icon: Icon(Icons.keyboard_arrow_down,
+                  size: 18, color: MyTheme.textSecondary),
+              style: TextStyle(
+                  fontSize: 13, color: MyTheme.textBody),
               items: items
                   .map((e) => DropdownMenuItem(
                         value: e.$1,
@@ -1346,17 +1346,17 @@ class _DesktopHomePageState extends State<DesktopHomePage>
           height: 38,
           padding: const EdgeInsets.symmetric(horizontal: 12),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: MyTheme.cardBg,
             borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: const Color(0xFFE5E7EB)),
+            border: Border.all(color: MyTheme.softBorder),
           ),
           child: DropdownButtonHideUnderline(
             child: DropdownButton<int>(
               value: current,
               isDense: true,
-              icon: const Icon(Icons.keyboard_arrow_down,
-                  size: 18, color: Color(0xFF6B7280)),
-              style: const TextStyle(fontSize: 13, color: Color(0xFF374151)),
+              icon: Icon(Icons.keyboard_arrow_down,
+                  size: 18, color: MyTheme.textSecondary),
+              style: TextStyle(fontSize: 13, color: MyTheme.textBody),
               items: _recentPageSizeOptions
                   .map((n) => DropdownMenuItem(
                         value: n,
@@ -1379,7 +1379,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
     VoidCallback? onTap,
   }) {
     final enabled = onTap != null;
-    final fg = enabled ? const Color(0xFF374151) : const Color(0xFF9CA3AF);
+    final fg = enabled ? MyTheme.textBody : MyTheme.textMuted;
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -1389,9 +1389,9 @@ class _DesktopHomePageState extends State<DesktopHomePage>
           height: 38,
           padding: const EdgeInsets.symmetric(horizontal: 14),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: MyTheme.cardBg,
             borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: const Color(0xFFE5E7EB)),
+            border: Border.all(color: MyTheme.softBorder),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
@@ -1418,9 +1418,9 @@ class _DesktopHomePageState extends State<DesktopHomePage>
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.cloud_off, size: 40, color: Color(0xFFCBD5E1)),
+            Icon(Icons.cloud_off, size: 40, color: MyTheme.iconFaint),
             const SizedBox(height: 12),
-            Text(error, style: const TextStyle(color: Color(0xFF9CA3AF))),
+            Text(error, style: TextStyle(color: MyTheme.textMuted)),
             const SizedBox(height: 12),
             _outlineButton(
               icon: Icons.refresh,
@@ -1434,7 +1434,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
       content = Center(
         child: Text(
           translate('No recent sessions'),
-          style: const TextStyle(color: Color(0xFF9CA3AF)),
+          style: TextStyle(color: MyTheme.textMuted),
         ),
       );
     } else {
@@ -1451,9 +1451,9 @@ class _DesktopHomePageState extends State<DesktopHomePage>
               Table(
                 columnWidths: _recentColumnWidths,
                 defaultVerticalAlignment: TableCellVerticalAlignment.middle,
-                border: const TableBorder(
+                border: TableBorder(
                   horizontalInside:
-                      BorderSide(color: Color(0xFFF3F4F6), width: 1),
+                      BorderSide(color: MyTheme.hairline, width: 1),
                 ),
                 children: [
                   _recentTableHeader(),
@@ -1467,11 +1467,11 @@ class _DesktopHomePageState extends State<DesktopHomePage>
     }
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: MyTheme.cardBg,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
+            color: MyTheme.cardShadow,
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -1501,10 +1501,10 @@ class _DesktopHomePageState extends State<DesktopHomePage>
       EdgeInsets.symmetric(horizontal: 6, vertical: 14);
 
   TableRow _recentTableHeader() {
-    const style = TextStyle(
+    final style = TextStyle(
       fontSize: 12,
       fontWeight: FontWeight.w600,
-      color: Color(0xFF6B7280),
+      color: MyTheme.textSecondary,
     );
     // 标题栏文字居中，与数据行内容（同样居中）逐列对齐
     Widget cell(String text) => Padding(
@@ -1512,7 +1512,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
           child: Text(text, style: style, textAlign: TextAlign.center),
         );
     return TableRow(
-      decoration: const BoxDecoration(color: Color(0xFFF9FAFB)),
+      decoration: BoxDecoration(color: MyTheme.subtleBg),
       children: [
         cell(translate('Device')),
         cell(translate('Target ID')),
@@ -1537,7 +1537,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
           const SizedBox(width: 6),
           Text(
             translate('End of list'),
-            style: const TextStyle(fontSize: 12, color: Color(0xFF9CA3AF)),
+            style: TextStyle(fontSize: 12, color: MyTheme.textMuted),
           ),
         ],
       ),
@@ -1583,7 +1583,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
     // 文字型按钮（上一页/下一页）。
     Widget textButton(String label, bool enabled, VoidCallback onTap) {
       final fg =
-          enabled ? const Color(0xFF374151) : const Color(0xFFC2C8D0);
+          enabled ? MyTheme.textBody : MyTheme.iconFaint;
       return Material(
         color: Colors.transparent,
         child: InkWell(
@@ -1594,12 +1594,12 @@ class _DesktopHomePageState extends State<DesktopHomePage>
             padding: const EdgeInsets.symmetric(horizontal: 10),
             alignment: Alignment.center,
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: MyTheme.cardBg,
               borderRadius: BorderRadius.circular(8),
               border: Border.all(
                   color: enabled
-                      ? const Color(0xFFE5E7EB)
-                      : const Color(0xFFEFF1F4)),
+                      ? MyTheme.softBorder
+                      : MyTheme.hairline),
             ),
             child: Text(label,
                 style: TextStyle(
@@ -1625,10 +1625,10 @@ class _DesktopHomePageState extends State<DesktopHomePage>
               padding: const EdgeInsets.symmetric(horizontal: 8),
               alignment: Alignment.center,
               decoration: BoxDecoration(
-                color: active ? MyTheme.accent : Colors.white,
+                color: active ? MyTheme.accent : MyTheme.cardBg,
                 borderRadius: BorderRadius.circular(8),
                 border: Border.all(
-                    color: active ? MyTheme.accent : const Color(0xFFE5E7EB)),
+                    color: active ? MyTheme.accent : MyTheme.softBorder),
                 boxShadow: active
                     ? [
                         BoxShadow(
@@ -1644,7 +1644,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
                 style: TextStyle(
                     fontSize: 12,
                     fontWeight: active ? FontWeight.w600 : FontWeight.w500,
-                    color: active ? Colors.white : const Color(0xFF374151)),
+                    color: active ? Colors.white : MyTheme.textBody),
               ),
             ),
           ),
@@ -1656,10 +1656,10 @@ class _DesktopHomePageState extends State<DesktopHomePage>
     final numberWidgets = <Widget>[];
     for (final t in tokens) {
       if (t == null) {
-        numberWidgets.add(const Padding(
-          padding: EdgeInsets.symmetric(horizontal: 4),
+        numberWidgets.add(Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 4),
           child: Text('…',
-              style: TextStyle(fontSize: 13, color: Color(0xFF9CA3AF))),
+              style: TextStyle(fontSize: 13, color: MyTheme.textMuted)),
         ));
       } else {
         numberWidgets.add(numButton(t));
@@ -1674,7 +1674,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
           // 左侧：当前页 / 总页数 · 共 N 条
           Text(
             '$current1/$pageCount · ${translate('Total')} $total',
-            style: const TextStyle(fontSize: 12, color: Color(0xFF9CA3AF)),
+            style: TextStyle(fontSize: 12, color: MyTheme.textMuted),
           ),
           // 右侧：上一页 / 页码 / 下一页
           Row(
@@ -1721,10 +1721,10 @@ class _DesktopHomePageState extends State<DesktopHomePage>
               Flexible(
                 child: Text(
                   displayName,
-                  style: const TextStyle(
+                  style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
-                      color: Color(0xFF1F2937)),
+                      color: MyTheme.textPrimary),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -1738,7 +1738,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
           child: Text(
             _formatPeerId(remoteId),
             textAlign: TextAlign.center,
-            style: const TextStyle(fontSize: 12, color: Color(0xFF374151)),
+            style: TextStyle(fontSize: 12, color: MyTheme.textBody),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
@@ -1749,7 +1749,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
           child: Text(
             _directionLabel(session.direction),
             textAlign: TextAlign.center,
-            style: const TextStyle(fontSize: 12, color: Color(0xFF374151)),
+            style: TextStyle(fontSize: 12, color: MyTheme.textBody),
           ),
         ),
         // Status (session active vs ended)
@@ -1765,7 +1765,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
                   shape: BoxShape.circle,
                   color: active
                       ? const Color(0xFF22C55E)
-                      : const Color(0xFFCBD5E1),
+                      : MyTheme.iconFaint,
                 ),
               ),
               const SizedBox(width: 6),
@@ -1775,7 +1775,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
                   fontSize: 12,
                   color: active
                       ? const Color(0xFF22C55E)
-                      : const Color(0xFF9CA3AF),
+                      : MyTheme.textMuted,
                 ),
               ),
             ],
@@ -1787,7 +1787,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
           child: Text(
             _formatIsoTime(session.startTime),
             textAlign: TextAlign.center,
-            style: const TextStyle(fontSize: 12, color: Color(0xFF374151)),
+            style: TextStyle(fontSize: 12, color: MyTheme.textBody),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
@@ -1798,7 +1798,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
           child: Text(
             _formatDurationSecs(session.durationSec),
             textAlign: TextAlign.center,
-            style: const TextStyle(fontSize: 12, color: Color(0xFF374151)),
+            style: TextStyle(fontSize: 12, color: MyTheme.textBody),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
@@ -2019,7 +2019,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
         const SizedBox(width: 8),
         Text(
           '($count)',
-          style: const TextStyle(fontSize: 15, color: Color(0xFF6B7280)),
+          style: TextStyle(fontSize: 15, color: MyTheme.textSecondary),
         ),
       ],
     );
@@ -2032,9 +2032,9 @@ class _DesktopHomePageState extends State<DesktopHomePage>
           child: Container(
             height: 38,
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: MyTheme.cardBg,
               borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: const Color(0xFFE5E7EB)),
+              border: Border.all(color: MyTheme.softBorder),
             ),
             child: TextField(
               controller: _devicesSearchCtrl,
@@ -2043,10 +2043,10 @@ class _DesktopHomePageState extends State<DesktopHomePage>
               decoration: InputDecoration(
                 isDense: true,
                 hintText: translate('Search device or ID'),
-                hintStyle: const TextStyle(
-                    color: Color(0xFF9CA3AF), fontSize: 13),
-                prefixIcon: const Icon(Icons.search,
-                    size: 18, color: Color(0xFF9CA3AF)),
+                hintStyle: TextStyle(
+                    color: MyTheme.textMuted, fontSize: 13),
+                prefixIcon: Icon(Icons.search,
+                    size: 18, color: MyTheme.textMuted),
                 prefixIconConstraints:
                     const BoxConstraints(minWidth: 36, minHeight: 36),
                 border: InputBorder.none,
@@ -2095,11 +2095,11 @@ class _DesktopHomePageState extends State<DesktopHomePage>
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.cloud_off,
-                size: 40, color: Color(0xFFCBD5E1)),
+            Icon(Icons.cloud_off,
+                size: 40, color: MyTheme.iconFaint),
             const SizedBox(height: 12),
             Text(error,
-                style: const TextStyle(color: Color(0xFF9CA3AF))),
+                style: TextStyle(color: MyTheme.textMuted)),
             const SizedBox(height: 12),
             _outlineButton(
               icon: Icons.refresh,
@@ -2113,7 +2113,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
       content = Center(
         child: Text(
           translate('No devices'),
-          style: const TextStyle(color: Color(0xFF9CA3AF)),
+          style: TextStyle(color: MyTheme.textMuted),
         ),
       );
     } else {
@@ -2121,7 +2121,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
         padding: EdgeInsets.zero,
         itemCount: devices.length + 1,
         separatorBuilder: (_, __) =>
-            const Divider(height: 1, color: Color(0xFFF3F4F6)),
+            Divider(height: 1, color: MyTheme.hairline),
         itemBuilder: (_, i) {
           if (i == devices.length) return _recentTableFooter();
           return _myDevicesTableRow(context, devices[i]);
@@ -2130,11 +2130,11 @@ class _DesktopHomePageState extends State<DesktopHomePage>
     }
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: MyTheme.cardBg,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
+            color: MyTheme.cardShadow,
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -2143,7 +2143,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
       child: Column(
         children: [
           _myDevicesTableHeader(),
-          const Divider(height: 1, color: Color(0xFFEDEFF3)),
+          Divider(height: 1, color: MyTheme.hairline),
           Expanded(child: content),
         ],
       ),
@@ -2151,16 +2151,16 @@ class _DesktopHomePageState extends State<DesktopHomePage>
   }
 
   Widget _myDevicesTableHeader() {
-    const style = TextStyle(
+    final style = TextStyle(
       fontSize: 13,
       fontWeight: FontWeight.w600,
-      color: Color(0xFF6B7280),
+      color: MyTheme.textSecondary,
     );
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      decoration: const BoxDecoration(
-        color: Color(0xFFF9FAFB),
-        borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
+      decoration: BoxDecoration(
+        color: MyTheme.subtleBg,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
       ),
       child: Row(
         children: [
@@ -2206,10 +2206,10 @@ class _DesktopHomePageState extends State<DesktopHomePage>
                     children: [
                       Text(
                         displayName,
-                        style: const TextStyle(
+                        style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w600,
-                            color: Color(0xFF1F2937)),
+                            color: MyTheme.textPrimary),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -2230,7 +2230,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
             flex: 2,
             child: Text(
               _formatPeerId(device.id),
-              style: const TextStyle(fontSize: 13, color: Color(0xFF374151)),
+              style: TextStyle(fontSize: 13, color: MyTheme.textBody),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
@@ -2244,7 +2244,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
                 padding:
                     const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFEFF4FF),
+                  color: MyTheme.accentTintBg,
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: Text(
@@ -2262,7 +2262,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
             flex: 2,
             child: Text(
               _formatIsoTime(device.lastSeen),
-              style: const TextStyle(fontSize: 13, color: Color(0xFF374151)),
+              style: TextStyle(fontSize: 13, color: MyTheme.textBody),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
@@ -2392,9 +2392,9 @@ class _DesktopHomePageState extends State<DesktopHomePage>
                                       fontWeight: FontWeight.w700)),
                               const SizedBox(width: 6),
                               Text('(${filtered.length})',
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                       fontSize: 14,
-                                      color: Color(0xFF6B7280))),
+                                      color: MyTheme.textSecondary)),
                               const Spacer(),
                               const PeerSearchBar(),
                               const SizedBox(width: 8),
@@ -2413,7 +2413,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
                         query.isEmpty
                             ? translate('No recent sessions')
                             : translate('No matching devices'),
-                        style: const TextStyle(color: Color(0xFF9CA3AF)),
+                        style: TextStyle(color: MyTheme.textMuted),
                       ),
                     )
                   else
@@ -2484,7 +2484,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color: const Color(0xFFEFF4FF),
+        color: MyTheme.accentTintBg,
         borderRadius: BorderRadius.circular(10),
         border: Border.all(color: MyTheme.accent.withOpacity(0.25)),
       ),
@@ -2540,8 +2540,8 @@ class _DesktopHomePageState extends State<DesktopHomePage>
   }) {
     final enabled = onTap != null;
     final fg = enabled
-        ? (color ?? const Color(0xFF374151))
-        : const Color(0xFF9CA3AF);
+        ? (color ?? MyTheme.textBody)
+        : MyTheme.textMuted;
     return Tooltip(
       message: label,
       child: Material(
@@ -2553,9 +2553,9 @@ class _DesktopHomePageState extends State<DesktopHomePage>
             padding:
                 const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: MyTheme.cardBg,
               borderRadius: BorderRadius.circular(6),
-              border: Border.all(color: const Color(0xFFE5E7EB)),
+              border: Border.all(color: MyTheme.softBorder),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
@@ -2590,7 +2590,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
                 padding: const EdgeInsets.all(6),
                 decoration: BoxDecoration(
                   color: hover.value
-                      ? const Color(0xFFEFF4FF)
+                      ? MyTheme.accentTintBg
                       : Colors.transparent,
                   borderRadius: BorderRadius.circular(6),
                 ),
@@ -2631,8 +2631,8 @@ class _DesktopHomePageState extends State<DesktopHomePage>
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
                   color: isSelected
-                      ? const Color(0xFFEFF4FF)
-                      : Colors.white,
+                      ? MyTheme.accentTintBg
+                      : MyTheme.cardBg,
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
                     color: isSelected
@@ -2642,7 +2642,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.04),
+                      color: MyTheme.cardShadow,
                       blurRadius: 10,
                       offset: const Offset(0, 2),
                     ),
@@ -2657,7 +2657,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
                           width: 40,
                           height: 40,
                           decoration: BoxDecoration(
-                            color: const Color(0xFFEFF4FF),
+                            color: MyTheme.accentTintBg,
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Icon(_platformIcon(peer.platform),
@@ -2681,7 +2681,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
                                       shape: BoxShape.circle,
                                       color: online
                                           ? const Color(0xFF22C55E)
-                                          : const Color(0xFFCBD5E1),
+                                          : MyTheme.iconFaint,
                                     ),
                                   ),
                                   const SizedBox(width: 6),
@@ -2693,7 +2693,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
                                       fontSize: 11,
                                       color: online
                                           ? const Color(0xFF22C55E)
-                                          : const Color(0xFF9CA3AF),
+                                          : MyTheme.textMuted,
                                     ),
                                   ),
                                 ],
@@ -2717,7 +2717,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
                         padding: const EdgeInsets.symmetric(
                             horizontal: 6, vertical: 2),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFEFF4FF),
+                          color: MyTheme.accentTintBg,
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: Text(
@@ -2730,8 +2730,8 @@ class _DesktopHomePageState extends State<DesktopHomePage>
                     const SizedBox(height: 10),
                     Text(
                       peer.id,
-                      style: const TextStyle(
-                          fontSize: 12, color: Color(0xFF6B7280)),
+                      style: TextStyle(
+                          fontSize: 12, color: MyTheme.textSecondary),
                     ),
                     const SizedBox(height: 12),
                     SizedBox(
@@ -2747,7 +2747,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
                                 backgroundColor: isMultiSelect
                                     ? (isSelected
                                         ? MyTheme.accent
-                                        : Colors.white)
+                                        : MyTheme.cardBg)
                                     : MyTheme.accent,
                                 foregroundColor: isMultiSelect
                                     ? (isSelected
@@ -2797,12 +2797,12 @@ class _DesktopHomePageState extends State<DesktopHomePage>
                       width: 22,
                       height: 22,
                       decoration: BoxDecoration(
-                        color: isSelected ? MyTheme.accent : Colors.white,
+                        color: isSelected ? MyTheme.accent : MyTheme.cardBg,
                         borderRadius: BorderRadius.circular(6),
                         border: Border.all(
                           color: isSelected
                               ? MyTheme.accent
-                              : const Color(0xFFD1D5DB),
+                              : MyTheme.softBorder,
                           width: 1.5,
                         ),
                         boxShadow: [
@@ -2853,7 +2853,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
                     icon,
                     size: 18,
                     color:
-                        selected ? Colors.white : const Color(0xFF6B7280),
+                        selected ? Colors.white : MyTheme.textSecondary,
                   ),
                 ),
               ),
@@ -2864,7 +2864,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
         return Container(
           padding: const EdgeInsets.all(2),
           decoration: BoxDecoration(
-            color: const Color(0xFFF1F3F6),
+            color: MyTheme.subtleBg,
             borderRadius: BorderRadius.circular(8),
           ),
           child: Row(
@@ -2887,11 +2887,11 @@ class _DesktopHomePageState extends State<DesktopHomePage>
     final items = peers.take(12).toList();
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: MyTheme.cardBg,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: MyTheme.cardShadow,
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -2903,7 +2903,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
           children: [
             for (int i = 0; i < items.length; i++) ...[
               if (i > 0)
-                const Divider(height: 1, color: Color(0xFFF3F4F6)),
+                Divider(height: 1, color: MyTheme.hairline),
               _recentPeerListRow(context, items[i]),
             ],
           ],
@@ -2927,7 +2927,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
         final isSelected =
             isMultiSelect && model.selectedPeers.any((p) => p.id == peer.id);
         return Material(
-          color: isSelected ? const Color(0xFFEFF4FF) : Colors.white,
+          color: isSelected ? MyTheme.accentTintBg : MyTheme.cardBg,
           child: InkWell(
             onTap: isMultiSelect ? () => model.select(peer) : null,
             child: Padding(
@@ -2940,12 +2940,12 @@ class _DesktopHomePageState extends State<DesktopHomePage>
                       width: 22,
                       height: 22,
                       decoration: BoxDecoration(
-                        color: isSelected ? MyTheme.accent : Colors.white,
+                        color: isSelected ? MyTheme.accent : MyTheme.cardBg,
                         borderRadius: BorderRadius.circular(6),
                         border: Border.all(
                           color: isSelected
                               ? MyTheme.accent
-                              : const Color(0xFFD1D5DB),
+                              : MyTheme.softBorder,
                           width: 1.5,
                         ),
                       ),
@@ -2960,7 +2960,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
                     width: 36,
                     height: 36,
                     decoration: BoxDecoration(
-                      color: const Color(0xFFEFF4FF),
+                      color: MyTheme.accentTintBg,
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Icon(_platformIcon(peer.platform),
@@ -2983,8 +2983,8 @@ class _DesktopHomePageState extends State<DesktopHomePage>
                         const SizedBox(height: 2),
                         Text(
                           peer.id,
-                          style: const TextStyle(
-                              fontSize: 12, color: Color(0xFF6B7280)),
+                          style: TextStyle(
+                              fontSize: 12, color: MyTheme.textSecondary),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -3002,7 +3002,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
                         padding: const EdgeInsets.symmetric(
                             horizontal: 8, vertical: 3),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFEFF4FF),
+                          color: MyTheme.accentTintBg,
                           borderRadius: BorderRadius.circular(6),
                         ),
                         child: Text(
@@ -3033,7 +3033,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
                                 shape: BoxShape.circle,
                                 color: online
                                     ? const Color(0xFF22C55E)
-                                    : const Color(0xFFCBD5E1),
+                                    : MyTheme.iconFaint,
                               ),
                             ),
                             const SizedBox(width: 6),
@@ -3045,7 +3045,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
                                 fontSize: 12,
                                 color: online
                                     ? const Color(0xFF22C55E)
-                                    : const Color(0xFF9CA3AF),
+                                    : MyTheme.textMuted,
                               ),
                             ),
                           ],
@@ -3196,7 +3196,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
           decoration: BoxDecoration(
-            color: const Color(0xFFEFF4FF),
+            color: MyTheme.accentTintBg,
             borderRadius: BorderRadius.circular(10),
           ),
           child: Text(
@@ -3225,9 +3225,9 @@ class _DesktopHomePageState extends State<DesktopHomePage>
           height: 38,
           child: Container(
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: MyTheme.cardBg,
               borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: const Color(0xFFE5E7EB)),
+              border: Border.all(color: MyTheme.softBorder),
             ),
             child: TextField(
               controller: _favSearchCtrl,
@@ -3237,9 +3237,9 @@ class _DesktopHomePageState extends State<DesktopHomePage>
                 isDense: true,
                 hintText: translate('Search'),
                 hintStyle:
-                    const TextStyle(color: Color(0xFF9CA3AF), fontSize: 13),
-                prefixIcon: const Icon(Icons.search,
-                    size: 18, color: Color(0xFF9CA3AF)),
+                    TextStyle(color: MyTheme.textMuted, fontSize: 13),
+                prefixIcon: Icon(Icons.search,
+                    size: 18, color: MyTheme.textMuted),
                 prefixIconConstraints:
                     const BoxConstraints(minWidth: 36, minHeight: 36),
                 border: InputBorder.none,
@@ -3283,10 +3283,10 @@ class _DesktopHomePageState extends State<DesktopHomePage>
               padding: const EdgeInsets.symmetric(horizontal: 14),
               alignment: Alignment.center,
               decoration: BoxDecoration(
-                color: selected ? MyTheme.accent : Colors.white,
+                color: selected ? MyTheme.accent : MyTheme.cardBg,
                 borderRadius: BorderRadius.circular(8),
                 border: Border.all(
-                  color: selected ? MyTheme.accent : const Color(0xFFE5E7EB),
+                  color: selected ? MyTheme.accent : MyTheme.softBorder,
                 ),
               ),
               child: Text(
@@ -3294,7 +3294,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
                 style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w500,
-                  color: selected ? Colors.white : const Color(0xFF374151),
+                  color: selected ? Colors.white : MyTheme.textBody,
                 ),
               ),
             ),
@@ -3347,11 +3347,11 @@ class _DesktopHomePageState extends State<DesktopHomePage>
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.cloud_off, size: 56, color: Color(0xFFCBD5E1)),
+            Icon(Icons.cloud_off, size: 56, color: MyTheme.iconFaint),
             const SizedBox(height: 14),
             Text(error,
-                style: const TextStyle(
-                    fontSize: 14, color: Color(0xFF6B7280))),
+                style: TextStyle(
+                    fontSize: 14, color: MyTheme.textSecondary)),
             const SizedBox(height: 12),
             _outlineButton(
               icon: Icons.refresh,
@@ -3368,12 +3368,12 @@ class _DesktopHomePageState extends State<DesktopHomePage>
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(Icons.star_border,
-                size: 56, color: const Color(0xFFCBD5E1)),
+                size: 56, color: MyTheme.iconFaint),
             const SizedBox(height: 14),
             Text(
               translate('No favorites yet'),
-              style: const TextStyle(
-                  fontSize: 14, color: Color(0xFF6B7280)),
+              style: TextStyle(
+                  fontSize: 14, color: MyTheme.textSecondary),
             ),
           ],
         ),
@@ -3412,11 +3412,11 @@ class _DesktopHomePageState extends State<DesktopHomePage>
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: MyTheme.cardBg,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: MyTheme.cardShadow,
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -3462,7 +3462,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
           const SizedBox(height: 4),
           Text(
             fav.peerId,
-            style: const TextStyle(fontSize: 12, color: Color(0xFF9CA3AF)),
+            style: TextStyle(fontSize: 12, color: MyTheme.textMuted),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
@@ -3475,7 +3475,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
                 decoration: BoxDecoration(
                   color: online
                       ? const Color(0xFFDCFCE7)
-                      : const Color(0xFFF3F4F6),
+                      : MyTheme.subtleBg,
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Row(
@@ -3488,7 +3488,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
                         shape: BoxShape.circle,
                         color: online
                             ? const Color(0xFF22C55E)
-                            : const Color(0xFFCBD5E1),
+                            : MyTheme.iconFaint,
                       ),
                     ),
                     const SizedBox(width: 6),
@@ -3499,7 +3499,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
                         fontWeight: FontWeight.w500,
                         color: online
                             ? const Color(0xFF15803D)
-                            : const Color(0xFF6B7280),
+                            : MyTheme.textSecondary,
                       ),
                     ),
                   ],
