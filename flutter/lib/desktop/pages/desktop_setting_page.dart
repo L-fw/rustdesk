@@ -49,51 +49,34 @@ const String _kSettingPageControllerTag = 'settingPageController';
 const String _kSettingPageTabKeyTag = 'settingPageTabKey';
 
 // ── Theme-aware palette ──────────────────────────────────────────────────
-// This settings UI was originally laid out with hard-coded light colors, so it
-// stayed light-looking in dark mode. Each helper below resolves a semantic role
-// to a dark equivalent, while the LIGHT branch returns the exact original value
-// so the light appearance is unchanged. Dark values are aligned with
-// `MyTheme.darkTheme` (scaffold 0xFF18191E, card/surface 0xFF24252B).
-bool get _isDarkMode => MyTheme.currentThemeMode() == ThemeMode.dark;
+// The palette now lives centrally on `MyTheme` (see common.dart) so every
+// desktop page shares one source of truth. These file-local aliases keep the
+// existing call sites in this file unchanged while delegating to `MyTheme`.
+bool get _isDarkMode => MyTheme.isDarkMode;
 
 // Backgrounds
-Color get _pageBg =>
-    _isDarkMode ? const Color(0xFF18191E) : const Color(0xFFF3F5F8);
-Color get _cardBg => _isDarkMode ? const Color(0xFF24252B) : Colors.white;
-Color get _subtleBg =>
-    _isDarkMode ? const Color(0xFF2C2D34) : const Color(0xFFF8F9FB);
-Color get _accentTintBg =>
-    _isDarkMode ? const Color(0xFF1E2A3D) : const Color(0xFFEFF4FF);
-Color get _bannerBg =>
-    _isDarkMode ? const Color(0xFF1B2740) : const Color(0xFFEAF1FF);
-Color get _bannerBorder =>
-    _isDarkMode ? const Color(0xFF2C3E5E) : const Color(0xFFD3E1FF);
+Color get _pageBg => MyTheme.pageBg;
+Color get _cardBg => MyTheme.cardBg;
+Color get _subtleBg => MyTheme.subtleBg;
+Color get _accentTintBg => MyTheme.accentTintBg;
+Color get _bannerBg => MyTheme.bannerBg;
+Color get _bannerBorder => MyTheme.bannerBorder;
 
 // Borders & dividers
-Color get _hairlineColor =>
-    _isDarkMode ? const Color(0xFF303138) : const Color(0xFFEDEFF3);
-Color get _softBorderColor =>
-    _isDarkMode ? const Color(0xFF34353C) : const Color(0xFFE5E7EB);
-Color get _dividerColor =>
-    _isDarkMode ? const Color(0xFF2E2F36) : const Color(0xFFF0F1F4);
+Color get _hairlineColor => MyTheme.hairline;
+Color get _softBorderColor => MyTheme.softBorder;
+Color get _dividerColor => MyTheme.dividerSoft;
 
 // Text
-Color get _textStrongColor => _isDarkMode ? Colors.white : Colors.black;
-Color get _textPrimaryColor =>
-    _isDarkMode ? const Color(0xFFE6E6E9) : const Color(0xFF1F2937);
-Color get _textBodyColor =>
-    _isDarkMode ? const Color(0xFFCBCDD3) : const Color(0xFF374151);
-Color get _textSecondaryColor =>
-    _isDarkMode ? const Color(0xFFA5ABB3) : const Color(0xFF6B7280);
-Color get _textMutedColor =>
-    _isDarkMode ? const Color(0xFF8A9099) : const Color(0xFF9CA3AF);
-Color get _iconFaintColor =>
-    _isDarkMode ? const Color(0xFF6B7280) : const Color(0xFFC2C7D0);
+Color get _textStrongColor => MyTheme.textStrong;
+Color get _textPrimaryColor => MyTheme.textPrimary;
+Color get _textBodyColor => MyTheme.textBody;
+Color get _textSecondaryColor => MyTheme.textSecondary;
+Color get _textMutedColor => MyTheme.textMuted;
+Color get _iconFaintColor => MyTheme.iconFaint;
 
 // Subtle card shadow (kept faint in light; a touch deeper on dark).
-Color get _cardShadowColor => _isDarkMode
-    ? Colors.black.withOpacity(0.25)
-    : Colors.black.withOpacity(0.03);
+Color get _cardShadowColor => MyTheme.cardShadow;
 
 class _TabInfo {
   late final SettingsTabKey key;

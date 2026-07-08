@@ -264,6 +264,56 @@ class MyTheme {
   static const Color button = Color(0xFF2C8CFF);
   static const Color hoverBorder = Color(0xFF999999);
 
+  // ── Theme-aware palette (single source of truth) ─────────────────────────
+  // Desktop pages (home / login / register / server / settings …) were laid out
+  // with hard-coded light colors, so they stayed light in dark mode. These
+  // getters resolve a semantic role to a dark equivalent while the LIGHT branch
+  // returns the exact original literal, so the light appearance is unchanged.
+  // Dark values are aligned with `MyTheme.darkTheme` (scaffold 0xFF18191E,
+  // card/surface 0xFF24252B). Context-free (branches on `currentThemeMode()`) so
+  // it also works inside top-level helper widgets that take no BuildContext.
+  static bool get isDarkMode => currentThemeMode() == ThemeMode.dark;
+
+  // Backgrounds
+  static Color get pageBg =>
+      isDarkMode ? const Color(0xFF18191E) : const Color(0xFFF3F5F8);
+  static Color get cardBg =>
+      isDarkMode ? const Color(0xFF24252B) : Colors.white;
+  static Color get subtleBg =>
+      isDarkMode ? const Color(0xFF2C2D34) : const Color(0xFFF8F9FB);
+  static Color get accentTintBg =>
+      isDarkMode ? const Color(0xFF1E2A3D) : const Color(0xFFEFF4FF);
+  static Color get bannerBg =>
+      isDarkMode ? const Color(0xFF1B2740) : const Color(0xFFEAF1FF);
+  static Color get bannerBorder =>
+      isDarkMode ? const Color(0xFF2C3E5E) : const Color(0xFFD3E1FF);
+
+  // Borders & dividers
+  static Color get hairline =>
+      isDarkMode ? const Color(0xFF303138) : const Color(0xFFEDEFF3);
+  static Color get softBorder =>
+      isDarkMode ? const Color(0xFF34353C) : const Color(0xFFE5E7EB);
+  static Color get dividerSoft =>
+      isDarkMode ? const Color(0xFF2E2F36) : const Color(0xFFF0F1F4);
+
+  // Text
+  static Color get textStrong => isDarkMode ? Colors.white : Colors.black;
+  static Color get textPrimary =>
+      isDarkMode ? const Color(0xFFE6E6E9) : const Color(0xFF1F2937);
+  static Color get textBody =>
+      isDarkMode ? const Color(0xFFCBCDD3) : const Color(0xFF374151);
+  static Color get textSecondary =>
+      isDarkMode ? const Color(0xFFA5ABB3) : const Color(0xFF6B7280);
+  static Color get textMuted =>
+      isDarkMode ? const Color(0xFF8A9099) : const Color(0xFF9CA3AF);
+  static Color get iconFaint =>
+      isDarkMode ? const Color(0xFF6B7280) : const Color(0xFFC2C7D0);
+
+  // Subtle card shadow (faint in light; a touch deeper on dark).
+  static Color get cardShadow => isDarkMode
+      ? Colors.black.withOpacity(0.25)
+      : Colors.black.withOpacity(0.03);
+
   // ListTile
   static const ListTileThemeData listTileTheme = ListTileThemeData(
     shape: RoundedRectangleBorder(
