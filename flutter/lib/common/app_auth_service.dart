@@ -35,6 +35,8 @@ class AppAuthService {
     '用户不存在': 'server_user_not_found',
     '用户名已存在': 'server_username_exists',
     '手机号已注册': 'server_phone_registered',
+    '该手机号已被注册': 'server_phone_registered',
+    '新手机号不能与当前手机号相同': 'phone_unchanged',
     '验证码错误': 'server_wrong_sms_code',
     '验证码已过期': 'server_sms_code_expired',
     '验证码发送过于频繁': 'server_sms_too_frequent',
@@ -407,6 +409,43 @@ class AppAuthService {
       }
       return _translateServerMsg(result['msg']) ??
           translate('change_username_failed');
+    } catch (e) {
+      return '${translate('network_error')}: $e';
+    }
+  }
+
+  /// 更换绑定手机号：凭登录密码验证身份 + 发往新手机号的短信验证码验证新号码归属，
+  /// 将当前账号的绑定手机号改为新手机号。成功后会同步更新本地缓存的用户信息，
+  /// token 保持不变，无需重新登录。
+  /// 返回 null 表示成功，返回错误信息表示失败。
+  Future<String?> changePhone({
+    required String newPhone,
+    required String password,
+    required String smsCode,
+  }) async {
+    try {
+      final token = await getToken();
+      if (token.isEmpty) return translate('login_failed');
+      final result = await _post('/api/user/phone/change', {
+        'token': token,
+        'password': password,
+        'new_phone': newPhone,
+        'sms_code': smsCode,
+      });
+      if (result['code'] == 200) {
+        final serverUser = result['user'];
+        final resolvedPhone =
+            (serverUser is Map && serverUser['phone'] != null)
+                ? serverUser['phone'].toString()
+                : newPhone;
+        // 更新本地缓存的用户信息，使设置页显示同步刷新
+        final info = await getUserInfo() ?? <String, dynamic>{};
+        info['phone'] = resolvedPhone;
+        await _setSecureLocalOption(_userInfoKey, jsonEncode(info));
+        return null; // 成功
+      }
+      return _translateServerMsg(result['msg']) ??
+          translate('change_phone_failed');
     } catch (e) {
       return '${translate('network_error')}: $e';
     }

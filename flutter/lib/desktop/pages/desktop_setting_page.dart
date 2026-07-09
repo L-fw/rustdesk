@@ -2670,6 +2670,19 @@ class _AccountState extends State<_Account> {
     }
   }
 
+  Future<void> _doChangePhone() async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (_) => const _ChangePhoneDialog(),
+    );
+    if (!mounted) return;
+    if (ok == true) {
+      showToast(translate('change_phone_success'));
+      // 重新加载用户信息以刷新卡片中显示的手机号
+      await _loadUserInfo();
+    }
+  }
+
   Future<void> _doLogout() async {
     final confirmed = await gFFI.dialogManager.show<bool>(
       (setState, close, context) {
@@ -2743,6 +2756,12 @@ class _AccountState extends State<_Account> {
           title: 'Forgot Password',
           subtitle: 'acc_forgot_pwd_sub',
           onTap: () => _doForgotPassword(),
+        ),
+        _accountLinkRow(
+          context,
+          title: 'change_phone_title',
+          subtitle: 'acc_change_phone_sub',
+          onTap: () => _doChangePhone(),
         ),
       ],
     );
@@ -3216,6 +3235,297 @@ class _DeregisterAccountDialogState extends State<_DeregisterAccountDialog> {
                       strokeWidth: 2.5, color: Colors.white),
                 )
               : Text(translate('confirm_deregister')),
+        ),
+      ],
+    );
+  }
+}
+
+/// 更换手机号对话框：输入登录密码（验证本人）+ 新手机号 + 发往新手机号的短信
+/// 验证码（验证新号码归属），提交后将账号绑定手机号更新为新号码。
+class _ChangePhoneDialog extends StatefulWidget {
+  const _ChangePhoneDialog({Key? key}) : super(key: key);
+
+  @override
+  State<_ChangePhoneDialog> createState() => _ChangePhoneDialogState();
+}
+
+class _ChangePhoneDialogState extends State<_ChangePhoneDialog> {
+  final _passwordController = TextEditingController();
+  final _newPhoneController = TextEditingController();
+  final _smsCodeController = TextEditingController();
+  final _authService = AppAuthService();
+
+  String _currentPhone = '';
+  bool _obscurePassword = true;
+  bool _isLoading = false;
+  bool _isSendingSms = false;
+  String? _errorMsg;
+  int _countdown = 0;
+  Timer? _countdownTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadCurrentPhone();
+  }
+
+  Future<void> _loadCurrentPhone() async {
+    final info = await _authService.getUserInfo();
+    final phone = info?['phone']?.toString().trim() ?? '';
+    if (mounted && phone.isNotEmpty) {
+      setState(() => _currentPhone = phone);
+    }
+  }
+
+  @override
+  void dispose() {
+    _passwordController.dispose();
+    _newPhoneController.dispose();
+    _smsCodeController.dispose();
+    _countdownTimer?.cancel();
+    super.dispose();
+  }
+
+  void _startCountdown() {
+    setState(() => _countdown = 60);
+    _countdownTimer?.cancel();
+    _countdownTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (_countdown <= 1) {
+        timer.cancel();
+        if (mounted) setState(() => _countdown = 0);
+      } else {
+        if (mounted) setState(() => _countdown--);
+      }
+    });
+  }
+
+  Future<void> _sendSmsCode() async {
+    final phone = _newPhoneController.text.trim();
+    if (phone.isEmpty) {
+      setState(() => _errorMsg = translate('please_enter_phone'));
+      return;
+    }
+    if (phone.length != 11) {
+      setState(() => _errorMsg = translate('phone_must_be_11_digits'));
+      return;
+    }
+    if (phone == _currentPhone) {
+      setState(() => _errorMsg = translate('phone_unchanged'));
+      return;
+    }
+    setState(() {
+      _isSendingSms = true;
+      _errorMsg = null;
+    });
+    // 验证码发往新手机号，以确认新号码归属本人。
+    final error = await _authService.sendSmsCode(phone: phone);
+    if (!mounted) return;
+    setState(() => _isSendingSms = false);
+    if (error != null) {
+      setState(() => _errorMsg = error);
+      return;
+    }
+    _startCountdown();
+  }
+
+  Future<void> _submit() async {
+    final password = _passwordController.text;
+    final phone = _newPhoneController.text.trim();
+    final smsCode = _smsCodeController.text.trim();
+
+    if (password.isEmpty) {
+      setState(() => _errorMsg = translate('please_enter_password'));
+      return;
+    }
+    if (phone.isEmpty) {
+      setState(() => _errorMsg = translate('please_enter_phone'));
+      return;
+    }
+    if (phone.length != 11) {
+      setState(() => _errorMsg = translate('phone_must_be_11_digits'));
+      return;
+    }
+    if (phone == _currentPhone) {
+      setState(() => _errorMsg = translate('phone_unchanged'));
+      return;
+    }
+    if (smsCode.isEmpty) {
+      setState(() => _errorMsg = translate('please_enter_sms_code'));
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+      _errorMsg = null;
+    });
+
+    final error = await _authService.changePhone(
+      newPhone: phone,
+      password: password,
+      smsCode: smsCode,
+    );
+
+    if (!mounted) return;
+    setState(() => _isLoading = false);
+    if (error != null) {
+      setState(() => _errorMsg = error);
+      return;
+    }
+    Navigator.of(context).pop(true);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    // 当前手机号脱敏显示，供用户确认改的是哪个账号
+    final maskedCurrent = _currentPhone.length >= 7
+        ? '${_currentPhone.substring(0, 3)}****${_currentPhone.substring(_currentPhone.length - 4)}'
+        : _currentPhone;
+    return AlertDialog(
+      title: Text(translate('change_phone_title')),
+      content: SingleChildScrollView(
+        child: SizedBox(
+          width: 360,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (maskedCurrent.isNotEmpty) ...[
+                Text(
+                  '${translate('current_phone_label')}: $maskedCurrent',
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: isDark ? Colors.white70 : Colors.black54,
+                  ),
+                ),
+                const SizedBox(height: 16),
+              ],
+              TextField(
+                controller: _passwordController,
+                obscureText: _obscurePassword,
+                textInputAction: TextInputAction.next,
+                inputFormatters: [
+                  FilteringTextInputFormatter.deny(RegExp(r'[一-鿿]')),
+                ],
+                decoration: InputDecoration(
+                  labelText: translate('verify_identity_password'),
+                  prefixIcon: const Icon(Icons.lock_outline, size: 20),
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      _obscurePassword
+                          ? Icons.visibility_off_outlined
+                          : Icons.visibility_outlined,
+                      size: 20,
+                    ),
+                    onPressed: () => setState(
+                        () => _obscurePassword = !_obscurePassword),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: _newPhoneController,
+                keyboardType: TextInputType.phone,
+                textInputAction: TextInputAction.next,
+                inputFormatters: [
+                  FilteringTextInputFormatter.digitsOnly,
+                  LengthLimitingTextInputFormatter(11),
+                ],
+                decoration: InputDecoration(
+                  labelText: translate('new_phone_number'),
+                  prefixIcon: const Icon(Icons.phone_android, size: 20),
+                ),
+              ),
+              const SizedBox(height: 12),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _smsCodeController,
+                      keyboardType: TextInputType.number,
+                      textInputAction: TextInputAction.done,
+                      onSubmitted: (_) => _submit(),
+                      inputFormatters: [
+                        FilteringTextInputFormatter.digitsOnly,
+                        LengthLimitingTextInputFormatter(6),
+                      ],
+                      decoration: InputDecoration(
+                        labelText: translate('Verification code'),
+                        prefixIcon: const Icon(Icons.sms_outlined, size: 20),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  SizedBox(
+                    height: 48,
+                    child: ElevatedButton(
+                      onPressed:
+                          (_countdown > 0 || _isSendingSms || _isLoading)
+                              ? null
+                              : _sendSmsCode,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: _accentColor,
+                        foregroundColor: Colors.white,
+                        disabledBackgroundColor: Colors.grey.shade300,
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10)),
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        elevation: 0,
+                      ),
+                      child: Text(
+                        _countdown > 0
+                            ? '${_countdown}s'
+                            : translate('get_sms_code'),
+                        style: const TextStyle(fontSize: 13),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              if (_errorMsg != null) ...[
+                const SizedBox(height: 12),
+                Text(
+                  _errorMsg!,
+                  style: const TextStyle(color: Colors.red, fontSize: 13),
+                ),
+              ],
+              const SizedBox(height: 8),
+              Text(
+                translate('change_phone_warning'),
+                style: TextStyle(
+                  fontSize: 12,
+                  color: isDark ? Colors.white54 : Colors.black45,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed:
+              _isLoading ? null : () => Navigator.of(context).pop(false),
+          child: Text(translate('Cancel')),
+        ),
+        ElevatedButton(
+          onPressed: _isLoading ? null : _submit,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: _accentColor,
+            foregroundColor: Colors.white,
+            elevation: 0,
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          ),
+          child: _isLoading
+              ? const SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(
+                      strokeWidth: 2.5, color: Colors.white),
+                )
+              : Text(translate('confirm_change_btn')),
         ),
       ],
     );

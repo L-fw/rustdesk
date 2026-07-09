@@ -115,7 +115,10 @@ class _DesktopHomePageState extends State<DesktopHomePage>
   final ValueNotifier<bool> _myDevicesLoading = ValueNotifier(false);
   final ValueNotifier<String?> _myDevicesError = ValueNotifier(null);
 
-  Future<void> _loadMyDevices() async {
+  // [feedback] controls whether a toast is shown when the load finishes. It is
+  // only set for user-initiated refreshes (the Refresh/Retry buttons), so the
+  // silent initial load and tab-switch loads stay quiet.
+  Future<void> _loadMyDevices({bool feedback = false}) async {
     if (_myDevicesLoading.value) return;
     _myDevicesLoading.value = true;
     _myDevicesError.value = null;
@@ -123,15 +126,18 @@ class _DesktopHomePageState extends State<DesktopHomePage>
       if (AppAuthService().currentUserName.value.isEmpty) {
         _myDevices.value = [];
         _myDevicesError.value = translate('Not logged in');
+        if (feedback) showToast(translate('Not logged in'));
         return;
       }
       final list = await AppAuthService().fetchMyDevices();
       if (list == null) {
         _myDevicesError.value = translate('Failed');
         _myDevices.value ??= [];
+        if (feedback) showToast(translate('Failed'));
       } else {
         _myDevices.value =
             list.map((e) => MyDevice.fromJson(e)).toList();
+        if (feedback) showToast(translate('Device list refreshed'));
       }
     } finally {
       _myDevicesLoading.value = false;
@@ -1377,14 +1383,17 @@ class _DesktopHomePageState extends State<DesktopHomePage>
     required IconData icon,
     required String label,
     VoidCallback? onTap,
+    bool loading = false,
   }) {
-    final enabled = onTap != null;
+    // While loading, disable the tap and swap the leading icon for a spinner so
+    // the button itself signals that work is in progress.
+    final enabled = onTap != null && !loading;
     final fg = enabled ? MyTheme.textBody : MyTheme.textMuted;
     return Material(
       color: Colors.transparent,
       child: InkWell(
         borderRadius: BorderRadius.circular(8),
-        onTap: onTap,
+        onTap: enabled ? onTap : null,
         child: Container(
           height: 38,
           padding: const EdgeInsets.symmetric(horizontal: 14),
@@ -1396,7 +1405,14 @@ class _DesktopHomePageState extends State<DesktopHomePage>
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(icon, size: 16, color: fg),
+              loading
+                  ? SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(
+                          strokeWidth: 2, color: fg),
+                    )
+                  : Icon(icon, size: 16, color: fg),
               const SizedBox(width: 6),
               Text(label,
                   style: TextStyle(
@@ -2076,10 +2092,14 @@ class _DesktopHomePageState extends State<DesktopHomePage>
           ],
         ),
         const SizedBox(width: 12),
-        _outlineButton(
-          icon: Icons.refresh,
-          label: translate('Refresh'),
-          onTap: () => _loadMyDevices(),
+        ValueListenableBuilder<bool>(
+          valueListenable: _myDevicesLoading,
+          builder: (_, loading, __) => _outlineButton(
+            icon: Icons.refresh,
+            label: translate('Refresh'),
+            loading: loading,
+            onTap: () => _loadMyDevices(feedback: true),
+          ),
         ),
       ],
     );
@@ -2104,7 +2124,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
             _outlineButton(
               icon: Icons.refresh,
               label: translate('Retry'),
-              onTap: () => _loadMyDevices(),
+              onTap: () => _loadMyDevices(feedback: true),
             ),
           ],
         ),
