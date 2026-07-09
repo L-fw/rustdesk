@@ -1019,8 +1019,14 @@ class _DesktopHomePageState extends State<DesktopHomePage>
           builder: (btnContext) => InkWell(
             borderRadius: BorderRadius.circular(8),
             onTap: () async {
-              final entries = await RecentPeerCard(peer: peer)
-                  .buildPopupMenuEntry(context);
+              final entries = await RecentPeerCard(
+                peer: peer,
+                // 收藏改为账号服务器存储，与"最近连接"表格/收藏页保持一致，
+                // 使下拉框中的"加入到收藏/取消收藏"真正生效。
+                isFavoriteOverride: (id) =>
+                    _myFavorites.value?.any((f) => f.peerId == id) ?? false,
+                onToggleFavorite: (id, isFav) => _toggleFavorite(id, isFav),
+              ).buildPopupMenuEntry(context);
               if (entries.isEmpty) return;
               final pos = _menuPositionFromButton(btnContext);
               await mod_menu.showMenu(
@@ -2378,6 +2384,12 @@ class _DesktopHomePageState extends State<DesktopHomePage>
           valueListenable: _mySessions,
           builder: (_, sessions, __) {
             bind.mainLoadRecentPeers();
+            // 确保收藏数据已加载，使卡片下拉框中的"加入到收藏/取消收藏"
+            // 能正确反映当前收藏状态（收藏为账号服务器存储）。
+            if (_myFavorites.value == null && !_myFavoritesLoading.value) {
+              WidgetsBinding.instance
+                  .addPostFrameCallback((_) => _loadMyFavorites());
+            }
             return Obx(() {
               final query = peerSearchText.value.trim().toLowerCase();
               // 取账号服务器最新的几条会话（同一对端去重），作为主页最近连接。

@@ -508,8 +508,21 @@ abstract class BasePeerCard extends StatelessWidget {
   final PeerTabIndex tab;
   final EdgeInsets? menuPadding;
 
+  // Optional server-backed favorite hooks. When both are provided (e.g. by the
+  // custom home page whose Favorites are stored on the account server rather
+  // than the local config), the "Add/Remove Favorites" menu item toggles the
+  // server favorite instead of the local one. Left null everywhere else so the
+  // standard peer tab keeps using the local favorites store unchanged.
+  final bool Function(String id)? isFavoriteOverride;
+  final Future<void> Function(String id, bool isFavorite)? onToggleFavorite;
+
   BasePeerCard(
-      {required this.peer, required this.tab, this.menuPadding, Key? key})
+      {required this.peer,
+      required this.tab,
+      this.menuPadding,
+      this.isFavoriteOverride,
+      this.onToggleFavorite,
+      Key? key})
       : super(key: key);
 
   @override
@@ -936,6 +949,38 @@ abstract class BasePeerCard extends StatelessWidget {
     );
   }
 
+  // Server-backed favorite toggle used when [onToggleFavorite] is provided.
+  // Mirrors the local add/remove entries above but delegates the actual
+  // add/remove (and any reload/toast) to the injected callback.
+  @protected
+  MenuEntryBase<String> _toggleFavServerAction(String id, bool isFav) {
+    return MenuEntryButton<String>(
+      childBuilder: (TextStyle? style) => Row(
+        children: [
+          Text(
+            translate(isFav ? 'Remove from Favorites' : 'Add to Favorites'),
+            style: style,
+          ),
+          Expanded(
+              child: Align(
+            alignment: Alignment.centerRight,
+            child: Transform.scale(
+              scale: 0.8,
+              child: Icon(isFav ? Icons.star : Icons.star_outline),
+            ),
+          ).marginOnly(right: 4)),
+        ],
+      ),
+      proc: () {
+        () async {
+          await onToggleFavorite?.call(id, isFav);
+        }();
+      },
+      padding: menuPadding,
+      dismissOnClicked: true,
+    );
+  }
+
   @protected
   MenuEntryBase<String> _addToAb(Peer peer) {
     return MenuEntryButton<String>(
@@ -962,11 +1007,18 @@ abstract class BasePeerCard extends StatelessWidget {
 }
 
 class RecentPeerCard extends BasePeerCard {
-  RecentPeerCard({required Peer peer, EdgeInsets? menuPadding, Key? key})
+  RecentPeerCard(
+      {required Peer peer,
+      EdgeInsets? menuPadding,
+      bool Function(String id)? isFavoriteOverride,
+      Future<void> Function(String id, bool isFavorite)? onToggleFavorite,
+      Key? key})
       : super(
             peer: peer,
             tab: PeerTabIndex.recent,
             menuPadding: menuPadding,
+            isFavoriteOverride: isFavoriteOverride,
+            onToggleFavorite: onToggleFavorite,
             key: key);
 
   @override
@@ -1000,7 +1052,11 @@ class RecentPeerCard extends BasePeerCard {
       menuItems.add(_unrememberPasswordAction(peer.id));
     }
 
-    if (!favs.contains(peer.id)) {
+    if (onToggleFavorite != null) {
+      // Home page: favorites live on the account server, so toggle there.
+      final isFav = isFavoriteOverride?.call(peer.id) ?? false;
+      menuItems.add(_toggleFavServerAction(peer.id, isFav));
+    } else if (!favs.contains(peer.id)) {
       menuItems.add(_addFavAction(peer.id));
     } else {
       menuItems.add(_rmFavAction(peer.id, () async {}));
