@@ -1530,29 +1530,36 @@ class _DesktopHomePageState extends State<DesktopHomePage>
         ),
       );
     } else {
+      // 为当前展示行读取本地持久化别名（重命名结果），使设备列显示设备名而非 ID。
+      _maybeRefreshRecentAliases(
+          sessions.map((s) => s.remoteId).toList());
       // 用单个 Table 承载表头 + 所有数据行，列宽由 _recentColumnWidths 统一控制，
       // 表头与数据行天然对齐；内容列用 IntrinsicColumnWidth 按内容自适应，
       // 整个表格在 SingleChildScrollView 内垂直滚动（表头随内容滚动）。
-      content = SingleChildScrollView(
-        padding: EdgeInsets.zero,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 8),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Table(
-                columnWidths: _recentColumnWidths,
-                defaultVerticalAlignment: TableCellVerticalAlignment.middle,
-                border: TableBorder(
-                  horizontalInside:
-                      BorderSide(color: MyTheme.hairline, width: 1),
+      // 监听别名缓存，使重命名后设备列显示名即时更新。
+      content = ValueListenableBuilder<Map<String, String>>(
+        valueListenable: _recentAliases,
+        builder: (_, __, ___) => SingleChildScrollView(
+          padding: EdgeInsets.zero,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Table(
+                  columnWidths: _recentColumnWidths,
+                  defaultVerticalAlignment: TableCellVerticalAlignment.middle,
+                  border: TableBorder(
+                    horizontalInside:
+                        BorderSide(color: MyTheme.hairline, width: 1),
+                  ),
+                  children: [
+                    _recentTableHeader(),
+                    for (final s in sessions) _recentTableRow(context, s),
+                  ],
                 ),
-                children: [
-                  _recentTableHeader(),
-                  for (final s in sessions) _recentTableRow(context, s),
-                ],
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       );
@@ -1788,7 +1795,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
 
   TableRow _recentTableRow(BuildContext context, MySession session) {
     final remoteId = session.remoteId;
-    final displayName = remoteId.isEmpty ? '---' : remoteId;
+    final displayName = _recentDeviceName(remoteId);
     final active = session.active;
 
     return TableRow(
@@ -2414,6 +2421,19 @@ class _DesktopHomePageState extends State<DesktopHomePage>
       default:
         return '';
     }
+  }
+
+  // 某个对端在"最近连接"里应展示的设备名：优先用本地持久化别名缓存（重命名结果），
+  // 其次用本地最近连接模型里的别名，最后回退到对端 ID。供表格视图的设备列使用，
+  // 与卡片视图（见 _recentPeersFromSessions）显示名保持一致。
+  String _recentDeviceName(String id) {
+    if (id.isEmpty) return '---';
+    final overrideAlias = _recentAliases.value[id];
+    if (overrideAlias != null && overrideAlias.isNotEmpty) return overrideAlias;
+    for (final p in gFFI.recentPeersModel.peers) {
+      if (p.id == id && p.alias.isNotEmpty) return p.alias;
+    }
+    return id;
   }
 
   List<Peer> _recentPeersFromSessions(List<MySession>? sessions) {
