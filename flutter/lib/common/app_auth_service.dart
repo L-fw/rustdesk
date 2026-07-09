@@ -528,6 +528,22 @@ class AppAuthService {
     }
   }
 
+  /// 删除当前登录用户与指定对端之间的全部会话记录（"最近连接"里删除单条）。
+  /// 成功返回 true。
+  Future<bool> deleteMySession(String peerId) async {
+    try {
+      final token = await getToken();
+      if (token.isEmpty || peerId.isEmpty) return false;
+      final result = await _post('/api/user/sessions/delete', {
+        'token': token,
+        'peer_id': peerId,
+      });
+      return result['code'] == 200;
+    } catch (_) {
+      return false;
+    }
+  }
+
   /// 获取当前登录用户的收藏列表
   Future<List<Map<String, dynamic>>?> fetchMyFavorites() async {
     try {

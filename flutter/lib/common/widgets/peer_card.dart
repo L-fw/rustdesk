@@ -516,12 +516,26 @@ abstract class BasePeerCard extends StatelessWidget {
   final bool Function(String id)? isFavoriteOverride;
   final Future<void> Function(String id, bool isFavorite)? onToggleFavorite;
 
+  // Optional rename hook. When provided (e.g. the home page whose recent list is
+  // derived from account-server sessions), the "Rename" menu item persists the
+  // new alias through this callback so the caller can also refresh its own view.
+  // Left null elsewhere so the standard peer tab keeps its default rename path.
+  final Future<void> Function(String id, String newAlias)? onRenameOverride;
+
+  // Optional delete hook. When provided (e.g. the home page whose recent list is
+  // account-server session history), the "Delete" menu item removes the record
+  // through this callback instead of only dropping the local recent peer.
+  // Left null elsewhere so the standard peer tab keeps its default behavior.
+  final Future<void> Function(String id)? onRemoveOverride;
+
   BasePeerCard(
       {required this.peer,
       required this.tab,
       this.menuPadding,
       this.isFavoriteOverride,
       this.onToggleFavorite,
+      this.onRenameOverride,
+      this.onRemoveOverride,
       Key? key})
       : super(key: key);
 
@@ -784,7 +798,10 @@ abstract class BasePeerCard extends StatelessWidget {
             oldName: oldName,
             onSubmit: (String newName) async {
               if (newName != oldName) {
-                if (tab == PeerTabIndex.ab) {
+                if (onRenameOverride != null) {
+                  // Caller persists the alias and refreshes its own view.
+                  await onRenameOverride!(id, newName);
+                } else if (tab == PeerTabIndex.ab) {
                   await gFFI.abModel.changeAlias(id: id, alias: newName);
                   await bind.mainSetPeerAlias(id: id, alias: newName);
                 } else {
@@ -821,6 +838,11 @@ abstract class BasePeerCard extends StatelessWidget {
       ),
       proc: () {
         onSubmit() async {
+          if (onRemoveOverride != null) {
+            // Caller removes the record (e.g. server-side) and refreshes itself.
+            await onRemoveOverride!(id);
+            return;
+          }
           switch (tab) {
             case PeerTabIndex.recent:
               await bind.mainRemovePeer(id: id);
@@ -1012,6 +1034,8 @@ class RecentPeerCard extends BasePeerCard {
       EdgeInsets? menuPadding,
       bool Function(String id)? isFavoriteOverride,
       Future<void> Function(String id, bool isFavorite)? onToggleFavorite,
+      Future<void> Function(String id, String newAlias)? onRenameOverride,
+      Future<void> Function(String id)? onRemoveOverride,
       Key? key})
       : super(
             peer: peer,
@@ -1019,6 +1043,8 @@ class RecentPeerCard extends BasePeerCard {
             menuPadding: menuPadding,
             isFavoriteOverride: isFavoriteOverride,
             onToggleFavorite: onToggleFavorite,
+            onRenameOverride: onRenameOverride,
+            onRemoveOverride: onRemoveOverride,
             key: key);
 
   @override

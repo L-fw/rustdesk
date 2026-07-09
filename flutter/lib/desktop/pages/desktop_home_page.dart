@@ -268,6 +268,71 @@ class _DesktopHomePageState extends State<DesktopHomePage>
     WidgetsBinding.instance.addPostFrameCallback((_) => _loadRecentOnline());
   }
 
+  // 主页最近连接卡片的自定义显示名（重命名）。最近连接来自账号服务器的会话历史，
+  // 对端未必存在于本地 recentPeersModel 中，所以这里直接按 peerId 读取本地别名
+  // （由 mainSetPeerAlias 持久化），作为卡片显示名的优先来源。key=peerId。
+  final ValueNotifier<Map<String, String>> _recentAliases =
+      ValueNotifier(<String, String>{});
+  Set<String> _lastRecentAliasIds = <String>{};
+
+  // 为当前展示的最近连接对端读取本地持久化别名，填充 _recentAliases。仅在有变化
+  // 时更新，避免无谓重建。
+  Future<void> _loadRecentAliases(List<String> ids) async {
+    final map = Map<String, String>.from(_recentAliases.value);
+    var changed = false;
+    for (final id in ids) {
+      if (id.isEmpty) continue;
+      final alias = await bind.mainGetPeerOption(id: id, key: 'alias');
+      final cur = map[id] ?? '';
+      if (alias == cur) continue;
+      if (alias.isEmpty) {
+        if (map.remove(id) != null) changed = true;
+      } else {
+        map[id] = alias;
+        changed = true;
+      }
+    }
+    if (changed && mounted) _recentAliases.value = map;
+  }
+
+  // 展示的对端集合变化时刷新一次别名缓存（与在线状态刷新同样的触发方式）。
+  void _maybeRefreshRecentAliases(List<String> ids) {
+    final set = ids.toSet();
+    if (set.length == _lastRecentAliasIds.length &&
+        set.containsAll(_lastRecentAliasIds)) {
+      return;
+    }
+    _lastRecentAliasIds = set;
+    WidgetsBinding.instance
+        .addPostFrameCallback((_) => _loadRecentAliases(ids));
+  }
+
+  // 重命名：持久化本地别名并立即刷新主页最近连接卡片显示名。供卡片下拉框调用。
+  Future<void> _renameRecentPeer(String id, String newAlias) async {
+    if (id.isEmpty) return;
+    await bind.mainSetPeerAlias(id: id, alias: newAlias);
+    // 同步本地最近连接模型（标准逻辑一致），再刷新自定义别名缓存驱动重建。
+    bind.mainLoadRecentPeers();
+    await _loadRecentAliases([id]);
+    showToast(translate('Successful'));
+  }
+
+  // 删除：主页最近连接来自账号服务器会话历史，需删除服务器上与该对端的会话，
+  // 再顺带清掉本地最近连接记录，最后重新拉取会话使卡片消失。供卡片下拉框调用。
+  Future<void> _deleteRecentPeer(String id) async {
+    if (id.isEmpty) return;
+    final ok = await AppAuthService().deleteMySession(id);
+    // 无论服务器结果如何都清理本地记录，保持本地最近连接与服务器一致。
+    await bind.mainRemovePeer(id: id);
+    bind.mainLoadRecentPeers();
+    if (ok) {
+      showToast(translate('Successful'));
+      await _loadMySessions();
+    } else {
+      showToast(translate('Failed'));
+    }
+  }
+
   // Recent sessions view mode on the home page: false = card grid, true = list.
   // Persisted independently from the shared [peerCardUiType] so the home page
   // keeps "card" as its default and isn't affected by the view chosen on the
@@ -1026,6 +1091,11 @@ class _DesktopHomePageState extends State<DesktopHomePage>
                 isFavoriteOverride: (id) =>
                     _myFavorites.value?.any((f) => f.peerId == id) ?? false,
                 onToggleFavorite: (id, isFav) => _toggleFavorite(id, isFav),
+                // 重命名：持久化本地别名并即时刷新卡片显示名。
+                onRenameOverride: (id, newAlias) =>
+                    _renameRecentPeer(id, newAlias),
+                // 删除：删除服务器会话记录并刷新，使卡片消失。
+                onRemoveOverride: (id) => _deleteRecentPeer(id),
               ).buildPopupMenuEntry(context);
               if (entries.isEmpty) return;
               final pos = _menuPositionFromButton(btnContext);
@@ -2360,12 +2430,17 @@ class _DesktopHomePageState extends State<DesktopHomePage>
       // 平台优先按会话的客户端类型推导（始终可得）；未知时回退到本地记录。
       var platform = _platformFromClientType(s.remoteClientType);
       if (platform.isEmpty) platform = local?.platform ?? '';
+      // 重命名后的显示名优先用本地持久化别名缓存（见 _recentAliases）；
+      // 未重命名时回退到本地最近连接记录里的别名。
+      final overrideAlias = _recentAliases.value[id];
       result.add(Peer.fromJson({
         'id': id,
         'username':
             (local?.username.isNotEmpty ?? false) ? local!.username : s.username,
         'hostname': local?.hostname ?? '',
-        'alias': local?.alias ?? '',
+        'alias': (overrideAlias != null && overrideAlias.isNotEmpty)
+            ? overrideAlias
+            : (local?.alias ?? ''),
         'platform': platform,
       }));
       if (result.length >= _kHomeRecentLimit) break;
@@ -2390,7 +2465,10 @@ class _DesktopHomePageState extends State<DesktopHomePage>
               WidgetsBinding.instance
                   .addPostFrameCallback((_) => _loadMyFavorites());
             }
-            return Obx(() {
+            // 监听自定义别名缓存，使"重命名"后卡片显示名即时更新。
+            return ValueListenableBuilder<Map<String, String>>(
+              valueListenable: _recentAliases,
+              builder: (_, __, ___) => Obx(() {
               final query = peerSearchText.value.trim().toLowerCase();
               // 取账号服务器最新的几条会话（同一对端去重），作为主页最近连接。
               final recent = _recentPeersFromSessions(sessions);
@@ -2409,6 +2487,9 @@ class _DesktopHomePageState extends State<DesktopHomePage>
               // Query the server for online status for the displayed peers
               // (online flag is server-backed, like Favorites).
               _maybeRefreshRecentOnline(
+                  recent.map((p) => p.id).toList());
+              // 读取展示对端的本地别名（重命名结果），驱动显示名。
+              _maybeRefreshRecentAliases(
                   recent.map((p) => p.id).toList());
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -2467,7 +2548,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
                     ),
                 ],
               );
-            });
+            }));
           },
         ),
       ),
@@ -2483,24 +2564,29 @@ class _DesktopHomePageState extends State<DesktopHomePage>
     Future<void> doDelete() async {
       final peers = model.selectedPeers.toList();
       deleteConfirmDialog(() async {
+        // 最近连接来自账号服务器会话历史：先删服务器记录，再清本地记录。
+        var ok = true;
         for (var p in peers) {
+          if (!await AppAuthService().deleteMySession(p.id)) ok = false;
           await bind.mainRemovePeer(id: p.id);
         }
         bind.mainLoadRecentPeers();
         model.setMultiSelectionMode(false);
-        showToast(translate('Successful'));
+        showToast(translate(ok ? 'Successful' : 'Failed'));
+        await _loadMySessions();
       }, translate('Delete'));
     }
 
     Future<void> doAddToFav() async {
+      // 收藏为账号服务器存储（与收藏页/单卡片一致），逐个调用服务器接口。
       final peers = model.selectedPeers.toList();
-      final favs = (await bind.mainGetFav()).toList();
+      var ok = true;
       for (var p in peers) {
-        if (!favs.contains(p.id)) favs.add(p.id);
+        if (!await AppAuthService().addFavorite(p.id)) ok = false;
       }
-      await bind.mainStoreFav(favs: favs);
       model.setMultiSelectionMode(false);
-      showToast(translate('Added to favorites'));
+      showToast(translate(ok ? 'Added to favorites' : 'Failed'));
+      await _loadMyFavorites();
     }
 
     void toggleSelectAll() {
@@ -4377,6 +4463,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
     _updateTimer?.cancel();
     _recentOnlineTimer?.cancel();
     _recentOnline.dispose();
+    _recentAliases.dispose();
     _selectedNav.dispose();
     _homeRemoteIdController.dispose();
     _recentSearchCtrl.dispose();
