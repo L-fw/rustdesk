@@ -1393,7 +1393,9 @@ fn get_after_install(
 }
 
 pub fn install_me(options: &str, path: String, silent: bool, debug: bool) -> ResultType<()> {
-    let uninstall_str = get_uninstall(false, false);
+    // Install-time cleanup of a previous installation: do NOT remove config here, otherwise
+    // reinstalling/upgrading would wipe the user's settings and device id.
+    let uninstall_str = get_uninstall(false, false, false);
     let mut path = path.trim_end_matches('\\').to_owned();
     let (subkey, _path, start_menu, exe) = get_default_install_info();
     let mut exe = exe;
@@ -1614,12 +1616,16 @@ fn get_before_uninstall(kill_self: bool) -> String {
 ///   the current process as well. If `false`, it will exclude the current process from the kill
 ///   command.
 /// - `uninstall_printer`: If `true`, includes commands to uninstall the remote printer.
+/// - `remove_config`: If `true`, also removes the local config/cache data (device id, settings,
+///   logs). This must only be `true` for a genuine uninstall. During install this same script is
+///   embedded to clean up a previous installation, and removing the config there would wipe the
+///   user's settings and device id on every reinstall/upgrade.
 ///
 /// # Details
 /// The `uninstall_printer` parameter determines whether the command to uninstall the remote printer
 /// is included in the generated uninstall script. If `uninstall_printer` is `false`, the printer
 /// related command is omitted from the script.
-fn get_uninstall(kill_self: bool, uninstall_printer: bool) -> String {
+fn get_uninstall(kill_self: bool, uninstall_printer: bool, remove_config: bool) -> String {
     let reg_uninstall_string = get_reg("UninstallString");
     if reg_uninstall_string.to_lowercase().contains("msiexec.exe") {
         return reg_uninstall_string;
@@ -1635,6 +1641,11 @@ fn get_uninstall(kill_self: bool, uninstall_printer: bool) -> String {
         }
     }
     let (subkey, path, start_menu, _) = get_install_info();
+    let clean_config_cmd = if remove_config {
+        get_config_cleanup_cmds()
+    } else {
+        "".to_string()
+    };
     format!(
         "
     {before_uninstall}
@@ -1646,6 +1657,7 @@ fn get_uninstall(kill_self: bool, uninstall_printer: bool) -> String {
     if exist \"{start_menu}\" rd /s /q \"{start_menu}\"
     if exist \"%PUBLIC%\\Desktop\\{app_name}.lnk\" del /f /q \"%PUBLIC%\\Desktop\\{app_name}.lnk\"
     if exist \"%PROGRAMDATA%\\Microsoft\\Windows\\Start Menu\\Programs\\Startup\\{app_name} Tray.lnk\" del /f /q \"%PROGRAMDATA%\\Microsoft\\Windows\\Start Menu\\Programs\\Startup\\{app_name} Tray.lnk\"
+    {clean_config_cmd}
     ",
         before_uninstall=get_before_uninstall(kill_self),
         uninstall_amyuni_idd=get_uninstall_amyuni_idd(),
@@ -1653,8 +1665,25 @@ fn get_uninstall(kill_self: bool, uninstall_printer: bool) -> String {
     )
 }
 
+/// Commands to remove the local config/cache data left behind after uninstalling:
+/// the current user's roaming config/logs and the service (LocalSystem) profile config.
+/// The service runs as LocalSystem, whose config is stored under `system32\config\systemprofile`
+/// and remapped to `ServiceProfiles\LocalService` (see `hbb_common::config::patch`), so both
+/// locations are cleaned to cover current and legacy layouts. Each command is guarded by
+/// `if exist`, so missing folders are silently skipped.
+fn get_config_cleanup_cmds() -> String {
+    format!(
+        "
+    if exist \"%APPDATA%\\{app_name}\" rd /s /q \"%APPDATA%\\{app_name}\"
+    if exist \"%SystemRoot%\\ServiceProfiles\\LocalService\\AppData\\Roaming\\{app_name}\" rd /s /q \"%SystemRoot%\\ServiceProfiles\\LocalService\\AppData\\Roaming\\{app_name}\"
+    if exist \"%SystemRoot%\\System32\\config\\systemprofile\\AppData\\Roaming\\{app_name}\" rd /s /q \"%SystemRoot%\\System32\\config\\systemprofile\\AppData\\Roaming\\{app_name}\"
+    ",
+        app_name = crate::get_app_name(),
+    )
+}
+
 pub fn uninstall_me(kill_self: bool) -> ResultType<()> {
-    run_cmds(get_uninstall(kill_self, true), true, "uninstall")
+    run_cmds(get_uninstall(kill_self, true, true), true, "uninstall")
 }
 
 fn write_cmds(cmds: String, ext: &str, tip: &str) -> ResultType<std::path::PathBuf> {

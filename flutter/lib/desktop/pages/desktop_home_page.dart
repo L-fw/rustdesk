@@ -2468,7 +2468,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
       }
       await bind.mainStoreFav(favs: favs);
       model.setMultiSelectionMode(false);
-      showToast(translate('Successful'));
+      showToast(translate('Added to favorites'));
     }
 
     void toggleSelectAll() {

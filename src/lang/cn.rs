@@ -281,7 +281,7 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
         ("Favorites", "收藏"),
         ("Add to Favorites", "加入到收藏"),
         ("Remove from Favorites", "从收藏中删除"),
-        ("Added to favorites", "已加入收藏"),
+        ("Added to favorites", "已收藏"),
         ("No favorites yet", "暂无收藏"),
         ("Copy", "复制"),
         ("Empty", "空空如也"),
