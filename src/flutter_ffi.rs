@@ -2772,6 +2772,11 @@ pub fn main_get_common(key: String) -> String {
         return crate::platform::linux::has_gnome_shortcuts_inhibitor_permission().to_string();
         #[cfg(not(target_os = "linux"))]
         return false.to_string();
+    } else if key == "boot_time" {
+        // Unix timestamp (secs) of the current OS boot. Stable within a boot
+        // session, changes after a reboot. Used to bind login state to the
+        // current boot (reopening the app keeps login; a reboot requires re-login).
+        return hbb_common::sysinfo::System::boot_time().to_string();
     } else {
         if key.starts_with("download-data-") {
             let id = key.replace("download-data-", "");

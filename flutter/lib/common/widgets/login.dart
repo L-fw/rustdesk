@@ -436,6 +436,12 @@ Future<bool?> loginDialog() async {
                   key: 'access_token', value: resp.access_token!);
               await bind.mainSetLocalOption(
                   key: 'user_info', value: jsonEncode(resp.user ?? {}));
+              // Bind this login to the current OS boot session (desktop only).
+              if (isDesktop) {
+                await bind.mainSetLocalOption(
+                    key: 'login_boot_time',
+                    value: bind.mainGetCommonSync(key: 'boot_time'));
+              }
             }
             if (close != null) {
               close(true);
@@ -648,6 +654,12 @@ Future<bool?> verificationCodeDialog(
             if (resp.access_token != null) {
               await bind.mainSetLocalOption(
                   key: 'access_token', value: resp.access_token!);
+              // Bind this login to the current OS boot session (desktop only).
+              if (isDesktop) {
+                await bind.mainSetLocalOption(
+                    key: 'login_boot_time',
+                    value: bind.mainGetCommonSync(key: 'boot_time'));
+              }
               close(true);
               return;
             }
