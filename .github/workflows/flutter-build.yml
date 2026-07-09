@@ -1982,6 +1982,11 @@ jobs:
           sudo apt-get install -y libarchive-tools libfuse2
           # set-up appimage-builder
           # https://github.com/AppImage/AppImageKit/issues/1395
+          # Upgrade the build backend first: appimage-builder pulls in
+          # setuptools_scm 10.2.0, which needs a newer setuptools than the
+          # runner's system one, otherwise metadata generation fails with
+          # "AttributeError: ignore_egg_info_in_manifest".
+          sudo pip3 install --upgrade pip setuptools wheel
           sudo pip3 install git+https://github.com/rustdesk-org/appimage-builder.git
           # run appimage-builder
           pushd appimage
