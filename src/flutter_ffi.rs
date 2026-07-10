@@ -2776,7 +2776,7 @@ pub fn main_get_common(key: String) -> String {
         // Unix timestamp (secs) of the current OS boot. Stable within a boot
         // session, changes after a reboot. Used to bind login state to the
         // current boot (reopening the app keeps login; a reboot requires re-login).
-        return hbb_common::sysinfo::System::boot_time().to_string();
+        return hbb_common::sysinfo::System::new().boot_time().to_string();
     } else {
         if key.starts_with("download-data-") {
             let id = key.replace("download-data-", "");
