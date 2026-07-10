@@ -1196,6 +1196,10 @@ class _DesktopHomePageState extends State<DesktopHomePage>
                                   valueListenable: _recentPage,
                                   builder: (_, pageRaw, __) {
                                 final all = sessions ?? <MySession>[];
+                                // 先为全部会话（而非仅当前页）加载本地别名，
+                                // 否则按重命名后的设备名搜索时，别名尚未进缓存会漏掉不在当前页的项。
+                                _maybeRefreshRecentAliases(
+                                    all.map((s) => s.remoteId).toList());
                                 final filtered = _filterMySessions(
                                     all, query, timeFilter, typeFilter);
                                 final total = filtered.length;
@@ -1263,8 +1267,11 @@ class _DesktopHomePageState extends State<DesktopHomePage>
     final now = DateTime.now();
     return all.where((s) {
       if (q.isNotEmpty) {
+        // 同时匹配实际显示的设备名（本地别名/重命名结果），否则重命名后按名字搜不到。
+        final displayName = _recentDeviceName(s.remoteId).toLowerCase();
         final matches = s.remoteId.toLowerCase().contains(q) ||
-            s.username.toLowerCase().contains(q);
+            s.username.toLowerCase().contains(q) ||
+            displayName.contains(q);
         if (!matches) return false;
       }
       if (typeFilter != 'all') {
@@ -1530,9 +1537,8 @@ class _DesktopHomePageState extends State<DesktopHomePage>
         ),
       );
     } else {
-      // 为当前展示行读取本地持久化别名（重命名结果），使设备列显示设备名而非 ID。
-      _maybeRefreshRecentAliases(
-          sessions.map((s) => s.remoteId).toList());
+      // 别名已在上层对全部会话统一预加载（见 build 中 _maybeRefreshRecentAliases），
+      // 此处不再按当前页重复触发，避免两处争抢 _lastRecentAliasIds 造成反复重建。
       // 用单个 Table 承载表头 + 所有数据行，列宽由 _recentColumnWidths 统一控制，
       // 表头与数据行天然对齐；内容列用 IntrinsicColumnWidth 按内容自适应，
       // 整个表格在 SingleChildScrollView 内垂直滚动（表头随内容滚动）。
