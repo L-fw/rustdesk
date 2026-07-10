@@ -80,6 +80,11 @@ class _DesktopHomePageState extends State<DesktopHomePage>
   final IDTextEditingController _homeRemoteIdController =
       IDTextEditingController();
   final RxBool _connectMenuOpen = false.obs;
+  // 控制远程 ID 输入框只允许输入的最大数字位数（不含自动分组的空格）。
+  static const int _kHomeRemoteIdMaxDigits = 10;
+  // 输入非法字符/超长时的提示文案；null 表示不显示。局部刷新，避免重建整页。
+  final ValueNotifier<String?> _homeRemoteIdError = ValueNotifier<String?>(null);
+  Timer? _homeRemoteIdErrorTimer;
 
   // Recent sessions page state
   final TextEditingController _recentSearchCtrl = TextEditingController();
@@ -793,7 +798,15 @@ class _DesktopHomePageState extends State<DesktopHomePage>
               Expanded(
                 child: TextField(
                   controller: _homeRemoteIdController,
-                  inputFormatters: [IDTextInputFormatter()],
+                  // 先过滤为数字并限制位数（非法字符/超长时弹提示），
+                  // 再交由 IDTextInputFormatter 做分组显示。
+                  inputFormatters: [
+                    _HomeRemoteIdFormatter(
+                      maxDigits: _kHomeRemoteIdMaxDigits,
+                      onReject: _onHomeRemoteIdRejected,
+                    ),
+                    IDTextInputFormatter(),
+                  ],
                   style: const TextStyle(fontSize: 15),
                   decoration: InputDecoration(
                     hintText: translate('Enter Remote ID'),
@@ -818,6 +831,8 @@ class _DesktopHomePageState extends State<DesktopHomePage>
                           BorderSide(color: MyTheme.accent, width: 1.4),
                     ),
                   ),
+                  // 成功输入合法字符后（文本发生变化）隐藏提示。
+                  onChanged: (_) => _clearHomeRemoteIdError(),
                   onSubmitted: (_) => _doConnect(),
                 ),
               ),
@@ -847,9 +862,64 @@ class _DesktopHomePageState extends State<DesktopHomePage>
               _buildConnectMenuButton(context),
             ],
           ),
+          // 非法字符/超长提示：在输入框下方弹出，短暂显示后自动消失。
+          ValueListenableBuilder<String?>(
+            valueListenable: _homeRemoteIdError,
+            builder: (context, err, _) {
+              return AnimatedSwitcher(
+                duration: const Duration(milliseconds: 180),
+                child: err == null
+                    ? const SizedBox(width: double.infinity, height: 0)
+                    : Container(
+                        width: double.infinity,
+                        margin: const EdgeInsets.only(top: 10),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: Colors.red.withOpacity(0.08),
+                          borderRadius: BorderRadius.circular(8),
+                          border:
+                              Border.all(color: Colors.red.withOpacity(0.2)),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.error_outline,
+                                color: Colors.red, size: 16),
+                            const SizedBox(width: 6),
+                            Expanded(
+                              child: Text(
+                                err,
+                                style: const TextStyle(
+                                    color: Colors.red, fontSize: 12),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+              );
+            },
+          ),
         ],
       ),
     );
+  }
+
+  // 输入框吞掉非法字符或超出最大位数时触发：在下方弹出提示，3 秒后自动隐藏。
+  // 延后到帧末设置，避免在 formatEditUpdate 过滤过程中同步改状态。
+  void _onHomeRemoteIdRejected() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _homeRemoteIdError.value = translate('please_enter_valid_characters');
+      _homeRemoteIdErrorTimer?.cancel();
+      _homeRemoteIdErrorTimer = Timer(const Duration(seconds: 3), () {
+        if (mounted) _homeRemoteIdError.value = null;
+      });
+    });
+  }
+
+  void _clearHomeRemoteIdError() {
+    _homeRemoteIdErrorTimer?.cancel();
+    if (_homeRemoteIdError.value != null) _homeRemoteIdError.value = null;
   }
 
   void _doConnect({bool isFileTransfer = false}) {
@@ -4492,6 +4562,8 @@ class _DesktopHomePageState extends State<DesktopHomePage>
     _recentAliases.dispose();
     _selectedNav.dispose();
     _homeRemoteIdController.dispose();
+    _homeRemoteIdErrorTimer?.cancel();
+    _homeRemoteIdError.dispose();
     _recentSearchCtrl.dispose();
     _recentSearch.dispose();
     _recentTimeFilter.dispose();
@@ -4854,6 +4926,56 @@ class MyFavorite {
       createdAt: s(j['createdAt']),
       clientType: s(j['clientType']),
       online: j['online'] == true,
+    );
+  }
+}
+
+/// 控制远程 ID 输入框的前置过滤器：
+/// - 只保留数字（自动分组产生的空格会被剔除，随后由 [IDTextInputFormatter] 重新分组）；
+/// - 数字位数上限为 [maxDigits]，超出部分被截断；
+/// - 当有非数字字符被剔除或发生截断时，回调 [onReject] 以便页面弹出提示。
+///
+/// 光标位置按“光标前的数字个数”还原，保证中间插入/删除时不跳位，
+/// 与后续 [IDTextInputFormatter] 的选区计算逻辑保持一致。
+class _HomeRemoteIdFormatter extends TextInputFormatter {
+  _HomeRemoteIdFormatter({required this.maxDigits, required this.onReject});
+
+  final int maxDigits;
+  final VoidCallback onReject;
+
+  @override
+  TextEditingValue formatEditUpdate(
+      TextEditingValue oldValue, TextEditingValue newValue) {
+    final text = newValue.text;
+    final caret =
+        newValue.selection.end < 0 ? text.length : newValue.selection.end;
+    final buffer = StringBuffer();
+    int digitsBeforeCaret = 0;
+    bool rejected = false;
+    for (int i = 0; i < text.length; i++) {
+      final code = text.codeUnitAt(i);
+      final isDigit = code >= 0x30 && code <= 0x39;
+      if (isDigit) {
+        if (buffer.length < maxDigits) {
+          buffer.writeCharCode(code);
+          if (i < caret) digitsBeforeCaret++;
+        } else {
+          // 超过最大位数，丢弃并提示。
+          rejected = true;
+        }
+      } else if (code == 0x20) {
+        // 分组空格，静默剔除（不算非法输入）。
+      } else {
+        // 非数字、非空格的字符视为非法输入。
+        rejected = true;
+      }
+    }
+    if (rejected) onReject();
+    final digits = buffer.toString();
+    final offset = digitsBeforeCaret.clamp(0, digits.length);
+    return TextEditingValue(
+      text: digits,
+      selection: TextSelection.collapsed(offset: offset),
     );
   }
 }
