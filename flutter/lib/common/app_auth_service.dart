@@ -15,6 +15,9 @@ class AppAuthService {
   static const String _tokenKey = 'app_user_token';
   static const String _userInfoKey = 'app_user_info';
   static const String _tokenVersionKey = 'app_user_token_version';
+  // 桌面端：登录态绑定到本次开机会话（Unix 秒的开机时间戳）。同一次开机内重开
+  // 程序免登录；重启电脑后开机时间戳变化 → 需要重新登录（与 QQ 一致）。
+  static const String _bootTimeKey = 'app_login_boot_time';
   static const String _rememberPasswordKey = 'app_login_remember_password_map';
   static const String _securePrefix = 'enc:v1:';
   static const String _secureSalt = 'gamwing-app-auth-v1';
@@ -71,11 +74,44 @@ class AppAuthService {
     await _loadCachedUserInfo();
     final token = await _getSecureLocalOption(_tokenKey);
     if (token.isEmpty) return false;
+    // 桌面端：重启电脑后强制重新登录（与 QQ 一致）。放在网络校验之前，
+    // 这样重启后无需等待网络请求即可判定。
+    if (isDesktop && _rebootedSinceLogin()) {
+      await logout();
+      return false;
+    }
     final ok = await _verifyToken(token);
     if (!ok) {
       await logout();
     }
     return ok;
+  }
+
+  /// 判断自上次登录以来电脑是否重启过（桌面端）。
+  /// 用系统开机时间戳比对：同一次开机内不变，重启后变为更晚的新值。
+  bool _rebootedSinceLogin() {
+    final curBoot = int.tryParse(bind.mainGetCommonSync(key: 'boot_time')) ?? 0;
+    // 读不到开机时间（<=0）时不做强制登出，避免异常误伤。
+    if (curBoot <= 0) return false;
+    final savedStr = bind.mainGetLocalOption(key: _bootTimeKey);
+    if (savedStr.isEmpty) {
+      // 老用户/升级前已登录但没有盖过时间戳：保留登录并补盖，规则从下次重启生效。
+      bind.mainSetLocalOption(key: _bootTimeKey, value: curBoot.toString());
+      return false;
+    }
+    final savedBoot = int.tryParse(savedStr) ?? 0;
+    // ±120 秒容差：开机时间由"当前时间-运行时长"推算，会有秒级抖动/NTP 微调；
+    // 真实重启时间戳相差远大于此。
+    return (curBoot - savedBoot).abs() > 120;
+  }
+
+  /// 记录本次登录所属的开机会话时间戳（桌面端）。
+  void _stampLoginBootTime() {
+    if (!isDesktop) return;
+    final boot = bind.mainGetCommonSync(key: 'boot_time');
+    if (boot.isNotEmpty && boot != '0') {
+      bind.mainSetLocalOption(key: _bootTimeKey, value: boot);
+    }
   }
 
   /// 获取已保存的 token
@@ -102,6 +138,8 @@ class AppAuthService {
   Future<void> _saveLoginInfo(String token, Map<String, dynamic> user) async {
     await _setSecureLocalOption(_tokenKey, token);
     await _setSecureLocalOption(_userInfoKey, jsonEncode(user));
+    // 绑定本次登录到当前开机会话（桌面端）。
+    _stampLoginBootTime();
     final userName = _extractUserName(user);
     currentUserName.value = userName;
     // Set plain-text user name for Rust-side peers directory isolation
@@ -116,6 +154,7 @@ class AppAuthService {
     await _setSecureLocalOption(_tokenKey, '');
     await _setSecureLocalOption(_userInfoKey, '');
     await _setSecureLocalOption(_tokenVersionKey, '');
+    await bind.mainSetLocalOption(key: _bootTimeKey, value: '');
     currentUserName.value = '';
     // Clear user name so Rust uses the default 'peers' directory
     await bind.mainSetLocalOption(key: 'current_user_name', value: '');

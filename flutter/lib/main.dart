@@ -141,9 +141,9 @@ Future<void> initEnv(String appType) async {
 void runMainApp(bool startService) async {
   // register uni links
   await initEnv(kAppTypeMain);
-  // 检查用户登录状态（与 mobile 一致）
-  _isAppLoggedIn =
-      isDesktop ? false : kAppModeShareOnly || await AppAuthService().isLoggedIn();
+  // 检查用户登录状态（与 mobile 一致）。runMainApp 仅在桌面原生运行，
+  // 之前写死 isDesktop ? false 导致桌面端每次启动都判为未登录、总是弹登录页。
+  _isAppLoggedIn = kAppModeShareOnly || await AppAuthService().isLoggedIn();
   checkUpdate();
   // trigger connection status updater
   await bind.mainCheckConnectStatus();

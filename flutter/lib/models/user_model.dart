@@ -53,32 +53,6 @@ class UserModel {
       await updateOtherModels();
       return;
     }
-    // Bind login state to the current OS boot session (desktop only):
-    // reopening the app within the same boot keeps the login, but a computer
-    // reboot forces a re-login (like QQ). Mobile/web behavior is unchanged.
-    if (isDesktop) {
-      final curBoot = int.tryParse(bind.mainGetCommonSync(key: 'boot_time')) ?? 0;
-      final savedBootStr = bind.mainGetLocalOption(key: 'login_boot_time');
-      // curBoot <= 0 means we failed to read the boot time; never log out on
-      // that uncertainty.
-      if (curBoot > 0) {
-        if (savedBootStr.isEmpty) {
-          // Existing login from before this feature (or after upgrade): keep the
-          // session and stamp it now, so the reboot rule applies from here on.
-          await bind.mainSetLocalOption(
-              key: 'login_boot_time', value: curBoot.toString());
-        } else {
-          final savedBoot = int.tryParse(savedBootStr) ?? 0;
-          // Tolerance guards against small boot-time jitter (uptime rounding /
-          // NTP adjustments); a real reboot differs by far more.
-          if ((curBoot - savedBoot).abs() > 120) {
-            await reset(resetOther: true);
-            await updateOtherModels();
-            return;
-          }
-        }
-      }
-    }
     _updateLocalUserInfo();
     final url = await bind.mainGetApiServer();
     final body = {
@@ -146,7 +120,6 @@ class UserModel {
   Future<void> reset({bool resetOther = false}) async {
     await bind.mainSetLocalOption(key: 'access_token', value: '');
     await bind.mainSetLocalOption(key: 'user_info', value: '');
-    await bind.mainSetLocalOption(key: 'login_boot_time', value: '');
     if (resetOther) {
       await gFFI.abModel.reset();
       await gFFI.groupModel.reset();
