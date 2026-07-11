@@ -772,14 +772,19 @@ class _GeneralState extends State<_General> {
                   fontSize: _kContentFontSize, color: _textSecondaryColor),
             ),
             Expanded(
-              child: GestureDetector(
-                onDoubleTap: exists ? () => launchUrl(Uri.file(dir)) : null,
-                child: Text(
-                  dir,
-                  softWrap: true,
-                  style: TextStyle(
-                    fontSize: _kContentFontSize,
-                    decoration: exists ? TextDecoration.underline : null,
+              child: MouseRegion(
+                cursor: exists
+                    ? SystemMouseCursors.click
+                    : MouseCursor.defer,
+                child: GestureDetector(
+                  onDoubleTap: exists ? () => launchUrl(Uri.file(dir)) : null,
+                  child: Text(
+                    dir,
+                    softWrap: true,
+                    style: TextStyle(
+                      fontSize: _kContentFontSize,
+                      decoration: exists ? TextDecoration.underline : null,
+                    ),
                   ),
                 ),
               ).marginOnly(left: 8),
