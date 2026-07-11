@@ -2154,8 +2154,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
     return all.where((d) {
       if (q.isNotEmpty) {
         final matches = d.id.toLowerCase().contains(q) ||
-            d.username.toLowerCase().contains(q) ||
-            d.ip.toLowerCase().contains(q);
+            d.username.toLowerCase().contains(q);
         if (!matches) return false;
       }
       if (typeFilter != 'all') {
@@ -2214,6 +2213,12 @@ class _DesktopHomePageState extends State<DesktopHomePage>
             child: TextField(
               controller: _devicesSearchCtrl,
               style: const TextStyle(fontSize: 13),
+              // 仅按设备ID与账号用户名搜索，二者均只含 [A-Za-z0-9_]，
+              // 故与注册页用户名保持一致的输入规范：过滤中文及其它字符。
+              inputFormatters: [
+                _DeviceSearchInputFormatter(),
+                LengthLimitingTextInputFormatter(20),
+              ],
               onChanged: (v) => _devicesSearch.value = v,
               decoration: InputDecoration(
                 isDense: true,
@@ -4926,6 +4931,30 @@ class MyFavorite {
       createdAt: s(j['createdAt']),
       clientType: s(j['clientType']),
       online: j['online'] == true,
+    );
+  }
+}
+
+/// “我的设备”搜索框输入过滤器：只允许英文、数字和下划线，不允许中文。
+/// 搜索仅匹配设备ID与账号用户名，二者均只含 [A-Za-z0-9_]，与注册页
+/// 用户名规范保持一致。IME 组字期间不干预，避免输入法叠字问题。
+class _DeviceSearchInputFormatter extends TextInputFormatter {
+  static final _disallowedPattern = RegExp(r'[^A-Za-z0-9_]');
+
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    if (newValue.composing != TextRange.empty) return newValue;
+
+    final filtered = newValue.text.replaceAll(_disallowedPattern, '');
+    if (filtered == newValue.text) return newValue;
+
+    return newValue.copyWith(
+      text: filtered,
+      selection: TextSelection.collapsed(offset: filtered.length),
+      composing: TextRange.empty,
     );
   }
 }
