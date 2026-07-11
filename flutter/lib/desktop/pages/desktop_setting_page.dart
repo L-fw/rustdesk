@@ -888,6 +888,46 @@ enum _AccessMode {
   view,
 }
 
+/// 安全设置解锁状态的全局持久化。语义与登录态（[AppAuthService]）保持一致：
+/// 解锁后绑定到本次开机会话——同一次开机内切换主页 / 重开程序都保持解锁，
+/// 重启电脑后开机时间戳变化，自动重新锁定。
+class _SecurityUnlock {
+  static const String _unlockBootTimeKey = 'security_settings_unlock_boot_time';
+
+  /// 记录解锁：将当前开机时间戳写入本地选项。
+  static void markUnlocked() {
+    final boot = bind.mainGetCommonSync(key: 'boot_time');
+    if (boot.isNotEmpty && boot != '0') {
+      bind.mainSetLocalOption(key: _unlockBootTimeKey, value: boot);
+    }
+  }
+
+  /// 重新锁定：清除解锁记录。
+  static void markLocked() {
+    bind.mainSetLocalOption(key: _unlockBootTimeKey, value: '');
+  }
+
+  /// 计算页面初始锁定状态：未安装则永不锁定；已安装时，若解锁记录仍属于当前
+  /// 开机会话则保持解锁，否则锁定。
+  static bool computeLocked() {
+    if (!bind.mainIsInstalled()) return false;
+    return !_unlockedInCurrentBootSession();
+  }
+
+  /// 判断已保存的解锁记录是否属于当前这次开机会话（与登录态判定同一套逻辑）。
+  static bool _unlockedInCurrentBootSession() {
+    final savedStr = bind.mainGetLocalOption(key: _unlockBootTimeKey);
+    if (savedStr.isEmpty) return false;
+    final curBoot = int.tryParse(bind.mainGetCommonSync(key: 'boot_time')) ?? 0;
+    if (curBoot <= 0) return false;
+    final savedBoot = int.tryParse(savedStr) ?? 0;
+    if (savedBoot <= 0) return false;
+    // ±120 秒容差：开机时间由"当前时间-运行时长"推算，会有秒级抖动/NTP 微调；
+    // 真实重启的时间戳相差远大于此。与 AppAuthService 保持一致。
+    return (curBoot - savedBoot).abs() <= 120;
+  }
+}
+
 class _Safety extends StatefulWidget {
   const _Safety({Key? key}) : super(key: key);
 
@@ -898,7 +938,9 @@ class _Safety extends StatefulWidget {
 class _SafetyState extends State<_Safety> with AutomaticKeepAliveClientMixin {
   @override
   bool get wantKeepAlive => true;
-  bool locked = bind.mainIsInstalled();
+  // 初始锁定状态由全局持久化决定：同一次开机内已解锁则保持解锁（切主页/重开
+  // 程序不丢），重启电脑后重新锁定。
+  bool locked = _SecurityUnlock.computeLocked();
   // Whether the collapsible "Advanced Permissions" section of the access
   // permissions card is expanded (matches the "高级权限 / 展开" row in the mockup).
   bool _showAdvancedPermissions = false;
@@ -964,7 +1006,12 @@ class _SafetyState extends State<_Safety> with AutomaticKeepAliveClientMixin {
             borderRadius: BorderRadius.circular(20),
             // Acts as a two-way switch: tap to unlock when locked, tap again to
             // re-lock (re-protect) the security settings when unlocked.
-            onTap: locked ? _unlock : () => setState(() => locked = true),
+            onTap: locked
+                ? _unlock
+                : () {
+                    _SecurityUnlock.markLocked();
+                    setState(() => locked = true);
+                  },
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
               decoration: BoxDecoration(
@@ -1000,7 +1047,11 @@ class _SafetyState extends State<_Safety> with AutomaticKeepAliveClientMixin {
   // [_lock] card below the banner.
   Future<void> _unlock() async {
     final unlockPin = bind.mainGetUnlockPin();
-    onUnlock() => setState(() => locked = false);
+    onUnlock() {
+      // 全局持久化解锁状态（绑定本次开机会话），与登录态一致。
+      _SecurityUnlock.markUnlocked();
+      setState(() => locked = false);
+    }
     if (unlockPin.isEmpty || isUnlockPinDisabled()) {
       final checked = await callMainCheckSuperUserPermission();
       if (checked) onUnlock();
