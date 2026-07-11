@@ -2689,6 +2689,9 @@ class _AccountState extends State<_Account> {
     );
     if (!mounted) return;
     if (ok == true) {
+      // 主动改密码会导致服务器踢下线；这里已跳回登录页，随后弹出的登录失效
+      // 提示框应显示“确认”而非“重新登录”（否则是从登录页重复跳转登录页）。
+      stateGlobal.appLoginInvalidatedBySelf = true;
       Navigator.of(context).pushAndRemoveUntil(
         PageRouteBuilder(
           pageBuilder: (_, __, ___) => const LoginTabPage(

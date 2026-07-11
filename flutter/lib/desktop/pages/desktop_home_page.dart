@@ -4616,6 +4616,11 @@ class _DesktopHomePageState extends State<DesktopHomePage>
   void _showLoginExpiredDialog() {
     if (!mounted || _loginStatusDialogShowing) return;
     _loginStatusDialogShowing = true;
+    // 用户在设置页主动修改密码触发的登录失效：此时不再显示“重新登录”，而是
+    // 显示“确认”（行为不变，仍跳回登录页）；“直接退出”按钮保持不变。
+    // 消费一次即复位，真正被踢/登录过期的场景仍显示“重新登录”。
+    final bySelf = stateGlobal.appLoginInvalidatedBySelf;
+    stateGlobal.appLoginInvalidatedBySelf = false;
     final msg = stateGlobal.appLoginInvalidatedMessage.value.isNotEmpty
         ? stateGlobal.appLoginInvalidatedMessage.value
         : translate('account_kicked_message');
@@ -4635,7 +4640,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
             },
           ),
           dialogButton(
-            translate('btn_relogin'),
+            bySelf ? translate('OK') : translate('btn_relogin'),
             onPressed: () {
               close();
               _loginStatusDialogShowing = false;

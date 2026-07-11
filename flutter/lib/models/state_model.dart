@@ -32,6 +32,10 @@ class StateGlobal {
   final remoteDisabledMessage = ''.obs;
   final appLoginInvalidated = false.obs;
   final appLoginInvalidatedMessage = ''.obs;
+  // 用户在设置页主动修改密码会触发服务器踢下线，但此时已经跳回登录页，
+  // 登录失效弹框应显示“确认”（仅关闭）而非“重新登录”（重复跳转登录页）。
+  // 由修改密码流程置位，弹框消费后立即复位，不影响真正被踢/登录过期的场景。
+  bool appLoginInvalidatedBySelf = false;
   final serverDownloadUrl = ''.obs;
   final serverUpdateLog = ''.obs;
   final serverForceUpdate = false.obs;
