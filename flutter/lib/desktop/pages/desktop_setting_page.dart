@@ -773,7 +773,7 @@ class _GeneralState extends State<_General> {
             ),
             Expanded(
               child: GestureDetector(
-                onTap: exists ? () => launchUrl(Uri.file(dir)) : null,
+                onDoubleTap: exists ? () => launchUrl(Uri.file(dir)) : null,
                 child: Text(
                   dir,
                   softWrap: true,
