@@ -284,7 +284,7 @@ class AppAuthService {
       }
       return _translateServerMsg(result['msg']) ?? translate('register_failed');
     } catch (e) {
-      return '${translate('network_error')}: $e';
+      return translate('network_error');
     }
   }
 
@@ -316,7 +316,7 @@ class AppAuthService {
       }
       return _translateServerMsg(result['msg']) ?? translate('login_failed');
     } catch (e) {
-      return '${translate('network_error')}: $e';
+      return translate('network_error');
     }
   }
 
@@ -331,7 +331,7 @@ class AppAuthService {
       }
       return _translateServerMsg(result['msg']) ?? translate('send_failed');
     } catch (e) {
-      return '${translate('network_error')}: $e';
+      return translate('network_error');
     }
   }
 
@@ -364,7 +364,7 @@ class AppAuthService {
       }
       return _translateServerMsg(result['msg']) ?? translate('login_failed');
     } catch (e) {
-      return '${translate('network_error')}: $e';
+      return translate('network_error');
     }
   }
 
@@ -385,7 +385,7 @@ class AppAuthService {
       }
       return _translateServerMsg(result['msg']) ?? translate('reset_failed');
     } catch (e) {
-      return '${translate('network_error')}: $e';
+      return translate('network_error');
     }
   }
 
@@ -409,7 +409,7 @@ class AppAuthService {
       }
       return _translateServerMsg(result['msg']) ?? translate('change_pwd_failed');
     } catch (e) {
-      return '${translate('network_error')}: $e';
+      return translate('network_error');
     }
   }
 
@@ -449,7 +449,7 @@ class AppAuthService {
       return _translateServerMsg(result['msg']) ??
           translate('change_username_failed');
     } catch (e) {
-      return '${translate('network_error')}: $e';
+      return translate('network_error');
     }
   }
 
@@ -486,7 +486,7 @@ class AppAuthService {
       return _translateServerMsg(result['msg']) ??
           translate('change_phone_failed');
     } catch (e) {
-      return '${translate('network_error')}: $e';
+      return translate('network_error');
     }
   }
 
@@ -510,7 +510,7 @@ class AppAuthService {
       }
       return _translateServerMsg(result['msg']) ?? translate('Failed');
     } catch (e) {
-      return '${translate('network_error')}: $e';
+      return translate('network_error');
     }
   }
 

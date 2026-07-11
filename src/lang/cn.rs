@@ -987,7 +987,7 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
         ("login_failed", "登录失败"),
         ("send_failed", "发送失败"),
         ("reset_failed", "重置失败"),
-        ("network_error", "网络错误"),
+        ("network_error", "网络异常"),
         ("server_wrong_credentials", "用户名或密码错误"),
         ("server_wrong_password", "密码错误"),
         ("server_user_not_found", "用户不存在"),

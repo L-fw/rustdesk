@@ -270,7 +270,8 @@ impl<T: InvokeUiSession> Remote<T> {
                             }
                             if !self.read_jobs.is_empty() {
                                 if let Err(err) = fs::handle_read_jobs(&mut self.read_jobs, &mut peer).await {
-                                    self.handler.msgbox("error", "Connection Error", &err.to_string(), "");
+                                    log::error!("Failed to handle read jobs: {}", err);
+                                    self.handler.msgbox("error", "Connection Error", "网络错误", "");
                                     break;
                                 }
                                 self.update_jobs_status();
@@ -1778,7 +1779,8 @@ impl<T: InvokeUiSession> Remote<T> {
                     }
                     Some(misc::Union::CloseReason(c)) => {
                         self.sent_close_reason = true; // The controlled end will close, no need to send close reason
-                        self.handler.msgbox("error", "Connection Error", &c, "");
+                        log::info!("Peer close reason: {}", c);
+                        self.handler.msgbox("error", "Connection Error", "网络错误", "");
                         return false;
                     }
                     Some(misc::Union::BackNotification(notification)) => {
