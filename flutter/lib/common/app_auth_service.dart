@@ -31,6 +31,10 @@ class AppAuthService {
   bool _storageMigrated = false;
   final RxString currentUserName = ''.obs;
 
+  /// 最近一次 login/smsLogin 因登录失败次数过多被锁定时，服务器返回的
+  /// 剩余锁定秒数（lock_remaining_sec）；未锁定时为 null。供登录页做实时倒计时。
+  int? lastLockRemainingSec;
+
   /// 已知服务器返回的中文消息 → i18n key 映射
   static const Map<String, String> _serverMsgMap = {
     '用户名或密码错误': 'server_wrong_credentials',
@@ -56,6 +60,14 @@ class AppAuthService {
     '新用户名不能与当前用户名相同': 'username_unchanged',
     '用户名需为 1-20 位字符，只能包含中文、英文和数字': 'username_rule_tip',
   };
+
+  /// 从登录接口响应中提取锁定剩余秒数（服务器 429 时附带 lock_remaining_sec）
+  void _updateLockRemaining(Map<String, dynamic> result) {
+    final remain = result['lock_remaining_sec'];
+    if (remain is num && remain > 0) {
+      lastLockRemainingSec = remain.toInt();
+    }
+  }
 
   /// 尝试将服务器返回的消息翻译为当前语言
   /// 如果是已知的中文消息，返回翻译后的文本；否则原样返回
@@ -297,6 +309,7 @@ class AppAuthService {
     String? agreedTime,
   }) async {
     try {
+      lastLockRemainingSec = null;
       final result = await _post('/api/user/login', {
         'username': username,
         'password': password,
@@ -305,6 +318,7 @@ class AppAuthService {
         if (agreedPrivacyVersion != null) 'agreed_privacy_version': agreedPrivacyVersion,
         if (agreedTime != null) 'agreed_time': agreedTime,
       });
+      _updateLockRemaining(result);
       if (result['code'] == 200 && result['token'] != null) {
         await _saveLoginInfo(
           result['token'],
@@ -345,6 +359,7 @@ class AppAuthService {
     String? agreedTime,
   }) async {
     try {
+      lastLockRemainingSec = null;
       final result = await _post('/api/user/sms/login', {
         'phone': phone,
         'code': code,
@@ -353,6 +368,7 @@ class AppAuthService {
         if (agreedPrivacyVersion != null) 'agreed_privacy_version': agreedPrivacyVersion,
         if (agreedTime != null) 'agreed_time': agreedTime,
       });
+      _updateLockRemaining(result);
       if (result['code'] == 200 && result['token'] != null) {
         await _saveLoginInfo(
           result['token'],

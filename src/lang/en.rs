@@ -453,6 +453,7 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
         ("please_enter_activation_code", "Please enter the activation code"),
         ("please_agree_terms", "Please read and agree to the Terms of Service and Privacy Policy"),
         ("sms_code_sent", "Code"),
+        ("login_locked_countdown", "Too many failed login attempts, please try again in {}"),
         ("register_success", "Registration successful. Please sign in."),
         ("already_have_account", "Already have an account?"),
         ("go_to_login", "Sign In"),

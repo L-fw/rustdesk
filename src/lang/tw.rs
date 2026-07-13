@@ -893,6 +893,7 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
         ("please_enter_activation_code", "請輸入啟用碼"),
         ("please_agree_terms", "請先閱讀並同意《使用者協議》與《隱私政策》"),
         ("sms_code_sent", "驗證碼已發送"),
+        ("login_locked_countdown", "登入失敗次數過多，請 {} 後再試"),
         ("register_success", "註冊成功，請登入"),
         ("already_have_account", "已有帳號？"),
         ("go_to_login", "去登入"),

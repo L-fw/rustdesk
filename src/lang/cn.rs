@@ -948,6 +948,7 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
         ("please_enter_activation_code", "请输入激活码"),
         ("please_agree_terms", "请先阅读并同意《用户协议》与《隐私政策》"),
         ("sms_code_sent", "验证码已发送"),
+        ("login_locked_countdown", "登录失败次数过多，请 {} 后再试"),
         ("register_success", "注册成功，请登录"),
         ("already_have_account", "已有账号？"),
         ("go_to_login", "去登录"),

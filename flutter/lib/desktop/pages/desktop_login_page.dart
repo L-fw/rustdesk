@@ -50,6 +50,10 @@ class _AppLoginPageState extends State<AppLoginPage>
   int _countdown = 0;
   Timer? _countdownTimer;
 
+  // 登录失败次数过多被锁定时的实时倒计时（秒）；>0 时错误框显示剩余时间并每秒刷新
+  int _loginLockRemaining = 0;
+  Timer? _loginLockTimer;
+
   bool _isLoading = false;
   String? _errorMsg;
 
@@ -81,6 +85,8 @@ class _AppLoginPageState extends State<AppLoginPage>
     _tabController = TabController(length: 2, vsync: this);
     _tabController.addListener(() {
       if (_tabController.indexIsChanging) {
+        // 与错误提示一致：切换 Tab 时同时结束锁定倒计时展示
+        _stopLoginLockCountdown();
         setState(() => _errorMsg = null);
       }
     });
@@ -111,6 +117,7 @@ class _AppLoginPageState extends State<AppLoginPage>
     _phoneFocus.dispose();
     _smsCodeFocus.dispose();
     _countdownTimer?.cancel();
+    _loginLockTimer?.cancel();
     super.dispose();
   }
 
@@ -178,6 +185,80 @@ class _AppLoginPageState extends State<AppLoginPage>
       }
     });
   }
+
+  // ─────────────── 登录失败次数过多：锁定实时倒计时 ───────────────
+
+  /// 若错误为"登录失败次数过多"锁定，则启动实时倒计时并返回 true；
+  /// 剩余秒数优先取服务器返回的 lock_remaining_sec，
+  /// 老版本服务器没有该字段时从中文提示文案中解析（分钟/小时粒度）。
+  bool _tryHandleLoginLock(String error) {
+    final sec = _authService.lastLockRemainingSec ?? _parseLockSeconds(error);
+    if (sec == null || sec <= 0) return false;
+    _startLoginLockCountdown(sec);
+    return true;
+  }
+
+  /// 兼容旧版服务器：从"登录失败次数过多，请 X 秒/分钟/小时 后再试"中解析剩余时长
+  int? _parseLockSeconds(String error) {
+    if (!error.contains('失败次数过多')) return null;
+    final m = RegExp(r'(\d+)\s*(秒|分钟|小时)').firstMatch(error);
+    if (m == null) return null;
+    final n = int.tryParse(m.group(1) ?? '') ?? 0;
+    switch (m.group(2)) {
+      case '小时':
+        return n * 3600;
+      case '分钟':
+        return n * 60;
+      default:
+        return n;
+    }
+  }
+
+  void _startLoginLockCountdown(int seconds) {
+    _loginLockTimer?.cancel();
+    setState(() {
+      // 锁定期间错误框显示实时倒计时文案（见 _displayErrorMsg），清掉旧的静态提示
+      _loginLockRemaining = seconds;
+      _errorMsg = null;
+    });
+    _loginLockTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (!mounted) {
+        timer.cancel();
+        return;
+      }
+      if (_loginLockRemaining <= 1) {
+        timer.cancel();
+        _loginLockTimer = null;
+        setState(() => _loginLockRemaining = 0);
+      } else {
+        setState(() => _loginLockRemaining--);
+      }
+    });
+  }
+
+  /// 收到非锁定的登录结果时停止倒计时（如管理员提前解锁后重试）
+  void _stopLoginLockCountdown() {
+    _loginLockTimer?.cancel();
+    _loginLockTimer = null;
+    if (_loginLockRemaining != 0) {
+      setState(() => _loginLockRemaining = 0);
+    }
+  }
+
+  /// 剩余时长格式化为 mm:ss（超过 1 小时为 h:mm:ss），保证每秒可见变化
+  String _formatLockDuration(int sec) {
+    String two(int v) => v.toString().padLeft(2, '0');
+    final h = sec ~/ 3600;
+    final m = (sec % 3600) ~/ 60;
+    final s = sec % 60;
+    return h > 0 ? '$h:${two(m)}:${two(s)}' : '${two(m)}:${two(s)}';
+  }
+
+  /// 错误框实际展示的文案：锁定倒计时优先于普通错误提示
+  String? get _displayErrorMsg => _loginLockRemaining > 0
+      ? translate('login_locked_countdown')
+          .replaceFirst('{}', _formatLockDuration(_loginLockRemaining))
+      : _errorMsg;
 
   void _loadAccountHistory() {
     final raw = bind.mainGetLocalOption(key: _accountHistoryKey);
@@ -422,6 +503,9 @@ class _AppLoginPageState extends State<AppLoginPage>
     if (mounted) {
       setState(() => _isLoading = false);
       if (error != null) {
+        // 账号被锁定：启动实时倒计时；其余错误则结束可能残留的倒计时
+        if (_tryHandleLoginLock(error)) return;
+        _stopLoginLockCountdown();
         if (_isActivationCodeError(error)) {
           final newCode = await _showActivationCodeDialog();
           if (!mounted) return;
@@ -444,6 +528,7 @@ class _AppLoginPageState extends State<AppLoginPage>
           if (!mounted) return;
           setState(() => _isLoading = false);
           if (retryError != null) {
+            if (_tryHandleLoginLock(retryError)) return;
             if (_isPasswordError(retryError)) {
               _setFieldError('password', _passwordFocus, retryError);
             } else {
@@ -503,6 +588,9 @@ class _AppLoginPageState extends State<AppLoginPage>
     if (mounted) {
       setState(() => _isLoading = false);
       if (error != null) {
+        // 账号被锁定：启动实时倒计时；其余错误则结束可能残留的倒计时
+        if (_tryHandleLoginLock(error)) return;
+        _stopLoginLockCountdown();
         if (_isActivationCodeError(error)) {
           final newCode = await _showActivationCodeDialog();
           if (!mounted) return;
@@ -525,6 +613,7 @@ class _AppLoginPageState extends State<AppLoginPage>
           if (!mounted) return;
           setState(() => _isLoading = false);
           if (retryError != null) {
+            if (_tryHandleLoginLock(retryError)) return;
             setState(() => _errorMsg = retryError);
           } else {
             _rememberPhone(phone);
@@ -905,8 +994,8 @@ class _AppLoginPageState extends State<AppLoginPage>
                   ),
                 ),
 
-                // Error Message
-                if (_errorMsg != null) ...[
+                // Error Message（锁定倒计时期间显示实时剩余时间）
+                if (_displayErrorMsg != null) ...[
                   const SizedBox(height: 10),
                   Container(
                     padding: const EdgeInsets.symmetric(
@@ -923,7 +1012,7 @@ class _AppLoginPageState extends State<AppLoginPage>
                         const SizedBox(width: 6),
                         Expanded(
                           child: Text(
-                            _errorMsg!,
+                            _displayErrorMsg!,
                             style: const TextStyle(
                                 color: Colors.red, fontSize: 12),
                           ),
