@@ -2619,7 +2619,6 @@ void changeUnlockPinDialog(String oldPin, Function() callback) {
   final confirmController = TextEditingController(text: oldPin);
   String? pinErrorText;
   String? confirmationErrorText;
-  final maxLength = bind.mainMaxEncryptLen();
   gFFI.dialogManager.show((setState, close, context) {
     submit() async {
       pinErrorText = null;
@@ -2653,14 +2652,20 @@ void changeUnlockPinDialog(String oldPin, Function() callback) {
             controller: pinController,
             obscureText: true,
             errorText: pinErrorText,
-            maxLength: maxLength,
+            inputFormatters: [
+              _UnlockPinInputFormatter(),
+              LengthLimitingTextInputFormatter(20),
+            ],
           ),
           DialogTextField(
             title: translate('Confirmation'),
             controller: confirmController,
             obscureText: true,
             errorText: confirmationErrorText,
-            maxLength: maxLength,
+            inputFormatters: [
+              _UnlockPinInputFormatter(),
+              LengthLimitingTextInputFormatter(20),
+            ],
           )
         ],
       ).marginOnly(bottom: 12),
@@ -2672,6 +2677,29 @@ void changeUnlockPinDialog(String oldPin, Function() callback) {
       onCancel: close,
     );
   });
+}
+
+/// 解锁 PIN 输入过滤器：与注册页用户名规则一致，仅允许英文、数字和下划线，
+/// 不允许中文等其它字符。IME 组字期间不干预，避免输入法叠字问题。
+class _UnlockPinInputFormatter extends TextInputFormatter {
+  static final _disallowedPattern = RegExp(r'[^A-Za-z0-9_]');
+
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    if (newValue.composing != TextRange.empty) return newValue;
+
+    final filtered = newValue.text.replaceAll(_disallowedPattern, '');
+    if (filtered == newValue.text) return newValue;
+
+    return newValue.copyWith(
+      text: filtered,
+      selection: TextSelection.collapsed(offset: filtered.length),
+      composing: TextRange.empty,
+    );
+  }
 }
 
 void checkUnlockPinDialog(String correctPin, Function() passCallback) {
