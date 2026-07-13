@@ -692,7 +692,7 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
         ("I Agree", "同意"),
         ("Decline", "拒绝"),
         ("Timeout in minutes", "超时（分钟）"),
-        ("auto_disconnect_option_tip", "自动关闭不活跃的会话"),
+        ("auto_disconnect_option_tip", "自动关闭不活跃的会话（仅被控时生效）"),
         ("Connection failed due to inactivity", "由于长时间无操作, 连接被自动断开"),
         ("Check for software update on startup", "启动时检查软件更新"),
         ("upgrade_LinkEase_server_pro_to_{}_tip", "请升级专业版服务器到{}或更高版本！"),

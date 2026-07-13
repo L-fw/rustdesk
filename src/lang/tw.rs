@@ -634,7 +634,7 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
         ("I Agree", "同意"),
         ("Decline", "拒絕"),
         ("Timeout in minutes", "超時（分鐘）"),
-        ("auto_disconnect_option_tip", "自動在連入的使用者不活躍時關閉工作階段"),
+        ("auto_disconnect_option_tip", "自動在連入的使用者不活躍時關閉工作階段（僅被控時生效）"),
         ("Connection failed due to inactivity", "由於長時間沒有操作，已自動關閉工作階段"),
         ("Check for software update on startup", "啟動時檢查更新"),
         ("upgrade_rustdesk_server_pro_to_{}_tip", "請升級專業版伺服器到{}或更高版本！"),
