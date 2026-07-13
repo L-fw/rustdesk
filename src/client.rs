@@ -2156,6 +2156,15 @@ impl LoginConfigHandler {
                 BoolOption::No
             }
             .into();
+        } else if name == keys::OPTION_SWAP_LEFT_RIGHT_MOUSE {
+            // Persist an explicit Y/N so that turning it off overrides the global default;
+            // an absent value means "inherit the global default".
+            let on = self.get_toggle_option(&name);
+            self.config
+                .options
+                .insert(name, if on { "N" } else { "Y" }.to_owned());
+            self.config.store(&self.id);
+            return None;
         } else {
             let is_set = self
                 .options
@@ -2341,6 +2350,14 @@ impl LoginConfigHandler {
             self.config.follow_remote_cursor.v
         } else if name == "follow-remote-window" {
             self.config.follow_remote_window.v
+        } else if name == keys::OPTION_SWAP_LEFT_RIGHT_MOUSE {
+            // An explicit per-session value ("Y"/"N") wins; otherwise follow the current
+            // global default, so the setting also applies to previously-connected peers.
+            match self.config.options.get(name).map(|s| s.as_str()) {
+                Some("Y") => true,
+                Some("N") => false,
+                _ => hbb_common::config::UserDefaultConfig::read(name) == "Y",
+            }
         } else {
             !self.get_option(name).is_empty()
         }

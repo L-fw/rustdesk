@@ -1481,7 +1481,6 @@ class _SafetyState extends State<_Safety> with AutomaticKeepAliveClientMixin {
         title: 'Connection Protection',
         subtitle: 'connection_protection_tip',
         children: [
-      if (isWindows && bind.mainIsInstalled()) shareRdp(context, enabled),
       _OptionSwitch(context, 'Deny LAN discovery', 'enable-lan-discovery',
           reverse: true, enabled: enabled),
       whitelist(),
