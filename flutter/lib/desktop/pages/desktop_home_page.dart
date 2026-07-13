@@ -909,11 +909,16 @@ class _DesktopHomePageState extends State<DesktopHomePage>
   void _onHomeRemoteIdRejected() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      _homeRemoteIdError.value = translate('please_enter_valid_characters');
-      _homeRemoteIdErrorTimer?.cancel();
-      _homeRemoteIdErrorTimer = Timer(const Duration(seconds: 3), () {
-        if (mounted) _homeRemoteIdError.value = null;
-      });
+      _showHomeRemoteIdError(translate('please_enter_valid_characters'));
+    });
+  }
+
+  // 在输入框下方的提示框内显示一条消息，3 秒后自动隐藏。
+  void _showHomeRemoteIdError(String message) {
+    _homeRemoteIdError.value = message;
+    _homeRemoteIdErrorTimer?.cancel();
+    _homeRemoteIdErrorTimer = Timer(const Duration(seconds: 3), () {
+      if (mounted) _homeRemoteIdError.value = null;
     });
   }
 
@@ -924,7 +929,11 @@ class _DesktopHomePageState extends State<DesktopHomePage>
 
   void _doConnect({bool isFileTransfer = false}) {
     final id = _homeRemoteIdController.id;
-    if (id.isEmpty) return;
+    if (id.isEmpty) {
+      // ID 为空时不发起连接，在输入框下方的提示框内提示用户。
+      _showHomeRemoteIdError(translate('ID_cannot_be_empty'));
+      return;
+    }
     bind.mainSetLocalOption(
       key: '$_kRecentConnectPrefix$id',
       value: DateTime.now().millisecondsSinceEpoch.toString(),

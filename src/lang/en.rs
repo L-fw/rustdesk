@@ -450,6 +450,7 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
         ("phone_must_be_11_digits", "Phone number must be 11 digits"),
         ("please_enter_sms_code", "Please enter the verification code"),
         ("please_enter_valid_characters", "Please enter valid characters"),
+        ("ID_cannot_be_empty", "ID cannot be empty"),
         ("please_enter_activation_code", "Please enter the activation code"),
         ("please_agree_terms", "Please read and agree to the Terms of Service and Privacy Policy"),
         ("sms_code_sent", "Code"),

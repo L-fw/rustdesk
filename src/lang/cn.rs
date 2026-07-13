@@ -945,6 +945,7 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
         ("phone_must_be_11_digits", "手机号必须为11位数字"),
         ("please_enter_sms_code", "请输入验证码"),
         ("please_enter_valid_characters", "请输入规范的字符"),
+        ("ID_cannot_be_empty", "ID不能为空"),
         ("please_enter_activation_code", "请输入激活码"),
         ("please_agree_terms", "请先阅读并同意《用户协议》与《隐私政策》"),
         ("sms_code_sent", "验证码已发送"),
