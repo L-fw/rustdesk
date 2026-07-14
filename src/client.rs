@@ -1831,6 +1831,20 @@ impl LoginConfigHandler {
         self.config
             .options
             .remove(keys::OPTION_SWAP_LEFT_RIGHT_MOUSE);
+        // Same for the image quality: every session starts from the current global
+        // default instead of the quality this peer was last left at. The toolbar can
+        // still override it for the duration of the session.
+        self.config.image_quality = config::UserDefaultConfig::read(keys::OPTION_IMAGE_QUALITY);
+        self.config.custom_image_quality =
+            vec![
+                config::UserDefaultConfig::read(keys::OPTION_CUSTOM_IMAGE_QUALITY)
+                    .parse::<f64>()
+                    .unwrap_or(50.0) as _,
+            ];
+        self.config.options.insert(
+            keys::OPTION_CUSTOM_FPS.to_owned(),
+            config::UserDefaultConfig::read(keys::OPTION_CUSTOM_FPS),
+        );
 
         let conn_token = conn_token
             .map(|x| serde_json::from_str::<ConnToken>(&x).ok())
