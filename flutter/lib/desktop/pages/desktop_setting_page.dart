@@ -1613,7 +1613,7 @@ class _SafetyState extends State<_Safety> with AutomaticKeepAliveClientMixin {
                   onChanged: (_) => applyEnabled.value = true,
                   inputFormatters: [
                     FilteringTextInputFormatter.allow(RegExp(
-                        r'^([0-9]|[1-9]\d|[1-9]\d{2}|[1-9]\d{3}|[1-5]\d{4}|6[0-4]\d{3}|65[0-4]\d{2}|655[0-2]\d|6553[0-5])$')),
+                        r'^([1-9]|[1-9]\d|[1-9]\d{2}|[1-9]\d{3}|[1-5]\d{4}|6[0-4]\d{3}|65[0-4]\d{2}|655[0-2]\d|6553[0-5])$')),
                   ],
                   decoration: const InputDecoration(
                     hintText: '10',
@@ -1627,6 +1627,12 @@ class _SafetyState extends State<_Safety> with AutomaticKeepAliveClientMixin {
                         applyEnabled.value && enabled && !locked && !isOptFixed
                             ? () async {
                                 applyEnabled.value = false;
+                                // 至少 1 分钟，避免 0 分钟导致会话被立即关闭。
+                                final minutes =
+                                    int.tryParse(controller.text) ?? 0;
+                                if (minutes < 1) {
+                                  controller.text = '1';
+                                }
                                 await bind.mainSetOption(
                                     key: kOptionAutoDisconnectTimeout,
                                     value: controller.text);
