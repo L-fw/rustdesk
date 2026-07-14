@@ -1824,6 +1824,13 @@ impl LoginConfigHandler {
         let config = self.load_config();
         self.remember = !config.password.is_empty();
         self.config = config;
+        // Do not carry over the per-peer swap-left-right-mouse memory across connections:
+        // on every new session, follow the current global default (an absent value makes
+        // `get_toggle_option` fall back to it). The toolbar toggle can still override it
+        // temporarily within the session.
+        self.config
+            .options
+            .remove(keys::OPTION_SWAP_LEFT_RIGHT_MOUSE);
 
         let conn_token = conn_token
             .map(|x| serde_json::from_str::<ConnToken>(&x).ok())
