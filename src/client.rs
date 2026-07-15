@@ -1845,6 +1845,12 @@ impl LoginConfigHandler {
             keys::OPTION_CUSTOM_FPS.to_owned(),
             config::UserDefaultConfig::read(keys::OPTION_CUSTOM_FPS),
         );
+        // Same for the trackpad speed: every session starts from the current global
+        // default instead of the speed this peer was last left at. The toolbar can
+        // still override it for the duration of the session.
+        self.config.trackpad_speed = config::UserDefaultConfig::read(keys::OPTION_TRACKPAD_SPEED)
+            .parse()
+            .unwrap_or(100);
 
         let conn_token = conn_token
             .map(|x| serde_json::from_str::<ConnToken>(&x).ok())

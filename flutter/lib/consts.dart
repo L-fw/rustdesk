@@ -269,7 +269,7 @@ const double kMaxMoreQuality = 2000;
 const String kKeyTrackpadSpeed = 'trackpad-speed';
 const int kMinTrackpadSpeed = 10;
 const int kDefaultTrackpadSpeed = 100;
-const int kMaxTrackpadSpeed = 1000;
+const int kMaxTrackpadSpeed = 100;
 
 // relative mouse mode
 /// Throttle duration (in milliseconds) for updating pointer lock center during
