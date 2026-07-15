@@ -97,7 +97,7 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
         ("img_quality_low_sub", "Prioritize smoothness and reduce latency"),
         ("img_quality_custom_sub", "Customize image quality and performance"),
         ("Auto (recommended)", "Auto (recommended)"),
-        ("rc_trackpad_speed_sub", "Adjust the mouse/trackpad movement speed in remote sessions."),
+        ("rc_trackpad_speed_sub", "Adjust the speed of two-finger trackpad scrolling in remote sessions."),
         ("Show monitors in toolbar", "Show monitors in toolbar"),
         ("adv_show_monitors_sub", "Show the multi-monitor switcher in the remote toolbar."),
         ("adv_collapse_toolbar_sub", "Collapse the remote session toolbar by default."),

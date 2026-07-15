@@ -589,7 +589,7 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
         ("img_quality_low_sub", "优先保证流畅性，降低延迟"),
         ("img_quality_custom_sub", "自定义画质和性能设置"),
         ("Auto (recommended)", "自动（推荐）"),
-        ("rc_trackpad_speed_sub", "调整远程会话中鼠标/触控板的移动速度。"),
+        ("rc_trackpad_speed_sub", "调整触控板双指滚动在远程会话中的速度。"),
         ("Bitrate", "码率"),
         ("FPS", "帧率"),
         ("Auto", "自动"),

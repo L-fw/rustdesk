@@ -1824,33 +1824,7 @@ impl LoginConfigHandler {
         let config = self.load_config();
         self.remember = !config.password.is_empty();
         self.config = config;
-        // Do not carry over the per-peer swap-left-right-mouse memory across connections:
-        // on every new session, follow the current global default (an absent value makes
-        // `get_toggle_option` fall back to it). The toolbar toggle can still override it
-        // temporarily within the session.
-        self.config
-            .options
-            .remove(keys::OPTION_SWAP_LEFT_RIGHT_MOUSE);
-        // Same for the image quality: every session starts from the current global
-        // default instead of the quality this peer was last left at. The toolbar can
-        // still override it for the duration of the session.
-        self.config.image_quality = config::UserDefaultConfig::read(keys::OPTION_IMAGE_QUALITY);
-        self.config.custom_image_quality =
-            vec![
-                config::UserDefaultConfig::read(keys::OPTION_CUSTOM_IMAGE_QUALITY)
-                    .parse::<f64>()
-                    .unwrap_or(50.0) as _,
-            ];
-        self.config.options.insert(
-            keys::OPTION_CUSTOM_FPS.to_owned(),
-            config::UserDefaultConfig::read(keys::OPTION_CUSTOM_FPS),
-        );
-        // Same for the trackpad speed: every session starts from the current global
-        // default instead of the speed this peer was last left at. The toolbar can
-        // still override it for the duration of the session.
-        self.config.trackpad_speed = config::UserDefaultConfig::read(keys::OPTION_TRACKPAD_SPEED)
-            .parse()
-            .unwrap_or(100);
+        Self::apply_user_defaults(&mut self.config);
 
         let conn_token = conn_token
             .map(|x| serde_json::from_str::<ConnToken>(&x).ok())
@@ -1915,6 +1889,31 @@ impl LoginConfigHandler {
     pub fn load_config(&self) -> PeerConfig {
         debug_assert!(self.id.len() > 0);
         PeerConfig::load(&self.id)
+    }
+
+    /// Overwrite the options that must follow the current global default rather than the
+    /// value this peer was last left at. The toolbar can still override them for the
+    /// duration of the session.
+    ///
+    /// Must be applied to every [`PeerConfig`] that becomes `self.config`, otherwise a
+    /// later reload from disk silently reverts the session to the peer's stale values.
+    fn apply_user_defaults(config: &mut PeerConfig) {
+        // Removing it makes `get_toggle_option` fall back to the global default.
+        config.options.remove(keys::OPTION_SWAP_LEFT_RIGHT_MOUSE);
+        config.image_quality = config::UserDefaultConfig::read(keys::OPTION_IMAGE_QUALITY);
+        config.custom_image_quality =
+            vec![
+                config::UserDefaultConfig::read(keys::OPTION_CUSTOM_IMAGE_QUALITY)
+                    .parse::<f64>()
+                    .unwrap_or(50.0) as _,
+            ];
+        config.options.insert(
+            keys::OPTION_CUSTOM_FPS.to_owned(),
+            config::UserDefaultConfig::read(keys::OPTION_CUSTOM_FPS),
+        );
+        config.trackpad_speed = config::UserDefaultConfig::read(keys::OPTION_TRACKPAD_SPEED)
+            .parse()
+            .unwrap_or(100);
     }
 
     /// Save a [`PeerConfig`] into the handler.
@@ -2255,12 +2254,13 @@ impl LoginConfigHandler {
         if let Some(q) = self.get_image_quality_enum(&q, ignore_default) {
             msg.image_quality = q.into();
         } else if q == "custom" {
-            let config = self.load_config();
+            // Not `load_config()`: this runs on login, before `handle_peer_info` has
+            // stored the user defaults, so disk still holds the peer's stale quality.
             let allow_more = !crate::using_public_server() || self.direct == Some(true);
-            let quality = if config.custom_image_quality.is_empty() {
+            let quality = if self.custom_image_quality.is_empty() {
                 50
             } else {
-                let mut quality = config.custom_image_quality[0];
+                let mut quality = self.custom_image_quality[0];
                 if !allow_more && quality > 100 {
                     quality = 50;
                 }
@@ -2555,6 +2555,10 @@ impl LoginConfigHandler {
             platform: pi.platform.clone(),
         };
         let mut config = self.load_config();
+        // This reload drops whatever `initialize` put in `self.config`, so re-apply the
+        // user defaults before they are stored back below. Keeps the handler and the
+        // stored peer config in sync on a single value.
+        Self::apply_user_defaults(&mut config);
         config.info = serde;
         let password = self.password.clone();
         let password0 = config.password.clone();

@@ -493,7 +493,7 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
         ("img_quality_low_sub", "優先保證流暢性，降低延遲"),
         ("img_quality_custom_sub", "自訂畫質和效能設定"),
         ("Auto (recommended)", "自動（推薦）"),
-        ("rc_trackpad_speed_sub", "調整遠端工作階段中滑鼠/觸控板的移動速度。"),
+        ("rc_trackpad_speed_sub", "調整觸控板雙指捲動在遠端工作階段中的速度。"),
         ("adv_show_cursor_sub", "在本機螢幕顯示遠端游標。"),
         ("adv_disable_clipboard_sub", "停用遠端工作階段中的剪貼簿。"),
         ("adv_file_copy_sub", "允許在本機與遠端間複製貼上檔案。"),
