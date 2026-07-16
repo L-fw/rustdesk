@@ -619,23 +619,8 @@ Future<List<TToggleMenu>> toolbarDisplayToggle(
             : null,
         child: Text(translate('Enable file copy and paste'))));
   }
-  // disable clipboard
-  if (isDefaultConn && ffiModel.keyboard && perms['clipboard'] != false) {
-    final enabled = !ffiModel.viewOnly;
-    final option = 'disable-clipboard';
-    var value =
-        bind.sessionGetToggleOptionSync(sessionId: sessionId, arg: option);
-    if (ffiModel.viewOnly) value = true;
-    v.add(TToggleMenu(
-        value: value,
-        onChanged: enabled
-            ? (value) {
-                if (value == null) return;
-                bind.sessionToggleOption(sessionId: sessionId, value: option);
-              }
-            : null,
-        child: Text(translate('Disable clipboard'))));
-  }
+  // "disable-clipboard" is intentionally not offered here: it follows the global
+  // default and is only settable in Settings -> Display.
   // lock after session end
   if (isDefaultConn && ffiModel.keyboard && !ffiModel.isPeerAndroid) {
     final enabled = !ffiModel.viewOnly;

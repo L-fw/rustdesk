@@ -1914,6 +1914,9 @@ impl LoginConfigHandler {
         config.trackpad_speed = config::UserDefaultConfig::read(keys::OPTION_TRACKPAD_SPEED)
             .parse()
             .unwrap_or(100);
+        // `Default` for these reads the global user default, see `serde_field_bool!`.
+        config.disable_clipboard = Default::default();
+        config.enable_file_copy_paste = Default::default();
     }
 
     /// Save a [`PeerConfig`] into the handler.
