@@ -3,6 +3,7 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
     [
         ("security_settings_banner_tip", "Security settings are enabled, your remote connections are protected."),
         ("Access Control", "Access Control"),
+        ("Show remote cursor", "Show the remote peer's cursor"),
         ("Access Permissions", "Access Permissions"),
         ("access_permissions_tip", "Manage the operations and permissions clients are allowed."),
         ("Permission scheme", "Permission scheme"),

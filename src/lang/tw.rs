@@ -171,7 +171,7 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
         ("Balanced", "平衡"),
         ("Optimize reaction time", "最佳化反應時間"),
         ("Custom", "自訂"),
-        ("Show remote cursor", "顯示遠端游標"),
+        ("Show remote cursor", "遠端時顯示對方的游標"),
         ("Show quality monitor", "顯示品質監測"),
         ("Disable clipboard", "停用剪貼簿"),
         ("Lock after session end", "工作階段結束後鎖定電腦"),
