@@ -90,6 +90,7 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
         ("Utility features", "Utility features"),
         ("Operations and input", "Operations and input"),
         ("Clipboard and file transfer", "Clipboard and file transfer"),
+        ("Clipboard", "Clipboard"),
         ("Multiple monitors", "Multiple monitors"),
         ("Clarity priority", "Clarity priority"),
         ("Smoothness priority", "Smoothness priority"),

@@ -2014,7 +2014,7 @@ class _RemoteControlState extends State<_RemoteControl> {
       imageQuality(context),
       codec(context),
       operationsAndInput(context),
-      clipboardAndFileTransfer(context),
+      clipboard(context),
       if (isDesktop) multipleMonitors(context),
     ]).marginOnly(bottom: _kListViewBottomMargin);
   }
@@ -2116,11 +2116,11 @@ class _RemoteControlState extends State<_RemoteControl> {
         ]);
   }
 
-  // 剪贴板与文件传输
-  Widget clipboardAndFileTransfer(BuildContext context) {
+  // 剪贴板
+  Widget clipboard(BuildContext context) {
     return _GCard(
         icon: Icons.content_paste_outlined,
-        title: 'Clipboard and file transfer',
+        title: 'Clipboard',
         children: [
           _defaultOptionToggle(
             icon: Icons.content_paste_off_outlined,
@@ -2129,14 +2129,6 @@ class _RemoteControlState extends State<_RemoteControl> {
             subtitle: 'adv_disable_clipboard_sub',
             key: kOptionDisableClipboard,
           ),
-          if (isDesktop)
-            _defaultOptionToggle(
-              icon: Icons.file_copy_outlined,
-              iconColor: Colors.orange,
-              title: 'Enable file copy and paste',
-              subtitle: 'adv_file_copy_sub',
-              key: kOptionEnableFileCopyPaste,
-            ),
         ]);
   }
 
@@ -4066,24 +4058,6 @@ class _AdvancedState extends State<_Advanced> {
         title: 'True color (4:4:4)',
         subtitle: 'adv_true_color_sub',
         key: kOptionI444,
-      ),
-    ]);
-
-    // 网络与性能
-    section('Network and performance', Icons.public_outlined, Colors.orange, [
-      _defaultOptionToggle(
-        icon: Icons.content_copy_outlined,
-        iconColor: Colors.orange,
-        title: 'Enable file copy and paste',
-        subtitle: 'adv_file_copy_sub',
-        key: kOptionEnableFileCopyPaste,
-      ),
-      _defaultOptionToggle(
-        icon: Icons.content_paste_off_outlined,
-        iconColor: Colors.orange,
-        title: 'Disable clipboard',
-        subtitle: 'adv_disable_clipboard_sub',
-        key: kOptionDisableClipboard,
       ),
     ]);
 

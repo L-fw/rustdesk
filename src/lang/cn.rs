@@ -476,6 +476,7 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
         ("Utility features", "实用功能"),
         ("Operations and input", "操作与输入"),
         ("Clipboard and file transfer", "剪贴板与文件传输"),
+        ("Clipboard", "剪贴板"),
         ("Multiple monitors", "多显示器"),
         ("Show monitors in toolbar", "工具栏显示显示器"),
         ("adv_show_monitors_sub", "在远程工具栏中显示多显示器切换"),

@@ -484,6 +484,7 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
         ("Default Codec", "預設編解碼器"),
         ("Operations and input", "操作與輸入"),
         ("Clipboard and file transfer", "剪貼簿與檔案傳輸"),
+        ("Clipboard", "剪貼簿"),
         ("Multiple monitors", "多螢幕"),
         ("Show monitors in toolbar", "在工具列顯示螢幕"),
         ("Clarity priority", "清晰優先"),
