@@ -2344,6 +2344,16 @@ impl LoginConfigHandler {
         }
     }
 
+    /// Whether the clipboard is disabled for this session.
+    ///
+    /// This unconditionally follows the global user default; the peer's stored
+    /// `disable_clipboard` is deliberately never consulted. `self.config` is reloaded from the
+    /// peer file by every `save_config()` caller, so reading the field would resurrect the
+    /// value the peer was last left at and silently ignore the global setting.
+    pub fn is_clipboard_disabled(&self) -> bool {
+        config::UserDefaultConfig::read(keys::OPTION_DISABLE_CLIPBOARD) == "Y"
+    }
+
     /// Get the status of a toggle option.
     ///
     /// # Arguments
@@ -2367,7 +2377,7 @@ impl LoginConfigHandler {
         } else if name == "disable-audio" {
             self.config.disable_audio.v
         } else if name == "disable-clipboard" {
-            self.config.disable_clipboard.v
+            self.is_clipboard_disabled()
         } else if name == "show-quality-monitor" {
             self.config.show_quality_monitor.v
         } else if name == "allow_swap_key" {

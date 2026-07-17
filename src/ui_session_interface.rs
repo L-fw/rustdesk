@@ -174,7 +174,7 @@ impl SessionPermissionConfig {
     pub fn is_text_clipboard_required(&self) -> bool {
         *self.server_clipboard_enabled.read().unwrap()
             && *self.server_keyboard_enabled.read().unwrap()
-            && !self.lc.read().unwrap().disable_clipboard.v
+            && !self.lc.read().unwrap().is_clipboard_disabled()
     }
 
     #[cfg(feature = "unix-file-copy-paste")]
@@ -410,7 +410,7 @@ impl<T: InvokeUiSession> Session<T> {
     pub fn is_text_clipboard_required(&self) -> bool {
         *self.server_clipboard_enabled.read().unwrap()
             && *self.server_keyboard_enabled.read().unwrap()
-            && !self.lc.read().unwrap().disable_clipboard.v
+            && !self.lc.read().unwrap().is_clipboard_disabled()
     }
 
     #[cfg(any(target_os = "windows", feature = "unix-file-copy-paste"))]
