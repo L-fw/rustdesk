@@ -957,34 +957,45 @@ class _ImagePaintState extends State<ImagePaint> {
         ],
       );
     }
-    if (layoutSize.width < size.width) {
-      widget = RawScrollbar(
-        thickness: kScrollbarThickness,
-        thumbColor: Colors.grey,
-        controller: horizontal,
-        thumbVisibility: false,
-        trackVisibility: false,
-        notificationPredicate: layoutSize.height < size.height
-            ? (notification) => notification.depth == 1
-            : defaultScrollNotificationPredicate,
-        child: widget,
-      );
-    }
+    // Overlay draggable scrollbars on top of the (already wrapped) scroll views.
+    //
+    // We intentionally do not use `RawScrollbar` here: it wraps the image as an
+    // ancestor, so pressing/dragging its thumb also reaches the image `Listener`
+    // underneath and gets forwarded to the remote as a mouse drag. Instead each
+    // `_DraggableScrollThumb` sits on top and only its thumb absorbs pointer
+    // events, so dragging the bar never leaks to the remote. The thumb drives the
+    // controller with `jumpTo`, which works even while the inner scroll view uses
+    // `NeverScrollableScrollPhysics` (the same mechanism edge scroll already uses).
+    final overlays = <Widget>[Positioned.fill(child: widget)];
     if (layoutSize.height < size.height) {
-      widget = RawScrollbar(
-        thickness: kScrollbarThickness,
-        thumbColor: Colors.grey,
-        controller: vertical,
-        thumbVisibility: false,
-        trackVisibility: false,
-        child: widget,
-      );
+      overlays.add(Positioned(
+        top: 0,
+        bottom: 0,
+        right: 0,
+        child: _DraggableScrollThumb(
+          controller: vertical,
+          axis: Axis.vertical,
+          thickness: kScrollbarThickness,
+        ),
+      ));
+    }
+    if (layoutSize.width < size.width) {
+      overlays.add(Positioned(
+        left: 0,
+        right: 0,
+        bottom: 0,
+        child: _DraggableScrollThumb(
+          controller: horizontal,
+          axis: Axis.horizontal,
+          thickness: kScrollbarThickness,
+        ),
+      ));
     }
 
-    return Container(
-      child: widget,
+    return SizedBox(
       width: layoutSize.width,
       height: layoutSize.height,
+      child: Stack(children: overlays),
     );
   }
 
@@ -994,6 +1005,146 @@ class _ImagePaintState extends State<ImagePaint> {
     } else {
       return child;
     }
+  }
+}
+
+// A draggable scrollbar thumb overlaid on top of the remote image scroll views.
+//
+// Only the thumb rectangle absorbs pointer events (so it never leaks a mouse
+// drag to the remote); the rest of the track lets events fall through to the
+// image below. Dragging moves the attached [ScrollController] with `jumpTo`,
+// which is not gated by the scroll view's physics.
+class _DraggableScrollThumb extends StatefulWidget {
+  final ScrollController controller;
+  final Axis axis;
+  final double thickness;
+
+  const _DraggableScrollThumb({
+    Key? key,
+    required this.controller,
+    required this.axis,
+    required this.thickness,
+  }) : super(key: key);
+
+  @override
+  State<_DraggableScrollThumb> createState() => _DraggableScrollThumbState();
+}
+
+class _DraggableScrollThumbState extends State<_DraggableScrollThumb> {
+  static const double _kMinThumbLength = 24.0;
+  bool _dragging = false;
+
+  @override
+  void initState() {
+    super.initState();
+    widget.controller.addListener(_onScroll);
+  }
+
+  @override
+  void didUpdateWidget(_DraggableScrollThumb oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.controller != widget.controller) {
+      oldWidget.controller.removeListener(_onScroll);
+      widget.controller.addListener(_onScroll);
+    }
+  }
+
+  @override
+  void dispose() {
+    widget.controller.removeListener(_onScroll);
+    super.dispose();
+  }
+
+  void _onScroll() {
+    if (mounted) setState(() {});
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isVertical = widget.axis == Axis.vertical;
+    return LayoutBuilder(builder: (context, constraints) {
+      final trackLength =
+          isVertical ? constraints.maxHeight : constraints.maxWidth;
+
+      // Not attached yet (first frame): reserve the strip and rebuild once the
+      // controller has a position.
+      if (!widget.controller.hasClients || trackLength <= 0) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted && widget.controller.hasClients) setState(() {});
+        });
+        return SizedBox(
+          width: isVertical ? widget.thickness : trackLength,
+          height: isVertical ? trackLength : widget.thickness,
+        );
+      }
+
+      final position = widget.controller.position;
+      final maxScroll = position.maxScrollExtent;
+      final viewport = position.viewportDimension;
+      final content = viewport + maxScroll;
+
+      double thumbLength =
+          content > 0 ? (viewport / content) * trackLength : trackLength;
+      thumbLength = thumbLength.clamp(_kMinThumbLength, trackLength);
+      final maxThumbOffset = trackLength - thumbLength;
+      final fraction =
+          maxScroll > 0 ? (position.pixels / maxScroll).clamp(0.0, 1.0) : 0.0;
+      final thumbOffset = fraction * maxThumbOffset;
+
+      void onDragDelta(double delta) {
+        if (!widget.controller.hasClients || maxThumbOffset <= 0) return;
+        final p = widget.controller.position;
+        final max = p.maxScrollExtent;
+        if (max <= 0) return;
+        final curThumbOffset = (p.pixels / max).clamp(0.0, 1.0) * maxThumbOffset;
+        final newFraction =
+            ((curThumbOffset + delta) / maxThumbOffset).clamp(0.0, 1.0);
+        widget.controller.jumpTo(newFraction * max);
+      }
+
+      final thumb = GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onVerticalDragStart:
+            isVertical ? (_) => setState(() => _dragging = true) : null,
+        onVerticalDragUpdate:
+            isVertical ? (d) => onDragDelta(d.delta.dy) : null,
+        onVerticalDragEnd:
+            isVertical ? (_) => setState(() => _dragging = false) : null,
+        onVerticalDragCancel:
+            isVertical ? () => setState(() => _dragging = false) : null,
+        onHorizontalDragStart:
+            isVertical ? null : (_) => setState(() => _dragging = true),
+        onHorizontalDragUpdate:
+            isVertical ? null : (d) => onDragDelta(d.delta.dx),
+        onHorizontalDragEnd:
+            isVertical ? null : (_) => setState(() => _dragging = false),
+        onHorizontalDragCancel:
+            isVertical ? null : () => setState(() => _dragging = false),
+        child: MouseRegion(
+          cursor: SystemMouseCursors.click,
+          child: Container(
+            width: isVertical ? widget.thickness : thumbLength,
+            height: isVertical ? thumbLength : widget.thickness,
+            decoration: BoxDecoration(
+              color: Colors.grey.withOpacity(_dragging ? 0.9 : 0.6),
+              borderRadius: BorderRadius.circular(widget.thickness / 2),
+            ),
+          ),
+        ),
+      );
+
+      return SizedBox(
+        width: isVertical ? widget.thickness : trackLength,
+        height: isVertical ? trackLength : widget.thickness,
+        child: Stack(children: [
+          Positioned(
+            left: isVertical ? 0 : thumbOffset,
+            top: isVertical ? thumbOffset : 0,
+            child: thumb,
+          ),
+        ]),
+      );
+    });
   }
 }
 
