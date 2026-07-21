@@ -1072,6 +1072,7 @@ class _DetachableTab extends StatefulWidget {
 class _DetachableTabState extends State<_DetachableTab> {
   Offset? _startGlobal;
   Offset? _lastGlobal;
+  Size? _windowSize;
   bool _movableToggled = false;
 
   void _restoreMovable() {
@@ -1085,6 +1086,9 @@ class _DetachableTabState extends State<_DetachableTab> {
   void _onStart(DragStartDetails d) {
     _startGlobal = d.globalPosition;
     _lastGlobal = d.globalPosition;
+    // Window content size in logical pixels, used to detect when the tab is
+    // dragged outside the window (in any direction).
+    _windowSize = MediaQuery.maybeOf(context)?.size;
     if (isMacOS) {
       // Prevent macOS from moving the whole window while tearing out a tab.
       setMovable(false, false);
@@ -1100,14 +1104,25 @@ class _DetachableTabState extends State<_DetachableTab> {
     _restoreMovable();
     final start = _startGlobal;
     final last = _lastGlobal;
+    final winSize = _windowSize;
     _startGlobal = null;
     _lastGlobal = null;
+    _windowSize = null;
     if (start == null || last == null) {
       return;
     }
-    // Detach only when dragged clearly out of the tab bar (downward past its
-    // height). Horizontal movement alone keeps the tab in place.
-    if (last.dy - start.dy > _kTabBarHeight) {
+    // Detach when dragged out of the tab bar: either downward past its height,
+    // or beyond any window edge (dragged outside the window / to another
+    // monitor). Movement within the tab bar strip keeps the tab in place.
+    final draggedBelowBar = last.dy - start.dy > _kTabBarHeight;
+    bool draggedOutsideWindow = false;
+    if (winSize != null) {
+      draggedOutsideWindow = last.dx < 0 ||
+          last.dy < 0 ||
+          last.dx > winSize.width ||
+          last.dy > winSize.height;
+    }
+    if (draggedBelowBar || draggedOutsideWindow) {
       widget.onDetach?.call(widget.tabKey, last);
     }
   }
@@ -1116,6 +1131,7 @@ class _DetachableTabState extends State<_DetachableTab> {
     _restoreMovable();
     _startGlobal = null;
     _lastGlobal = null;
+    _windowSize = null;
   }
 
   @override

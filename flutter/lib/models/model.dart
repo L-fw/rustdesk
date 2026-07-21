@@ -3777,6 +3777,17 @@ class FFI {
           await sessionRefreshVideo(sessionId, ffiModel.pi);
           await bind.sessionRequestNewDisplayInitMsgs(
               sessionId: sessionId, display: ffiModel.pi.currentDisplay);
+          // The render texture(s) of the new window are created asynchronously
+          // and may not be registered yet when the refresh above is requested,
+          // which leaves the view black until the user interacts. Re-request
+          // the video frame shortly after so the freshly registered texture
+          // receives an image immediately. Scoped to the tab-move case only.
+          for (final delayMs in [200, 600]) {
+            Future.delayed(Duration(milliseconds: delayMs), () {
+              if (closed) return;
+              sessionRefreshVideo(sessionId, ffiModel.pi);
+            });
+          }
         });
         isToNewWindowNotified.value = true;
       }
