@@ -67,7 +67,8 @@ class RustDeskMultiWindowManager {
   final List<int> _terminalWindows = List.empty(growable: true);
 
   moveTabToNewWindow(int windowId, String peerId, String sessionId,
-      WindowType windowType) async {
+      WindowType windowType,
+      {Offset? newWindowPosition}) async {
     var params = {
       'type': windowType.index,
       'id': peerId,
@@ -82,6 +83,7 @@ class RustDeskMultiWindowManager {
         peerId,
         _remoteDesktopWindows,
         jsonEncode(params),
+        newWindowPosition: newWindowPosition,
       );
     } else if (windowType == WindowType.ViewCamera) {
       await _newSession(
@@ -91,6 +93,7 @@ class RustDeskMultiWindowManager {
         peerId,
         _viewCameraWindows,
         jsonEncode(params),
+        newWindowPosition: newWindowPosition,
       );
     }
   }
@@ -149,22 +152,33 @@ class RustDeskMultiWindowManager {
     String remoteId,
     String msg,
     List<int> windows,
-    bool withScreenRect,
-  ) async {
+    bool withScreenRect, {
+    Offset? position,
+  }) async {
     final windowController = await DesktopMultiWindow.createWindow(msg);
     if (isWindows) {
       windowController.setInitBackgroundColor(Colors.black);
     }
     final windowId = windowController.windowId;
     if (!withScreenRect) {
-      windowController
-        ..setFrame(const Offset(0, 0) &
-            Size(1280 + windowId * 20, 720 + windowId * 20))
-        ..center()
-        ..setTitle(getWindowNameWithId(
-          remoteId,
-          overrideType: type,
-        ));
+      final size = Size(1280 + windowId * 20, 720 + windowId * 20);
+      if (position != null) {
+        // Open the new window at the drop position (e.g. tab dragged out).
+        windowController
+          ..setFrame(position & size)
+          ..setTitle(getWindowNameWithId(
+            remoteId,
+            overrideType: type,
+          ));
+      } else {
+        windowController
+          ..setFrame(const Offset(0, 0) & size)
+          ..center()
+          ..setTitle(getWindowNameWithId(
+            remoteId,
+            overrideType: type,
+          ));
+      }
     } else {
       windowController.setTitle(getWindowNameWithId(
         remoteId,
@@ -187,6 +201,7 @@ class RustDeskMultiWindowManager {
     List<int> windows,
     String msg, {
     Rect? screenRect,
+    Offset? newWindowPosition,
   }) async {
     if (openInTabs) {
       if (windows.isEmpty) {
@@ -214,7 +229,8 @@ class RustDeskMultiWindowManager {
         }
       }
       final windowId = await newSessionWindow(
-          type, remoteId, msg, windows, screenRect != null);
+          type, remoteId, msg, windows, screenRect != null,
+          position: newWindowPosition);
       return MultiWindowCallResult(windowId, null);
     }
   }

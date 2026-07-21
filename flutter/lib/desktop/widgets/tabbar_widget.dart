@@ -252,6 +252,9 @@ class DesktopTab extends StatefulWidget {
   final Color? selectedTabBackgroundColor;
   final Color? unSelectedTabBackgroundColor;
   final Color? selectedBorderColor;
+  // Called when a tab is dragged out of the tab bar to detach it into a new
+  // window. [globalDropPosition] is in logical pixels relative to this window.
+  final void Function(String key, Offset globalDropPosition)? onTabDetach;
 
   final DesktopTabController controller;
 
@@ -278,6 +281,7 @@ class DesktopTab extends StatefulWidget {
     this.selectedTabBackgroundColor,
     this.unSelectedTabBackgroundColor,
     this.selectedBorderColor,
+    this.onTabDetach,
   }) : super(key: key);
 
   static RxString tablabelGetter(String peerId) {
@@ -315,6 +319,8 @@ class _DesktopTabState extends State<DesktopTab>
   Color? get unSelectedTabBackgroundColor =>
       widget.unSelectedTabBackgroundColor;
   Color? get selectedBorderColor => widget.selectedBorderColor;
+  void Function(String key, Offset globalDropPosition)? get onTabDetach =>
+      widget.onTabDetach;
   DesktopTabController get controller => widget.controller;
   RxList<String> get invisibleTabKeys => widget.invisibleTabKeys;
   Debouncer get _scrollDebounce => widget._scrollDebounce;
@@ -682,6 +688,7 @@ class _DesktopTabState extends State<DesktopTab>
                                 unSelectedTabBackgroundColor:
                                     unSelectedTabBackgroundColor,
                                 selectedBorderColor: selectedBorderColor,
+                                onTabDetach: onTabDetach,
                               ),
                             ))),
                   ],
@@ -933,6 +940,7 @@ class _ListView extends StatelessWidget {
   final Color? selectedTabBackgroundColor;
   final Color? selectedBorderColor;
   final Color? unSelectedTabBackgroundColor;
+  final void Function(String key, Offset globalDropPosition)? onTabDetach;
 
   Rx<DesktopTabState> get state => controller.state;
 
@@ -946,6 +954,7 @@ class _ListView extends StatelessWidget {
     this.selectedTabBackgroundColor,
     this.unSelectedTabBackgroundColor,
     this.selectedBorderColor,
+    this.onTabDetach,
   });
 
   /// Check whether to show ListView
@@ -1019,11 +1028,118 @@ class _ListView extends StatelessWidget {
                     selectedBorderColor: selectedBorderColor,
                   ),
                 );
-                return GestureDetector(
-                  onPanStart: (e) {},
+                // Only remote desktop / camera sessions live in their own
+                // sub windows and support being detached into a new window.
+                final canDetach = onTabDetach != null &&
+                    (controller.tabType == DesktopTabType.remoteScreen ||
+                        controller.tabType == DesktopTabType.viewCamera) &&
+                    state.value.tabs.length > 1;
+                return _DetachableTab(
+                  key: ValueKey('detach_${tab.key}'),
+                  tabKey: tab.key,
+                  canDetach: canDetach,
+                  onDetach: onTabDetach,
                   child: child,
                 );
               }).toList()));
+  }
+}
+
+/// Wraps a tab so that dragging it out of the tab bar detaches it into a new
+/// window (Chrome-like tab tear-out).
+///
+/// When [canDetach] is false it behaves exactly like the previous inline
+/// `GestureDetector(onPanStart: (_) {})`: it only claims the pan gesture so
+/// that dragging on a tab does not move the whole window.
+class _DetachableTab extends StatefulWidget {
+  final String tabKey;
+  final bool canDetach;
+  final void Function(String key, Offset globalDropPosition)? onDetach;
+  final Widget child;
+
+  const _DetachableTab({
+    Key? key,
+    required this.tabKey,
+    required this.canDetach,
+    required this.onDetach,
+    required this.child,
+  }) : super(key: key);
+
+  @override
+  State<_DetachableTab> createState() => _DetachableTabState();
+}
+
+class _DetachableTabState extends State<_DetachableTab> {
+  Offset? _startGlobal;
+  Offset? _lastGlobal;
+  bool _movableToggled = false;
+
+  void _restoreMovable() {
+    if (_movableToggled) {
+      // Restore native window movability disabled on drag start (macOS).
+      setMovable(false, true);
+      _movableToggled = false;
+    }
+  }
+
+  void _onStart(DragStartDetails d) {
+    _startGlobal = d.globalPosition;
+    _lastGlobal = d.globalPosition;
+    if (isMacOS) {
+      // Prevent macOS from moving the whole window while tearing out a tab.
+      setMovable(false, false);
+      _movableToggled = true;
+    }
+  }
+
+  void _onUpdate(DragUpdateDetails d) {
+    _lastGlobal = d.globalPosition;
+  }
+
+  void _onEnd(DragEndDetails d) {
+    _restoreMovable();
+    final start = _startGlobal;
+    final last = _lastGlobal;
+    _startGlobal = null;
+    _lastGlobal = null;
+    if (start == null || last == null) {
+      return;
+    }
+    // Detach only when dragged clearly out of the tab bar (downward past its
+    // height). Horizontal movement alone keeps the tab in place.
+    if (last.dy - start.dy > _kTabBarHeight) {
+      widget.onDetach?.call(widget.tabKey, last);
+    }
+  }
+
+  void _onCancel() {
+    _restoreMovable();
+    _startGlobal = null;
+    _lastGlobal = null;
+  }
+
+  @override
+  void dispose() {
+    _restoreMovable();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (!widget.canDetach) {
+      // Keep the original behavior: absorb pan so the window is not dragged.
+      return GestureDetector(
+        onPanStart: (_) {},
+        child: widget.child,
+      );
+    }
+    return GestureDetector(
+      onPanStart: _onStart,
+      onPanUpdate: _onUpdate,
+      onPanEnd: _onEnd,
+      onPanCancel: _onCancel,
+      child: widget.child,
+    );
   }
 }
 

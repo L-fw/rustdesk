@@ -143,6 +143,7 @@ class _ConnectionTabPageState extends State<ConnectionTabPage> {
           ],
         ),
         selectedBorderColor: MyTheme.accent,
+        onTabDetach: _onTabDetach,
         pageViewBuilder: (pageView) => pageView,
         labelGetter: DesktopTab.tablabelGetter,
         tabBuilder: (key, icon, label, themeConf) => Obx(() {
@@ -389,6 +390,46 @@ class _ConnectionTabPageState extends State<ConnectionTabPage> {
 
   int windowId() {
     return widget.params["windowId"];
+  }
+
+  // Detach a tab into a new window when it is dragged out of the tab bar.
+  // Reuses the same path as the "Move tab to new window" context menu, but
+  // also forwards the drop position so the new window opens under the cursor.
+  Future<void> _onTabDetach(String key, Offset globalDropPosition) async {
+    if (tabController.state.value.tabs.length <= 1) {
+      return;
+    }
+    final tabs = tabController.state.value.tabs;
+    final idx = tabs.indexWhere((tab) => tab.key == key);
+    if (idx < 0) {
+      return;
+    }
+    final remotePage = tabs[idx].page as RemotePage;
+    // Avoid detaching before the session is fully established.
+    if (remotePage.ffi.ffiModel.pi.isSet.isFalse) {
+      return;
+    }
+    final sessionId = remotePage.ffi.sessionId;
+
+    String posArg = '';
+    try {
+      final frame = await WindowController.fromWindowId(windowId()).getFrame();
+      // `globalDropPosition` is in logical pixels relative to this window's
+      // top-left, and window frames here are also in logical pixels, so screen
+      // position is simply the sum. Offset a bit so the grabbed tab sits under
+      // the cursor rather than the window's top-left corner.
+      final screenPos =
+          frame.topLeft + globalDropPosition - const Offset(120, 10);
+      posArg = ',${screenPos.dx},${screenPos.dy}';
+    } catch (e) {
+      // Fall back to the default centered position if the frame is unavailable.
+      debugPrint('Failed to get frame for tab detach: $e');
+    }
+
+    await DesktopMultiWindow.invokeMethod(
+        kMainWindowId,
+        kWindowEventMoveTabToNewWindow,
+        '${windowId()},$key,$sessionId,RemoteDesktop$posArg');
   }
 
   Future<bool> handleWindowCloseButton() async {

@@ -4478,9 +4478,21 @@ class _DesktopHomePageState extends State<DesktopHomePage>
         } catch (e) {
           debugPrint("Failed to parse window type '${call.arguments}': $e");
         }
+        // Optional drop position (args[4], args[5]) when the tab is dragged out.
+        Offset? newWindowPosition;
+        if (args.length >= 6) {
+          try {
+            newWindowPosition =
+                Offset(double.parse(args[4]), double.parse(args[5]));
+          } catch (e) {
+            debugPrint(
+                "Failed to parse drop position '${call.arguments}': $e");
+          }
+        }
         if (windowId != null && windowType != null) {
           await rustDeskWinManager.moveTabToNewWindow(
-              windowId, args[1], args[2], windowType);
+              windowId, args[1], args[2], windowType,
+              newWindowPosition: newWindowPosition);
         }
       } else if (call.method == kWindowEventOpenMonitorSession) {
         final args = jsonDecode(call.arguments);

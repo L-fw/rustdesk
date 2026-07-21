@@ -137,6 +137,7 @@ class _ViewCameraTabPageState extends State<ViewCameraTabPage> {
         onWindowCloseButton: handleWindowCloseButton,
         tail: const AddButton(),
         selectedBorderColor: MyTheme.accent,
+        onTabDetach: _onTabDetach,
         pageViewBuilder: (pageView) => pageView,
         labelGetter: DesktopTab.tablabelGetter,
         tabBuilder: (key, icon, label, themeConf) => Obx(() {
@@ -351,6 +352,40 @@ class _ViewCameraTabPageState extends State<ViewCameraTabPage> {
 
   int windowId() {
     return widget.params["windowId"];
+  }
+
+  // Detach a tab into a new window when it is dragged out of the tab bar.
+  // Mirrors the "Move tab to new window" context menu, forwarding the drop
+  // position so the new window opens under the cursor.
+  Future<void> _onTabDetach(String key, Offset globalDropPosition) async {
+    if (tabController.state.value.tabs.length <= 1) {
+      return;
+    }
+    final tabs = tabController.state.value.tabs;
+    final idx = tabs.indexWhere((tab) => tab.key == key);
+    if (idx < 0) {
+      return;
+    }
+    final viewCameraPage = tabs[idx].page as ViewCameraPage;
+    if (viewCameraPage.ffi.ffiModel.pi.isSet.isFalse) {
+      return;
+    }
+    final sessionId = viewCameraPage.ffi.sessionId;
+
+    String posArg = '';
+    try {
+      final frame = await WindowController.fromWindowId(windowId()).getFrame();
+      final screenPos =
+          frame.topLeft + globalDropPosition - const Offset(120, 10);
+      posArg = ',${screenPos.dx},${screenPos.dy}';
+    } catch (e) {
+      debugPrint('Failed to get frame for tab detach: $e');
+    }
+
+    await DesktopMultiWindow.invokeMethod(
+        kMainWindowId,
+        kWindowEventMoveTabToNewWindow,
+        '${windowId()},$key,$sessionId,ViewCamera$posArg');
   }
 
   Future<bool> handleWindowCloseButton() async {
