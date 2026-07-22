@@ -1900,9 +1900,10 @@ impl LoginConfigHandler {
     fn apply_user_defaults(config: &mut PeerConfig) {
         // Removing it makes `get_toggle_option` fall back to the global default.
         config.options.remove(keys::OPTION_SWAP_LEFT_RIGHT_MOUSE);
-        // Every session starts from the current global scroll style instead of the
+        // Every session starts from the current global view/scroll style instead of the
         // style this peer was last left at. The toolbar can still override it for the
         // duration of the session.
+        config.view_style = config::UserDefaultConfig::read(keys::OPTION_VIEW_STYLE);
         config.scroll_style = config::UserDefaultConfig::read(keys::OPTION_SCROLL_STYLE);
         config.image_quality = config::UserDefaultConfig::read(keys::OPTION_IMAGE_QUALITY);
         config.custom_image_quality =
