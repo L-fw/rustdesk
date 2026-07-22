@@ -706,6 +706,7 @@ class _DesktopRegisterPageState extends State<DesktopRegisterPage>
                     focusNode: _activationCodeFocus,
                     label: translate('field_activation_code'),
                     icon: Icons.vpn_key_outlined,
+                    inputFormatters: [_UpperCaseTextInputFormatter()],
                     textInputAction: TextInputAction.done,
                     onSubmitted: (_) => _register(),
                   ),
@@ -938,9 +939,11 @@ class _DesktopRegisterPageState extends State<DesktopRegisterPage>
     ValueChanged<String>? onSubmitted, // ← 新增：支持可覆盖的提交操作
     TextInputAction? textInputAction,  // ← 新增：支持回车键行为自定义
   }) {
-    // 为字符过滤器包一层：当不规范字符被吞掉时，复用错误提示框提醒用户
+    // 为字符过滤器包一层：当不规范字符被吞掉时，复用错误提示框提醒用户。
+    // 长度限制与大小写转换不属于"吞字"，不包装，避免误触发错误提示。
     final effectiveFormatters = inputFormatters
-        ?.map((f) => f is LengthLimitingTextInputFormatter
+        ?.map((f) => f is LengthLimitingTextInputFormatter ||
+                f is _UpperCaseTextInputFormatter
             ? f
             : _RejectNotifyingFormatter(
                 f, () => _onCharRejected(fieldKey, focusNode)))
@@ -1052,6 +1055,27 @@ class _RejectNotifyingFormatter extends TextInputFormatter {
       onReject();
     }
     return result;
+  }
+}
+
+/// 激活码输入格式化：小写字母实时转换为大写显示。
+/// 仅转换 ASCII a-z（长度不变，光标位置不受影响）；
+/// IME 组字期间不干预，避免输入法叠字问题。
+class _UpperCaseTextInputFormatter extends TextInputFormatter {
+  static final _lowerCasePattern = RegExp(r'[a-z]');
+
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    if (newValue.composing != TextRange.empty) return newValue;
+
+    final upper = newValue.text
+        .replaceAllMapped(_lowerCasePattern, (m) => m[0]!.toUpperCase());
+    if (upper == newValue.text) return newValue;
+
+    return newValue.copyWith(text: upper);
   }
 }
 
