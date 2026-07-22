@@ -15,6 +15,10 @@ import 'home_page.dart';
 import 'privacy_policy.dart' as privacy_pages;
 import 'terms_of_service.dart' as terms_pages;
 
+/// 主题色：与桌面端登录设计稿一致的蓝色系
+const Color _kPrimaryColor = Color(0xFF2E6FF2);
+const List<Color> _kButtonGradient = [Color(0xFF2D63F0), Color(0xFF5B9BFF)];
+
 /// 应用登录页面
 class AppLoginPage extends StatefulWidget {
   const AppLoginPage({Key? key}) : super(key: key);
@@ -121,6 +125,14 @@ class _AppLoginPageState extends State<AppLoginPage>
     if (_invalidFields[key] == true) {
       setState(() => _invalidFields[key] = false);
     }
+  }
+
+  // 输入框吞掉不规范字符时的提示（延后到帧末，避免在过滤过程中 setState 并被 onChanged 清除）
+  void _onCharRejected(String key, FocusNode node) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _setFieldError(key, node, translate('please_enter_valid_characters'));
+    });
   }
 
   bool _isUsernameValid(String value) {
@@ -323,7 +335,7 @@ class _AppLoginPageState extends State<AppLoginPage>
                     Navigator.of(context).pop(value);
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF7C3AED),
+                    backgroundColor: _kPrimaryColor,
                     foregroundColor: Colors.white,
                   ),
                   child: Text(translate('OK')),
@@ -469,7 +481,7 @@ class _AppLoginPageState extends State<AppLoginPage>
     });
 
     final error = await _authService.smsLogin(
-      phone: phone, 
+      phone: phone,
       code: code,
       agreedTermsVersion: _currentTermsVersion,
       agreedPrivacyVersion: _currentPrivacyVersion,
@@ -582,28 +594,40 @@ class _AppLoginPageState extends State<AppLoginPage>
                 ),
                 const SizedBox(height: 20),
 
-                // Tab Bar
+                // Tab Bar（与桌面端样式一致）
                 Container(
+                  padding: const EdgeInsets.all(4),
                   decoration: BoxDecoration(
                     color: isDark
-                        ? Colors.white.withOpacity(0.08)
-                        : Colors.grey.shade100,
-                    borderRadius: BorderRadius.circular(10),
+                        ? const Color(0xFF2C2D34)
+                        : const Color(0xFFF1F4F9),
+                    borderRadius: BorderRadius.circular(12),
                   ),
                   child: TabBar(
                     controller: _tabController,
                     indicator: BoxDecoration(
-                      color: const Color(0xFF7C3AED),
-                      borderRadius: BorderRadius.circular(10),
+                      color: isDark ? const Color(0xFF3A3B42) : Colors.white,
+                      borderRadius: BorderRadius.circular(9),
+                      boxShadow: [
+                        BoxShadow(
+                          color: _kPrimaryColor.withOpacity(0.14),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
                     ),
-                    labelColor: Colors.white,
-                    unselectedLabelColor:
-                        isDark ? Colors.white60 : Colors.black54,
+                    labelColor: _kPrimaryColor,
+                    unselectedLabelColor: isDark
+                        ? const Color(0xFFA5ABB3)
+                        : const Color(0xFF8A93A6),
                     labelStyle: const TextStyle(
                         fontSize: 13, fontWeight: FontWeight.w600),
                     unselectedLabelStyle: const TextStyle(fontSize: 13),
                     indicatorSize: TabBarIndicatorSize.tab,
                     dividerColor: Colors.transparent,
+                    splashFactory: NoSplash.splashFactory,
+                    overlayColor:
+                        MaterialStateProperty.all(Colors.transparent),
                     tabs: [
                       Tab(text: translate('tab_account_login')),
                       Tab(text: translate('tab_phone_login')),
@@ -660,6 +684,12 @@ class _AppLoginPageState extends State<AppLoginPage>
                 ],
 
                 const SizedBox(height: 16),
+                Divider(
+                    height: 1,
+                    color: isDark
+                        ? const Color(0x14FFFFFF)
+                        : const Color(0x14000000)),
+                const SizedBox(height: 14),
 
                 // Register Link
                 Row(
@@ -668,18 +698,21 @@ class _AppLoginPageState extends State<AppLoginPage>
                     Text(
                       translate('no_account_prompt'),
                       style: TextStyle(
-                        color: isDark ? Colors.white54 : Colors.black45,
+                        color: isDark
+                            ? const Color(0xFFA5ABB3)
+                            : const Color(0xFF8A93A6),
                         fontSize: 13,
                       ),
                     ),
+                    const SizedBox(width: 4),
                     MouseRegion(
                       cursor: SystemMouseCursors.click,
                       child: GestureDetector(
                         onTap: _goToRegister,
                         child: Text(
                           translate('register_now'),
-                          style: TextStyle(
-                            color: const Color(0xFF7C3AED),
+                          style: const TextStyle(
+                            color: _kPrimaryColor,
                             fontSize: 13,
                             fontWeight: FontWeight.w600,
                           ),
@@ -705,7 +738,7 @@ class _AppLoginPageState extends State<AppLoginPage>
           fieldKey: 'username',
           controller: _usernameController,
           focusNode: _usernameFocus,
-          label: translate('Username'),
+          label: translate('account_input_hint'),
           icon: Icons.person_outline,
           suffix: _buildAccountSwitcher(),
           inputFormatters: [
@@ -725,7 +758,7 @@ class _AppLoginPageState extends State<AppLoginPage>
           icon: Icons.lock_outline,
           obscure: _obscurePassword,
           inputFormatters: [
-            FilteringTextInputFormatter.deny(RegExp(r'[\u4e00-\u9fff]')),
+            FilteringTextInputFormatter.deny(RegExp(r'[一-鿿]')),
           ],
           suffix: IconButton(
             icon: Icon(
@@ -744,14 +777,13 @@ class _AppLoginPageState extends State<AppLoginPage>
         ),
         const SizedBox(height: 8),
         Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             SizedBox(
               width: 20,
               height: 20,
               child: Checkbox(
                 value: _rememberPassword,
-                activeColor: const Color(0xFF7C3AED),
+                activeColor: _kPrimaryColor,
                 onChanged: (val) {
                   final next = val ?? false;
                   setState(() => _rememberPassword = next);
@@ -770,36 +802,31 @@ class _AppLoginPageState extends State<AppLoginPage>
               translate('remember_password'),
               style: TextStyle(
                 fontSize: 12,
-                color: Theme.of(context).brightness == Brightness.dark
-                    ? Colors.white54
-                    : Colors.black54,
+                color: isDark ? Colors.white54 : Colors.black54,
+              ),
+            ),
+            const Spacer(),
+            MouseRegion(
+              cursor: SystemMouseCursors.click,
+              child: GestureDetector(
+                onTap: _showForgotPassword,
+                child: Text(
+                  translate('Forget Password'),
+                  style: const TextStyle(
+                    color: _kPrimaryColor,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
               ),
             ),
           ],
         ),
         const SizedBox(height: 10),
         _buildTermsCheckbox(isDark),
-        const SizedBox(height: 12),
+        const SizedBox(height: 14),
         // Login Button
         _buildLoginButton(onPressed: _loginWithPassword),
-        const SizedBox(height: 6),
-        Align(
-          alignment: Alignment.centerRight,
-          child: MouseRegion(
-            cursor: SystemMouseCursors.click,
-            child: GestureDetector(
-              onTap: _showForgotPassword,
-              child: Text(
-                translate('Forget Password'),
-                style: TextStyle(
-                  color: const Color(0xFF7C3AED),
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-          ),
-        ),
       ],
     );
   }
@@ -822,7 +849,7 @@ class _AppLoginPageState extends State<AppLoginPage>
             height: 20,
             child: Checkbox(
               value: _agreedToTerms,
-              activeColor: const Color(0xFF7C3AED),
+              activeColor: _kPrimaryColor,
               onChanged: (val) {
                 setState(() => _agreedToTerms = val ?? false);
               },
@@ -846,9 +873,9 @@ class _AppLoginPageState extends State<AppLoginPage>
                         mode: LaunchMode.externalApplication),
                     child: Text(
                       translate('terms_link_label'),
-                      style: TextStyle(
+                      style: const TextStyle(
                         fontSize: 12,
-                        color: const Color(0xFF7C3AED),
+                        color: _kPrimaryColor,
                       ),
                     ),
                   ),
@@ -864,9 +891,9 @@ class _AppLoginPageState extends State<AppLoginPage>
                         mode: LaunchMode.externalApplication),
                     child: Text(
                       translate('privacy_link_label'),
-                      style: TextStyle(
+                      style: const TextStyle(
                         fontSize: 12,
-                        color: const Color(0xFF7C3AED),
+                        color: _kPrimaryColor,
                       ),
                     ),
                   ),
@@ -911,18 +938,22 @@ class _AppLoginPageState extends State<AppLoginPage>
                 label: translate('Verification code'),
                 icon: Icons.sms_outlined,
                 keyboardType: TextInputType.number,
+                inputFormatters: [
+                  FilteringTextInputFormatter.digitsOnly,
+                  LengthLimitingTextInputFormatter(6),
+                ],
                 textInputAction: TextInputAction.done,
                 onSubmitted: (_) => _loginWithSms(),
               ),
             ),
             const SizedBox(width: 12),
             SizedBox(
-              height: 48,
+              height: 44,
               child: ElevatedButton(
                 onPressed:
                     (_countdown > 0 || _isLoading) ? null : _sendSmsCode,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF7C3AED),
+                  backgroundColor: _kPrimaryColor,
                   foregroundColor: Colors.white,
                   disabledBackgroundColor: Colors.grey.shade300,
                   shape: RoundedRectangleBorder(
@@ -962,12 +993,21 @@ class _AppLoginPageState extends State<AppLoginPage>
     ValueChanged<String>? onSubmitted,
     TextInputAction? textInputAction,
   }) {
+    // 为字符过滤器包一层：当不规范字符被吞掉时，复用错误提示框提醒用户
+    final effectiveFormatters = inputFormatters
+        ?.map((f) => f is LengthLimitingTextInputFormatter
+            ? f
+            : _RejectNotifyingFormatter(
+                f, () => _onCharRejected(fieldKey, focusNode)))
+        .toList();
     return AnimatedBuilder(
       animation: Listenable.merge([
         focusNode,
         if (_shakeControllers[fieldKey] != null) _shakeControllers[fieldKey]!,
       ]),
       builder: (context, _) {
+        final isDark = Theme.of(context).brightness == Brightness.dark;
+        final hasFocus = focusNode.hasFocus;
         final isInvalid = _invalidFields[fieldKey] == true;
         final shake = _shakeControllers[fieldKey];
         final dx = shake == null
@@ -980,7 +1020,7 @@ class _AppLoginPageState extends State<AppLoginPage>
             focusNode: focusNode,
             obscureText: obscure,
             keyboardType: keyboardType,
-            inputFormatters: inputFormatters,
+            inputFormatters: effectiveFormatters,
             textInputAction: textInputAction ?? TextInputAction.done,
             onSubmitted: onSubmitted ?? (_) => FocusScope.of(context).nextFocus(),
             onChanged: (value) {
@@ -997,28 +1037,47 @@ class _AppLoginPageState extends State<AppLoginPage>
               hintStyle:
                   TextStyle(color: Colors.grey.shade500, fontSize: 15),
               prefixIcon: Icon(icon,
-                  size: 20, color: isInvalid ? Colors.red : null),
+                  size: 20,
+                  color: isInvalid
+                      ? Colors.red
+                      : (hasFocus
+                          ? _kPrimaryColor
+                          : (isDark
+                              ? const Color(0xFF8A9099)
+                              : const Color(0xFF9AA3B2)))),
               suffixIcon: suffix,
+              filled: true,
+              fillColor: isInvalid
+                  ? (isDark
+                      ? const Color(0xFF3A2626)
+                      : const Color(0xFFFFF5F5))
+                  : (isDark
+                      ? const Color(0xFF2C2D34)
+                      : const Color(0xFFF6F8FB)),
               border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(10),
-                borderSide: BorderSide(color: Colors.grey.shade300),
+                borderRadius: BorderRadius.circular(11),
+                borderSide: BorderSide(
+                    color: isDark ? Colors.white24 : Colors.grey.shade300),
               ),
               enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: BorderRadius.circular(11),
                 borderSide: BorderSide(
-                    color:
-                        isInvalid ? Colors.red : Colors.grey.shade300),
+                    color: isInvalid
+                        ? Colors.red
+                        : (isDark
+                            ? const Color(0xFF34353C)
+                            : const Color(0xFFE3E8F0))),
               ),
               focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: BorderRadius.circular(11),
                 borderSide: BorderSide(
-                  color: isInvalid ? Colors.red : const Color(0xFF7C3AED),
+                  color: isInvalid ? Colors.red : _kPrimaryColor,
                   width: 1.5,
                 ),
               ),
               contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 14, vertical: 12),
-              isDense: false,
+                  horizontal: 14, vertical: 10),
+              isDense: true,
             ),
           ),
         );
@@ -1027,40 +1086,51 @@ class _AppLoginPageState extends State<AppLoginPage>
   }
 
   Widget _buildLoginButton({required VoidCallback onPressed}) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final bgColor = isDark ? const Color(0xFF6D28D9) : const Color(0xFF7C3AED);
     const textColor = Colors.white;
-    final overlayColor = isDark
-        ? const Color(0xFF7C3AED)
-        : const Color(0xFF6D28D9);
-
-    return SizedBox(
-      width: double.infinity,
-      height: 44,
-      child: ElevatedButton(
-        onPressed: _isLoading ? null : onPressed,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: bgColor,
-          foregroundColor: textColor,
-          overlayColor: overlayColor,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
+    return Opacity(
+      opacity: _isLoading ? 0.7 : 1.0,
+      child: Container(
+        width: double.infinity,
+        height: 46,
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: _kButtonGradient,
+            begin: Alignment.centerLeft,
+            end: Alignment.centerRight,
           ),
-          elevation: 0,
+          borderRadius: BorderRadius.circular(11),
+          boxShadow: [
+            BoxShadow(
+              color: _kPrimaryColor.withOpacity(0.32),
+              blurRadius: 14,
+              offset: const Offset(0, 6),
+            ),
+          ],
         ),
-        child: _isLoading
-            ? SizedBox(
-                width: 20,
-                height: 20,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2.5,
-                  color: textColor,
-                ),
-              )
-            : Text(
-                translate('login_btn'),
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-              ),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(11),
+            onTap: _isLoading ? null : onPressed,
+            child: Center(
+              child: _isLoading
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                          strokeWidth: 2.5, color: textColor),
+                    )
+                  : Text(
+                      translate('login_btn'),
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: textColor,
+                      ),
+                    ),
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -1100,6 +1170,14 @@ class _ForgotPasswordDialogState extends State<_ForgotPasswordDialog> {
     _confirmPasswordController.dispose();
     _countdownTimer?.cancel();
     super.dispose();
+  }
+
+  // 输入框吞掉不规范字符时，复用本对话框的错误提示框提醒用户
+  void _notifyInvalidChar() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      setState(() => _errorMsg = translate('please_enter_valid_characters'));
+    });
   }
 
   void _startCountdown() {
@@ -1225,7 +1303,9 @@ class _ForgotPasswordDialogState extends State<_ForgotPasswordDialog> {
                 keyboardType: TextInputType.phone,
                 textInputAction: TextInputAction.next,
                 inputFormatters: [
-                  FilteringTextInputFormatter.digitsOnly,
+                  _RejectNotifyingFormatter(
+                      FilteringTextInputFormatter.digitsOnly,
+                      _notifyInvalidChar),
                   LengthLimitingTextInputFormatter(11),
                 ],
                 decoration: InputDecoration(
@@ -1242,6 +1322,12 @@ class _ForgotPasswordDialogState extends State<_ForgotPasswordDialog> {
                       controller: _smsCodeController,
                       keyboardType: TextInputType.number,
                       textInputAction: TextInputAction.next,
+                      inputFormatters: [
+                        _RejectNotifyingFormatter(
+                            FilteringTextInputFormatter.digitsOnly,
+                            _notifyInvalidChar),
+                        LengthLimitingTextInputFormatter(6),
+                      ],
                       decoration: InputDecoration(
                         labelText: translate('Verification code'),
                         prefixIcon: const Icon(Icons.sms_outlined, size: 20),
@@ -1256,7 +1342,7 @@ class _ForgotPasswordDialogState extends State<_ForgotPasswordDialog> {
                           ? null
                           : _sendSmsCode,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF7C3AED),
+                        backgroundColor: _kPrimaryColor,
                         foregroundColor: Colors.white,
                         disabledBackgroundColor: Colors.grey.shade300,
                         shape: RoundedRectangleBorder(
@@ -1279,7 +1365,10 @@ class _ForgotPasswordDialogState extends State<_ForgotPasswordDialog> {
                 obscureText: _obscurePassword,
                 textInputAction: TextInputAction.next,
                 inputFormatters: [
-                  FilteringTextInputFormatter.deny(RegExp(r'[\u4e00-\u9fff]')),
+                  _RejectNotifyingFormatter(
+                      FilteringTextInputFormatter.deny(
+                          RegExp(r'[一-鿿]')),
+                      _notifyInvalidChar),
                 ],
                 onChanged: (value) {
                   final error = _validatePasswordFormat(value);
@@ -1321,7 +1410,10 @@ class _ForgotPasswordDialogState extends State<_ForgotPasswordDialog> {
                 textInputAction: TextInputAction.done,
                 onSubmitted: (_) => _submit(),
                 inputFormatters: [
-                  FilteringTextInputFormatter.deny(RegExp(r'[\u4e00-\u9fff]')),
+                  _RejectNotifyingFormatter(
+                      FilteringTextInputFormatter.deny(
+                          RegExp(r'[一-鿿]')),
+                      _notifyInvalidChar),
                 ],
                 onChanged: (value) {
                   final error = (value.isNotEmpty && value != _passwordController.text)
@@ -1392,7 +1484,7 @@ class _ForgotPasswordDialogState extends State<_ForgotPasswordDialog> {
         ElevatedButton(
           onPressed: _isLoading ? null : _submit,
           style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFF7C3AED),
+            backgroundColor: _kPrimaryColor,
             foregroundColor: Colors.white,
             elevation: 0,
           ),
@@ -1409,6 +1501,27 @@ class _ForgotPasswordDialogState extends State<_ForgotPasswordDialog> {
         ),
       ],
     );
+  }
+}
+
+/// 包装字符过滤器：当内部过滤器吞掉不规范字符（导致文本变化）时触发回调，
+/// 用于复用页面原有的错误提示框提醒用户。不改变过滤结果本身。
+class _RejectNotifyingFormatter extends TextInputFormatter {
+  _RejectNotifyingFormatter(this.inner, this.onReject);
+
+  final TextInputFormatter inner;
+  final VoidCallback onReject;
+
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    final result = inner.formatEditUpdate(oldValue, newValue);
+    if (result.text != newValue.text) {
+      onReject();
+    }
+    return result;
   }
 }
 
