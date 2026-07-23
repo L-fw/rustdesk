@@ -636,24 +636,10 @@ class _AppLoginPageState extends State<AppLoginPage>
                 ),
                 const SizedBox(height: 20),
 
-                // Tab Content
-                AnimatedSize(
-                  duration: const Duration(milliseconds: 300),
-                  curve: Curves.easeInOut,
-                  alignment: Alignment.topCenter,
-                  child: AnimatedSwitcher(
-                    duration: const Duration(milliseconds: 300),
-                    child: _tabController.index == 0
-                        ? Container(
-                            key: const ValueKey(0),
-                            child: _buildPasswordLoginTab(),
-                          )
-                        : Container(
-                            key: const ValueKey(1),
-                            child: _buildSmsLoginTab(),
-                          ),
-                  ),
-                ),
+                // Tab Content（即时切换，无换场动画）
+                _tabController.index == 0
+                    ? _buildPasswordLoginTab()
+                    : _buildSmsLoginTab(),
 
                 // Error Message
                 if (_errorMsg != null) ...[
