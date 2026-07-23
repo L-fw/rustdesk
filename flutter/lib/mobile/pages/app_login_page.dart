@@ -550,7 +550,7 @@ class _AppLoginPageState extends State<AppLoginPage>
   Future<void> _showForgotPassword() async {
     final ok = await showDialog<bool>(
       context: context,
-      builder: (_) => const _ForgotPasswordDialog(),
+      builder: (_) => const ForgotPasswordDialog(),
     );
     if (!mounted) return;
     if (ok == true) {
@@ -1122,14 +1122,16 @@ class _AppLoginPageState extends State<AppLoginPage>
   }
 }
 
-class _ForgotPasswordDialog extends StatefulWidget {
-  const _ForgotPasswordDialog();
+/// 忘记密码对话框（手机号 + 短信验证码重置密码）。
+/// 设置页「账户安全」也会复用，因此保持公开。
+class ForgotPasswordDialog extends StatefulWidget {
+  const ForgotPasswordDialog({Key? key}) : super(key: key);
 
   @override
-  State<_ForgotPasswordDialog> createState() => _ForgotPasswordDialogState();
+  State<ForgotPasswordDialog> createState() => _ForgotPasswordDialogState();
 }
 
-class _ForgotPasswordDialogState extends State<_ForgotPasswordDialog> {
+class _ForgotPasswordDialogState extends State<ForgotPasswordDialog> {
   final _phoneController = TextEditingController();
   final _smsCodeController = TextEditingController();
   final _passwordController = TextEditingController();
