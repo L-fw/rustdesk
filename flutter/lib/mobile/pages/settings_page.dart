@@ -678,12 +678,8 @@ class _SettingsState extends State<SettingsPage> with WidgetsBindingObserver {
         padding: const EdgeInsets.only(bottom: 16),
         children: [
           customClientSection,
-          // 账户三卡片：信息 / 安全 / 操作，对齐桌面端 _Account tab
-          if (_appLoggedIn) ...[
-            _userInfoCard(context),
-            _accountSecurityCard(context),
-            _accountActionsCard(context),
-          ],
+          // 账户卡片：信息 + 安全 + 操作合并为一张卡片，不折叠。
+          if (_appLoggedIn) _userInfoCard(context),
           // 隐藏账户登录入口
           // if (!bind.isDisableAccount())
           //   SettingsSection(
@@ -707,6 +703,7 @@ class _SettingsState extends State<SettingsPage> with WidgetsBindingObserver {
           _settingCard(
               icon: Icons.settings_outlined,
               title: 'Settings',
+              collapsible: true,
               children: [
                 if (!kAppModeShareOnly &&
                     !disabledSettings &&
@@ -864,6 +861,7 @@ class _SettingsState extends State<SettingsPage> with WidgetsBindingObserver {
                 icon: Icons.memory,
                 iconColor: const Color(0xFF8B5CF6),
                 title: 'Hardware Codec',
+                collapsible: true,
                 children: [
                   _cardSwitchRow(
                     title: Text(translate('Enable hardware codec')),
@@ -885,6 +883,7 @@ class _SettingsState extends State<SettingsPage> with WidgetsBindingObserver {
               icon: Icons.videocam_outlined,
               iconColor: const Color(0xFFF59E0B),
               title: 'Recording',
+              collapsible: true,
               children: [
                 if (!outgoingOnly)
                   _cardSwitchRow(
@@ -947,6 +946,7 @@ class _SettingsState extends State<SettingsPage> with WidgetsBindingObserver {
                 icon: Icons.screen_share_outlined,
                 iconColor: const Color(0xFF22C55E),
                 title: 'Share screen',
+                collapsible: true,
                 children: shareScreenTiles,
               ),
           if (!kAppModeShareOnly && !bind.isIncomingOnly())
@@ -958,11 +958,13 @@ class _SettingsState extends State<SettingsPage> with WidgetsBindingObserver {
             _settingCard(
               icon: Icons.auto_awesome_outlined,
               title: 'Enhancements',
+              collapsible: true,
               children: enhancementsTiles,
             ),
           _settingCard(
             icon: Icons.info_outline,
             title: 'About',
+            collapsible: true,
             children: [
               _cardNavRow(
                   leading: Icons.info,
@@ -1134,7 +1136,72 @@ class _SettingsState extends State<SettingsPage> with WidgetsBindingObserver {
             ],
           ),
         ),
+        // 账户安全（合并进账户信息卡片）
+        Divider(height: 24, color: MyTheme.dividerSoft),
+        _accountSubheader('Account Security'),
+        _accountLinkRow(
+          title: 'Change Password',
+          subtitle: 'acc_change_pwd_sub',
+          onTap: () => _doChangePassword(),
+        ),
+        _accountLinkRow(
+          title: 'Forgot Password',
+          subtitle: 'acc_forgot_pwd_sub',
+          onTap: () => _doForgotPassword(),
+        ),
+        _accountLinkRow(
+          title: 'change_phone_title',
+          subtitle: 'acc_change_phone_sub',
+          onTap: () => _doChangePhone(),
+        ),
+        // 账户操作（合并进账户信息卡片）
+        Divider(height: 24, color: MyTheme.dividerSoft),
+        _accountSubheader('Account Actions'),
+        _accountActionRow(
+          title: 'Sign out of your account',
+          subtitle: 'acc_logout_sub',
+          button: OutlinedButton(
+            onPressed: () => _confirmLogout(),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: MyTheme.accent,
+              side: BorderSide(color: MyTheme.accent.withOpacity(0.6)),
+              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+              shape:
+                  RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
+            child: Text(translate('Sign out of your account')),
+          ),
+        ),
+        _accountActionRow(
+          title: 'Deregister account',
+          subtitle: 'acc_deregister_sub',
+          button: OutlinedButton(
+            onPressed: () => _doDeregister(),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: const Color(0xFFEF4444),
+              side: const BorderSide(color: Color(0xFFEF4444)),
+              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+              shape:
+                  RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
+            child: Text(translate('Deregister account')),
+          ),
+        ),
       ],
+    );
+  }
+
+  /// 账户卡片内的小节标题（账户安全 / 账户操作）
+  Widget _accountSubheader(String title) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 2),
+      child: Text(
+        translate(title),
+        style: TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: MyTheme.textMuted),
+      ),
     );
   }
 
@@ -1193,73 +1260,6 @@ class _SettingsState extends State<SettingsPage> with WidgetsBindingObserver {
         ),
         const SizedBox(width: 12),
         button,
-      ],
-    );
-  }
-
-  Widget _accountSecurityCard(BuildContext context) {
-    return _settingCard(
-      icon: Icons.shield_outlined,
-      iconColor: Colors.blue,
-      title: 'Account Security',
-      children: [
-        _accountLinkRow(
-          title: 'Change Password',
-          subtitle: 'acc_change_pwd_sub',
-          onTap: () => _doChangePassword(),
-        ),
-        _accountLinkRow(
-          title: 'Forgot Password',
-          subtitle: 'acc_forgot_pwd_sub',
-          onTap: () => _doForgotPassword(),
-        ),
-        _accountLinkRow(
-          title: 'change_phone_title',
-          subtitle: 'acc_change_phone_sub',
-          onTap: () => _doChangePhone(),
-        ),
-      ],
-    );
-  }
-
-  Widget _accountActionsCard(BuildContext context) {
-    return _settingCard(
-      icon: Icons.manage_accounts_outlined,
-      iconColor: Colors.green,
-      title: 'Account Actions',
-      children: [
-        _accountActionRow(
-          title: 'Sign out of your account',
-          subtitle: 'acc_logout_sub',
-          button: OutlinedButton(
-            onPressed: () => _confirmLogout(),
-            style: OutlinedButton.styleFrom(
-              foregroundColor: MyTheme.accent,
-              side: BorderSide(color: MyTheme.accent.withOpacity(0.6)),
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8)),
-            ),
-            child: Text(translate('Sign out of your account')),
-          ),
-        ),
-        _accountActionRow(
-          title: 'Deregister account',
-          subtitle: 'acc_deregister_sub',
-          button: OutlinedButton(
-            onPressed: () => _doDeregister(),
-            style: OutlinedButton.styleFrom(
-              foregroundColor: const Color(0xFFEF4444),
-              side: const BorderSide(color: Color(0xFFEF4444)),
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8)),
-            ),
-            child: Text(translate('Deregister account')),
-          ),
-        ),
       ],
     );
   }
@@ -1738,15 +1738,8 @@ class __ManageTrustedDevicesState extends State<_ManageTrustedDevices> {
 
 const double _kCardContentFontSize = 15;
 
-Widget _settingCard({
-  IconData? icon,
-  Color iconColor = MyTheme.accent,
-  String? title,
-  String? subtitle,
-  Widget? trailing,
-  List<Widget> children = const [],
-}) {
-  final hasHeader = icon != null || (title != null && title.isNotEmpty);
+// 卡片外层容器（统一背景/圆角/阴影/边距），普通卡片与折叠卡片共用。
+Widget _cardContainer({required Widget child}) {
   return Container(
     width: double.infinity,
     margin: const EdgeInsets.fromLTRB(12, 12, 12, 0),
@@ -1762,43 +1755,98 @@ Widget _settingCard({
         ),
       ],
     ),
+    child: child,
+  );
+}
+
+// 卡片头部（图标 + 标题 + 副标题），普通卡片与折叠卡片共用。
+// 返回头部 Row 中除 trailing / chevron 外的前置内容列表。
+List<Widget> _cardHeaderLeading({
+  IconData? icon,
+  Color iconColor = MyTheme.accent,
+  String? title,
+  String? subtitle,
+}) {
+  return [
+    if (icon != null) ...[
+      Container(
+        width: 40,
+        height: 40,
+        decoration: BoxDecoration(
+          color: iconColor.withOpacity(0.12),
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Icon(icon, color: iconColor, size: 21),
+      ),
+      const SizedBox(width: 14),
+    ],
+    Expanded(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            translate(title ?? ''),
+            style:
+                const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+          ),
+          if (subtitle != null && subtitle.isNotEmpty) ...[
+            const SizedBox(height: 3),
+            Text(
+              translate(subtitle),
+              style: TextStyle(fontSize: 12, color: MyTheme.textMuted),
+            ),
+          ],
+        ],
+      ),
+    ),
+  ];
+}
+
+// 卡片内容行（children）之间统一插入 10px 间距。
+List<Widget> _cardChildrenWithSpacing(List<Widget> children) {
+  return [
+    for (int i = 0; i < children.length; i++) ...[
+      if (i > 0) const SizedBox(height: 10),
+      children[i],
+    ],
+  ];
+}
+
+Widget _settingCard({
+  IconData? icon,
+  Color iconColor = MyTheme.accent,
+  String? title,
+  String? subtitle,
+  Widget? trailing,
+  List<Widget> children = const [],
+  bool collapsible = false,
+  bool initiallyExpanded = false,
+}) {
+  final hasHeader = icon != null || (title != null && title.isNotEmpty);
+  // 折叠卡片：点击头部展开/收起内容（与显示设置栏一致的头部样式）。
+  if (collapsible && hasHeader && children.isNotEmpty) {
+    return _CollapsibleSettingCard(
+      icon: icon,
+      iconColor: iconColor,
+      title: title,
+      subtitle: subtitle,
+      trailing: trailing,
+      initiallyExpanded: initiallyExpanded,
+      children: children,
+    );
+  }
+  return _cardContainer(
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         if (hasHeader)
           Row(
             children: [
-              if (icon != null) ...[
-                Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: iconColor.withOpacity(0.12),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Icon(icon, color: iconColor, size: 21),
-                ),
-                const SizedBox(width: 14),
-              ],
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      translate(title ?? ''),
-                      style: const TextStyle(
-                          fontSize: 16, fontWeight: FontWeight.w600),
-                    ),
-                    if (subtitle != null && subtitle.isNotEmpty) ...[
-                      const SizedBox(height: 3),
-                      Text(
-                        translate(subtitle),
-                        style:
-                            TextStyle(fontSize: 12, color: MyTheme.textMuted),
-                      ),
-                    ],
-                  ],
-                ),
+              ..._cardHeaderLeading(
+                icon: icon,
+                iconColor: iconColor,
+                title: title,
+                subtitle: subtitle,
               ),
               if (trailing != null)
                 Padding(
@@ -1807,13 +1855,92 @@ Widget _settingCard({
           ),
         if (hasHeader && children.isNotEmpty)
           Divider(height: 24, color: MyTheme.dividerSoft),
-        for (int i = 0; i < children.length; i++) ...[
-          if (i > 0) const SizedBox(height: 10),
-          children[i],
-        ],
+        ..._cardChildrenWithSpacing(children),
       ],
     ),
   );
+}
+
+// 可折叠的设置卡片：头部一行（图标/标题 + 右侧 chevron），点击切换展开状态。
+class _CollapsibleSettingCard extends StatefulWidget {
+  final IconData? icon;
+  final Color iconColor;
+  final String? title;
+  final String? subtitle;
+  final Widget? trailing;
+  final bool initiallyExpanded;
+  final List<Widget> children;
+
+  const _CollapsibleSettingCard({
+    this.icon,
+    this.iconColor = MyTheme.accent,
+    this.title,
+    this.subtitle,
+    this.trailing,
+    this.initiallyExpanded = false,
+    this.children = const [],
+  });
+
+  @override
+  State<_CollapsibleSettingCard> createState() =>
+      _CollapsibleSettingCardState();
+}
+
+class _CollapsibleSettingCardState extends State<_CollapsibleSettingCard> {
+  late bool _expanded = widget.initiallyExpanded;
+
+  @override
+  Widget build(BuildContext context) {
+    return _cardContainer(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          InkWell(
+            borderRadius: BorderRadius.circular(8),
+            onTap: () => setState(() => _expanded = !_expanded),
+            child: Row(
+              children: [
+                ..._cardHeaderLeading(
+                  icon: widget.icon,
+                  iconColor: widget.iconColor,
+                  title: widget.title,
+                  subtitle: widget.subtitle,
+                ),
+                if (widget.trailing != null)
+                  Padding(
+                      padding: const EdgeInsets.only(left: 12),
+                      child: widget.trailing),
+                Padding(
+                  padding: const EdgeInsets.only(left: 8),
+                  child: AnimatedRotation(
+                    turns: _expanded ? 0.5 : 0,
+                    duration: const Duration(milliseconds: 200),
+                    child: Icon(Icons.keyboard_arrow_down,
+                        size: 22, color: MyTheme.iconFaint),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          AnimatedCrossFade(
+            firstChild: const SizedBox(width: double.infinity, height: 0),
+            secondChild: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Divider(height: 24, color: MyTheme.dividerSoft),
+                ..._cardChildrenWithSpacing(widget.children),
+              ],
+            ),
+            crossFadeState: _expanded
+                ? CrossFadeState.showSecond
+                : CrossFadeState.showFirst,
+            duration: const Duration(milliseconds: 200),
+            sizeCurve: Curves.easeInOut,
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 // 标签 + 右侧 Switch 的行，对齐桌面安全页的 _switchRow 视觉。
